@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common";
 import { NecordModule } from 'necord';
 import { IntentsBitField } from 'discord.js';
-import { AppUpdate } from './discord.update';
+import { DiscordUpdate } from './discord.update';
 import { CommandsModule } from './commands/commands.module';
 import { DiscordService } from "./discord.service";
 
@@ -15,11 +15,12 @@ import { DiscordService } from "./discord.service";
     ],
     controllers: [],
     providers: [
-        AppUpdate,
+        DiscordUpdate,
         DiscordService
     ],
     exports: [
         DiscordService,
+        DiscordUpdate
     ]
 })
 export class DiscordModule {}

@@ -11,6 +11,6 @@ export class DiscordAuthController {
     @Get('callback')
     @UseGuards(AuthGuard('discord'))
     async discordAuthCallback(@Req() req, @Res() res) {
-        res.redirect('http://localhost:3000');
+        res.redirect('http://localhost:3000/profile');
     }
 }
