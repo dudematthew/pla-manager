@@ -1,6 +1,6 @@
 import { Controller, Get, UseGuards, Req } from '@nestjs/common';
 import { AppService } from './app.service';
-import { AuthGuard } from '@nestjs/passport';
+import { AuthenticatedGuard } from './auth/guards/authenticated.guard';
 
 @Controller()
 export class AppController {
@@ -16,7 +16,7 @@ export class AppController {
   }
 
   @Get('profile')
-  @UseGuards(AuthGuard('discord'))
+  @UseGuards(AuthenticatedGuard)
   getProfile(@Req() req): string {
     return JSON.stringify(req.user, null, 4);
   }

@@ -1,9 +1,9 @@
 import { BadRequestException, Injectable, InternalServerErrorException } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
 import { UserEntity } from "./user.entity";
 import { Repository } from "typeorm";
 import { UserInterface } from "./user.interface";
 import { DiscordService } from "src/discord/discord.service";
+import { InjectRepository } from "@nestjs/typeorm";
 
 @Injectable()
 export class UserService {

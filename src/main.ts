@@ -1,16 +1,15 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import * as session from 'express-session';
-import * as passport from 'passport';
 import { TypeORMSession } from './database/entities/session.entity';
 import { TypeormStore } from 'connect-typeorm';
-import { DataSource } from 'typeorm';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import * as passport from 'passport';
+import * as session from 'express-session';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  const dataSource = app.get(DataSource);
-  const sessionRepository = dataSource.getRepository(TypeORMSession);
+  const sessionRepository = app.get(getRepositoryToken(TypeORMSession));
 
   app.use(
     session({

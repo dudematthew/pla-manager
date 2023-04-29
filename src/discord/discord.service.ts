@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Client, TextChannel, ChannelType, User, GuildMember, PermissionsBitField, Guild, UserResolvable, PermissionResolvable } from 'discord.js';
+import { Client, TextChannel, ChannelType, User, GuildMember, PermissionsBitField, Guild, UserResolvable, PermissionResolvable, Channel } from 'discord.js';
 
 @Injectable()
 export class DiscordService {
@@ -52,4 +52,11 @@ export class DiscordService {
       return member.permissions.has(rights);
     }
 
+    /**
+     * Get channel by ID
+     * @param channelId The ID of the channel
+     */
+    async getChannelById(channelId: string): Promise<Channel> {
+      return await this.client.channels.fetch(channelId) as TextChannel;
+    }
 }

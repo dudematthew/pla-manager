@@ -8,6 +8,10 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { SessionSerializer } from './auth/session.serializer';
 import { DiscordStrategy } from './auth/discord.strategy';
+import { ChannelModule } from './channel/channel.module';
+import { DiscordService } from './discord/discord.service';
+import { TypeORMSession } from './database/entities/session.entity';
+import { AdminPanelModule } from './admin-panel/admin-panel.module';
 
 let envFilePath = '.env.development';
 if (process.env.NODE_ENV === 'production') {
@@ -26,6 +30,8 @@ console.log("Running with env file:", envFilePath);
      }),
     AuthModule,
     UserModule,
+    ChannelModule,
+    AdminPanelModule,
   ],
   controllers: [
     AppController,
@@ -34,9 +40,14 @@ console.log("Running with env file:", envFilePath);
     AppService,
     SessionSerializer,
     DiscordStrategy,
+    DiscordService,
+    TypeORMSession,
   ],
   exports: [
     SessionSerializer,
+    AppService,
+    DiscordService,
+    TypeORMSession,
   ],
 })
 export class AppModule {}

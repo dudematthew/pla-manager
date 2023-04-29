@@ -17,5 +17,11 @@ import { TypeORMSession } from "./entities/session.entity";
         }),
         TypeOrmModule.forFeature([TypeORMSession]), 
     ],
+    providers: [
+        TypeORMSession,
+    ],
+    exports: [
+        TypeORMSession,
+    ],
 })
 export class DatabaseModule {}

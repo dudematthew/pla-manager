@@ -20,7 +20,9 @@ import { DiscordService } from "./discord.service";
     ],
     exports: [
         DiscordService,
-        DiscordUpdate
+        DiscordUpdate,
+        NecordModule,
+        DiscordUpdate,
     ]
 })
 export class DiscordModule {}
