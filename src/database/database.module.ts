@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { UserEntity } from "src/user/user.entity";
+import { TypeORMSession } from "./entities/session.entity";
 
 @Module({
     imports: [
@@ -11,9 +12,10 @@ import { UserEntity } from "src/user/user.entity";
             username: process.env.DB_USER || 'root',
             password: process.env.DB_PASS || '',
             database: process.env.DB_NAME || 'pla_manager',
-            entities: [UserEntity],
+            entities: [UserEntity, TypeORMSession],
             synchronize: true,
         }),
+        TypeOrmModule.forFeature([TypeORMSession]), 
     ],
 })
 export class DatabaseModule {}

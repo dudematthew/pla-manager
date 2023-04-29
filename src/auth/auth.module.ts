@@ -5,19 +5,27 @@ import { DiscordAuthController } from "./discord-auth.controller";
 import { AuthService } from "./auth.service";
 import { UserModule } from "src/user/user.module";
 import { DiscordModule } from "src/discord/discord.module";
-import { UserSerializer } from "./user.serializer";
+import { DiscordAuthGuard } from "./guards/discord.guard";
+import { SessionSerializer } from "./session.serializer";
+import { TypeOrmModule } from "@nestjs/typeorm";
+import { UserEntity } from "src/user/user.entity";
 
 
 @Module({
     imports: [
-        PassportModule.register({ defaultStrategy: 'discord' }),
+        PassportModule.register({ 
+            defaultStrategy: 'discord',
+            session: true,
+        }),
         UserModule,
         DiscordModule,
+        TypeOrmModule.forFeature([UserEntity]),
     ],
     providers: [
         AuthService,
         DiscordStrategy,
-        UserSerializer,
+        DiscordAuthGuard,
+        SessionSerializer,
     ],
     controllers: [
         DiscordAuthController,
@@ -25,7 +33,8 @@ import { UserSerializer } from "./user.serializer";
     exports: [
         AuthService,
         PassportModule,
-        UserSerializer,
+        DiscordAuthGuard,
+        SessionSerializer,
     ]
 })
 export class AuthModule {}

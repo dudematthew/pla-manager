@@ -11,16 +11,13 @@ export class AppController {
     
     this.appService.sendDiscordMessage('Jestem bogiem');
 
-    console.log("Req user:", req.user);
-
     // Return user data nicely formatted to string
     return JSON.stringify(req.user, null, 4);
   }
 
   @Get('profile')
-  // @UseGuards(AuthGuard('discord'))
+  @UseGuards(AuthGuard('discord'))
   getProfile(@Req() req): string {
-    console.log("Req user:", req.user);
     return JSON.stringify(req.user, null, 4);
   }
 

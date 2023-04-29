@@ -6,30 +6,37 @@ import { LoggerModule } from './logger/logger.module';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
-import { UserSerializer } from './auth/user.serializer';
-import { PassportModule } from '@nestjs/passport';
+import { SessionSerializer } from './auth/session.serializer';
 import { DiscordStrategy } from './auth/discord.strategy';
 
+let envFilePath = '.env.development';
+if (process.env.NODE_ENV === 'production') {
+  envFilePath = '.env.production';
+}
+
+console.log("Running with env file:", envFilePath);
 
 @Module({
   imports: [
     DiscordModule,
     LoggerModule,
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({ 
+      isGlobal: true,
+      envFilePath: envFilePath,
+     }),
     AuthModule,
     UserModule,
-    PassportModule.register({ defaultStrategy: 'discord' }),
   ],
   controllers: [
     AppController,
   ],
   providers: [
     AppService,
-    UserSerializer,
+    SessionSerializer,
     DiscordStrategy,
   ],
   exports: [
-    UserSerializer,
+    SessionSerializer,
   ],
 })
 export class AppModule {}

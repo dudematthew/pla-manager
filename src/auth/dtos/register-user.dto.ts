@@ -5,5 +5,5 @@ export class RegisterUserDto {
     email: string;
     
     // Discord id
-    discord_id: string;
+    discordId: string;
 }

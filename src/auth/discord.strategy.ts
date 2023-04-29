@@ -1,17 +1,17 @@
 import { Injectable } from "@nestjs/common";
-import { PassportStrategy } from "@nestjs/passport";
 import { Strategy } from "passport-discord";
+import { PassportStrategy } from "@nestjs/passport";
 import { AuthService } from "./auth.service";
 import { DiscordService } from "src/discord/discord.service";
 import { PermissionsBitField } from "discord.js";
-import { UserSerializer } from "./user.serializer";
+import { UnauthorizedException } from "@nestjs/common";
+import { Profile } from "passport-discord";
 
 @Injectable()
-export class DiscordStrategy extends PassportStrategy(Strategy, 'discord') {
+export class DiscordStrategy extends PassportStrategy(Strategy) {
     constructor(
         private readonly authService: AuthService,
         private readonly discordService: DiscordService,
-        private readonly userSerializer: UserSerializer,
     ) {
         console.log(
             'Discord env:',
@@ -27,8 +27,12 @@ export class DiscordStrategy extends PassportStrategy(Strategy, 'discord') {
         });
     }
 
-    async validate(accessToken: string, refreshToken: string, profile: any, done: (error: any, user?: any, info?: any) => void) {
-        
+    async validate(
+        accessToken: string, 
+        refreshToken: string, 
+        profile: Profile, 
+        ) {
+
         const { id, username, discriminator, avatar, email } = profile;
 
         console.log('Validating Discord user', profile);
@@ -40,15 +44,14 @@ export class DiscordStrategy extends PassportStrategy(Strategy, 'discord') {
             user: {
                 discordId: id,
                 email: email,
-                is_admin: isAdmin
+                isAdmin: isAdmin
             }
         });
 
-        console.log("Logged user:", loggedUser);
 
         if (!loggedUser) {
             console.log("Logged user:", loggedUser);
-            done(null, false);
+            throw new UnauthorizedException();
             return;
         }
 
@@ -62,11 +65,7 @@ export class DiscordStrategy extends PassportStrategy(Strategy, 'discord') {
             refreshToken,
         }
 
-        // this.userSerializer.serializeUser(user, done);
-
         console.log('User: ', user);
-
-        done(null, user);
 
         return user;
     }

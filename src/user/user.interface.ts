@@ -1,7 +1,7 @@
 export interface UserInterface {
-    discord_id: string;
+    discordId: string;
     email: string;
-    created_at: Date;
-    updated_at: Date;
-    is_admin: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+    isAdmin: boolean;
 }

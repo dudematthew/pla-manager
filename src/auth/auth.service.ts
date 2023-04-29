@@ -11,23 +11,21 @@ export class AuthService {
 
     async socialLogin(req: { user: any; }): Promise<UserEntity> {
 
-        console.log(`Social login`, req.user);
-
         // Passport middleware will attach the user object to the request object
         // if the user is authenticated
         if (!req.user) {
-            throw new BadRequestException('No account presented');
+            return null;
         }
 
         const user: UserInterface = {
             ...req.user,
-            discord_id: req.user.discordId,
+            discordId: req.user.discordId,
             email: req.user.email,
-            is_admin: req.user.is_admin,
+            isAdmin: req.user.isAdmin,
         }
 
         // Check if the user exists in the database
-        const existingUser = await this.userService.findByDiscordId(user.discord_id);
+        const existingUser = await this.userService.findByDiscordId(user.discordId);
 
         if (existingUser) {
             console.log(`User already exists`, req.user, existingUser);
@@ -37,6 +35,11 @@ export class AuthService {
         console.log(`Creating new user`, req.user);
 
         const newUser = await this.userService.create(user);
+
+        if (!newUser) {
+            return null;
+        }
+
         return newUser;
     }
 

@@ -25,11 +25,11 @@ export class UserService {
 
     /**
      * Find a user by their Discord ID
-     * @param discord_id The Discord ID of the user
+     * @param discordId The Discord ID of the user
      * @returns The user
      */
-    async findByDiscordId(discord_id: string): Promise<UserEntity> {
-        return await this.userRepository.findOneBy({ discord_id });
+    async findByDiscordId(discordId: string): Promise<UserEntity> {
+        return await this.userRepository.findOneBy({ discordId });
     }
 
     /**
@@ -49,16 +49,16 @@ export class UserService {
     async create(user: UserInterface): Promise<UserEntity> {
 
         // If user doesn't exist on Discord, abort
-        console.log(`Checking if user ${user.discord_id} exists on Discord`);
-        if (!await this.discordService.userExists(user.discord_id)) {
-            console.log(`User ${user.discord_id} does not exist on Discord`);
+        console.log(`Checking if user ${user.discordId} exists on Discord`);
+        if (!await this.discordService.userExists(user.discordId)) {
+            console.log(`User ${user.discordId} does not exist on Discord`);
             return null;
         }
 
         const newUser = await this.userRepository.create({
-            discord_id: user.discord_id,
+            discordId: user.discordId,
             email: user.email,
-            is_admin: user.is_admin || false,
+            isAdmin: user.isAdmin || false,
         });
 
         return await this.userRepository.save(newUser);

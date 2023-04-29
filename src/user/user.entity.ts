@@ -8,20 +8,20 @@ export class UserEntity extends BaseEntity {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({ unique: true })
-    discord_id: string;
+    @Column({ unique: true, name: 'discord_id' })
+    discordId: string;
 
     @Column()
     email: string;
 
-    @CreateDateColumn()
-    created_at: Date;
+    @CreateDateColumn({ name: 'created_at' })
+    createdAt: Date;
 
-    @UpdateDateColumn()
-    updated_at: Date;
+    @UpdateDateColumn({ name: 'updated_at' })
+    updatedAt: Date;
 
-    @Column()
-    is_admin: boolean;
+    @Column({ default: false, name: 'is_admin'})
+    isAdmin: boolean;
 
     constructor(
         partial: Partial<UserEntity>,
@@ -36,7 +36,7 @@ export class UserEntity extends BaseEntity {
     }
 
     get discordUser(): Promise<User> {
-        return this.discordService.getUserById(this.discord_id);
+        return this.discordService.getUserById(this.discordId);
     }
 
     get username(): Promise<string> {
