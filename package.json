@@ -8,6 +8,8 @@
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "nest build",
+    "prepublish": "npm-auto-version",
+    "postpublish": "git push origin --tags",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -43,6 +45,7 @@
     "mysql": "^2.18.1",
     "necord": "^5.7.3",
     "nest-winston": "^1.9.1",
+    "npm-auto-version": "^1.0.0",
     "passport": "^0.6.0",
     "passport-discord": "^0.1.4",
     "react": "^18.2.0",
