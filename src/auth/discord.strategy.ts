@@ -13,12 +13,6 @@ export class DiscordStrategy extends PassportStrategy(Strategy) {
         private readonly authService: AuthService,
         private readonly discordService: DiscordService,
     ) {
-        console.log(
-            'Discord env:',
-            process.env.DISCORD_CLIENT_ID,
-            process.env.DISCORD_CLIENT_SECRET,
-            process.env.DISCORD_REDIRECT_URL,
-        );
         super({
             clientID: process.env.DISCORD_CLIENT_ID,
             clientSecret: process.env.DISCORD_CLIENT_SECRET,
