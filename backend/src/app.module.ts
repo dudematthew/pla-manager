@@ -11,22 +11,24 @@ import { DiscordStrategy } from './auth/discord.strategy';
 import { ChannelModule } from './channel/channel.module';
 import { DiscordService } from './discord/discord.service';
 import { TypeORMSession } from './database/entities/session.entity';
+import { DatabaseModule } from './database/database.module';
 
 let envFilePath = '.env.development';
-if (process.env.NODE_ENV === 'production') {
+if (process.env.NODE_ENV === 'prod') {
   envFilePath = '.env.production';
 }
 
-console.log("Running with env file:", envFilePath);
+console.log(`Running app in ${process.env.NODE_ENV} with env file:`, envFilePath);
 
 @Module({
   imports: [
-    DiscordModule,
-    LoggerModule,
     ConfigModule.forRoot({ 
       isGlobal: true,
-      envFilePath: envFilePath,
-     }),
+      envFilePath: '.env.production',
+    }),
+    DatabaseModule,
+    DiscordModule,
+    LoggerModule,
     AuthModule,
     UserModule,
     ChannelModule,
