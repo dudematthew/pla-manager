@@ -14,17 +14,28 @@ import { TypeORMSession } from './database/entities/session.entity';
 import { DatabaseModule } from './database/database.module';
 
 let envFilePath = '.env.development';
-if (process.env.NODE_ENV === 'prod') {
-  envFilePath = '.env.production';
+let ignoreEnvFile = false;
+if (process.env.NODE_ENV === 'production') {
+  // Check if .env.production exists
+  const fs = require('fs');
+  if (fs.existsSync('.env.production')) {
+    console.log('Using .env.production file');
+    envFilePath = '.env.production';
+  }
+  else {
+    console.log('No .env.production file found, using injected environment variables');
+    ignoreEnvFile = true;
+  }
+} else {
+  console.log('Using .env.development file');
 }
-
-console.log(`Running app in ${process.env.NODE_ENV} with env file:`, envFilePath);
 
 @Module({
   imports: [
     ConfigModule.forRoot({ 
       isGlobal: true,
-      envFilePath: '.env.production',
+      envFilePath,
+      ignoreEnvFile,
     }),
     DatabaseModule,
     DiscordModule,

@@ -2,18 +2,24 @@ import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { UserEntity } from "src/user/user.entity";
 import { TypeORMSession } from "./entities/session.entity";
+import { ConfigModule, ConfigService} from "@nestjs/config";
 
 @Module({
     imports: [
-        TypeOrmModule.forRoot({
-            type: 'mysql',
-            host: process.env.DB_HOST,
-            port: parseInt(process.env.DB_PORT),
-            username: process.env.DB_USER,
-            password: process.env.DB_PASS,
-            database: process.env.DB_NAME,
-            entities: [UserEntity, TypeORMSession],
-            synchronize: true,
+        ConfigModule,
+        TypeOrmModule.forRootAsync({
+            imports: [ConfigModule],
+            useFactory: async(configService: ConfigService) => ({
+                type: 'mysql',
+                host: configService.get('DB_HOST', 'localhost'),
+                port: parseInt(configService.get('DB_PORT', '3306')),
+                username: configService.get('DB_USER', 'root'),
+                password: configService.get('DB_PASS', ''),
+                database: configService.get('DB_NAME', 'pla_manager'),
+                entities: [UserEntity, TypeORMSession],
+                synchronize: true,
+            }),
+            inject: [ConfigService]
         }),
         TypeOrmModule.forFeature([TypeORMSession]),
     ],
@@ -24,11 +30,4 @@ import { TypeORMSession } from "./entities/session.entity";
         TypeORMSession,
     ],
 })
-export class DatabaseModule {
-
-    constructor() {
-        console.log(
-            `DatabaseModule: ${process.env.DB_HOST} ${process.env.DB_PORT} ${process.env.DB_USER} ${process.env.DB_PASS} ${process.env.DB_NAME}`
-        );
-    }
-}
+export class DatabaseModule {}
