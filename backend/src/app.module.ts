@@ -1,17 +1,21 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { ServeStaticModule } from '@nestjs/serve-static';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DiscordModule } from './discord/discord.module';
 import { LoggerModule } from './logger/logger.module';
-import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
-import { UserModule } from './user/user.module';
+import { UserModule } from './database/entities/user/user.module';
 import { SessionSerializer } from './auth/session.serializer';
 import { DiscordStrategy } from './auth/discord.strategy';
-import { ChannelModule } from './channel/channel.module';
+import { ChannelModule } from './database/entities/channel/channel.module';
 import { DiscordService } from './discord/discord.service';
 import { TypeORMSession } from './database/entities/session.entity';
 import { DatabaseModule } from './database/database.module';
+import { join } from 'path';
+import { AdminPanelModule } from './admin-panel/admin-panel.module';
+import { ApexApiModule } from './apex-api/apex-api.module';
 
 let envFilePath = '.env.development';
 let ignoreEnvFile = false;
@@ -37,12 +41,18 @@ if (process.env.NODE_ENV === 'production') {
       envFilePath,
       ignoreEnvFile,
     }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '../../frontend/dist'),
+      exclude: ['/api*', '/auth*', '/admin*'],
+    }),
     DatabaseModule,
     DiscordModule,
     LoggerModule,
     AuthModule,
     UserModule,
     ChannelModule,
+    AdminPanelModule,
+    ApexApiModule,
   ],
   controllers: [
     AppController,
@@ -51,12 +61,6 @@ if (process.env.NODE_ENV === 'production') {
     AppService,
     SessionSerializer,
     DiscordStrategy,
-    DiscordService,
-    TypeORMSession,
-  ],
-  exports: [
-    SessionSerializer,
-    AppService,
     DiscordService,
     TypeORMSession,
   ],

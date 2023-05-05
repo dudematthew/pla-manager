@@ -1,7 +1,15 @@
 {
-    "workbench.colorCustomizations": {
-        "activityBar.background": "#510D54",
-        "titleBar.activeBackground": "#711276",
-        "titleBar.activeForeground": "#FEFCFE"
-    }
+    "files.exclude": {
+        "frontend\\dist": false,
+        "frontend\\node_modules": false,
+        "node_modules": false,
+        "backend\\dist": false,
+        "backend\\node_modules": false,
+        ".history": false,
+        ".vscode": false,
+        "frontend\\.vscode": false,
+        "frontend\\.gitignore": false,
+        "backend\\.adminjs": false
+    },
+    "workspace.isHidden": false
 }

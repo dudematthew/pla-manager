@@ -2,17 +2,17 @@ import { Controller, Get, UseGuards, Req } from '@nestjs/common';
 import { AppService } from './app.service';
 import { AuthenticatedGuard } from './auth/guards/authenticated.guard';
 
-@Controller()
+@Controller('/api/')
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
-  @Get()
+  @Get('hello')
   getHello(@Req() req): string {
     
     this.appService.sendDiscordMessage('Jestem bogiem');
 
-    // Return user data nicely formatted to string
-    return JSON.stringify(req.user, null, 4);
+    // Return 200 OK
+    return 'OK';
   }
 
   @Get('profile')

@@ -3,12 +3,12 @@ import { PassportModule } from "@nestjs/passport";
 import { DiscordStrategy } from "./discord.strategy";
 import { DiscordAuthController } from "./discord-auth.controller";
 import { AuthService } from "./auth.service";
-import { UserModule } from "src/user/user.module";
+import { UserModule } from "src/database/entities/user/user.module";
 import { DiscordModule } from "src/discord/discord.module";
 import { DiscordAuthGuard } from "./guards/discord.guard";
 import { SessionSerializer } from "./session.serializer";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { UserEntity } from "src/user/user.entity";
+import { UserEntity } from "src/database/entities/user/user.entity";
 
 
 @Module({

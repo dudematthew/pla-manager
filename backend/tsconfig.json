@@ -3,6 +3,7 @@
     "moduleResolution": "node16",
     "module": "commonjs",
     "target": "esnext",
+    "jsx": "react",
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
@@ -18,6 +19,7 @@
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
-    "typeRoots": ["node_modules/@types", "src/@types"],
+    "typeRoots": ["./node_modules/@types", "src/@types"],
+    "types": ["puppeteer", "jest", "node", "express"]
   }
 }
