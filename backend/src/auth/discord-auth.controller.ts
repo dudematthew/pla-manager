@@ -13,7 +13,9 @@ export class DiscordAuthController {
      */
     @Get()
     @UseGuards(DiscordAuthGuard)
-    async discordAuth(): Promise<void> {}
+    async discordAuth(@Res() res): Promise<void> {
+        res.redirect('http://localhost:3000/profile');
+    }
 
     /**
      * Discord OAuth2 callback
@@ -22,8 +24,8 @@ export class DiscordAuthController {
     @Get('callback')
     @UseGuards(DiscordAuthGuard)
     async discordAuthCallback(@Res() res): Promise<void> {
-        res.send(200);
-        // res.redirect('http://localhost:3000/profile');
+        // res.send(200);
+        res.redirect('http://localhost:3000/profile');
     }
 
     /**

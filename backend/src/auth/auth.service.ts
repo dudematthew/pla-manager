@@ -2,11 +2,13 @@ import { BadRequestException, Injectable } from "@nestjs/common";
 import { UserService } from "src/database/entities/user/user.service";
 import { UserInterface } from "src/database/entities/user/user.interface";
 import { UserEntity } from "src/database/entities/user/user.entity";
+import { DiscordService } from "src/discord/discord.service";
 
 @Injectable()
 export class AuthService {
     constructor(
         private userService: UserService,
+        private discordService: DiscordService,
     ) {}
 
     async socialLogin(req: { user: any; }): Promise<UserEntity> {
@@ -43,4 +45,29 @@ export class AuthService {
         return newUser;
     }
 
+    async adminLogin (email: string, password: string) {
+        const user: UserEntity = await this.userService.findByEmail(email);
+    
+        if (!user || user?.isAdmin === false)
+            return null;
+    
+        // Check if password is equal .env ADMIN_PASSWORD
+        if (password === process.env.ADMIN_PASSWORD) {
+            const discordUser = await this.discordService.getUserById(user.discordId);
+    
+            if (!discordUser)
+                return null;
+    
+            const adminProfile = {
+                email: user.email,
+                title: await discordUser.username,
+                avatarUrl: await discordUser.displayAvatarURL(),
+                id: user.id.toString(),
+            }
+    
+            return adminProfile;
+        }
+        
+        return null;
+    };
 }

@@ -13,8 +13,6 @@
 
 <template>
   <main class="w-100">
-    <DefaultNavbar />
-    
     <RouterView />
   </main>
 </template>

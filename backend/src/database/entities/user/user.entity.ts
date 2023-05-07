@@ -2,7 +2,9 @@ import { User } from "discord.js";
 import { DiscordService } from "src/discord/discord.service";
 import { BaseEntity, Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
-@Entity()
+@Entity({
+    name: 'user',
+})
 export class UserEntity extends BaseEntity {
 
     @PrimaryGeneratedColumn()
@@ -22,32 +24,4 @@ export class UserEntity extends BaseEntity {
 
     @UpdateDateColumn({ name: 'updated_at' })
     updatedAt: Date;
-
-    // constructor(
-    //     partial: Partial<UserEntity>,
-    //     private readonly discordService: DiscordService,
-    // ) {
-    //     super();
-    //     Object.assign(this, partial);
-    // }
-
-    // get hasAvailableDiscordAccount(): boolean {
-    //     return this.discordUser !== null;
-    // }
-
-    // get discordUser(): Promise<User> {
-    //     return this.discordService.getUserById(this.discordId);
-    // }
-
-    // get username(): Promise<string> {
-    //     return this.discordUser.then(user => user.username);
-    // }
-
-    // get discriminator(): Promise<string> {
-    //     return this.discordUser.then(user => user.discriminator);
-    // }
-
-    // get displayAvatarURL(): Promise<string> {
-    //     return this.discordUser.then(user => user.displayAvatarURL());
-    // }
 }

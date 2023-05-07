@@ -14,7 +14,6 @@ import { TypeOrmModule } from "@nestjs/typeorm";
     ],
     imports: [
         DiscordModule,
-        DatabaseModule,
         TypeOrmModule.forFeature([UserEntity]),
     ],
 })

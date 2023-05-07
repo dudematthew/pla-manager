@@ -53,6 +53,22 @@ export class DiscordService {
     }
 
     /**
+     * Check if a role exists
+     * @param roleId The ID of the role
+     * @returns Whether the role exists
+     */
+    async roleExists(roleId: string): Promise<boolean> {
+      // Get main guild from env variable
+      const guild: Guild = this.client.guilds.cache.get(process.env.MAIN_GUILD_ID);
+      
+      // Get role from guild
+      const role = await guild.roles.fetch(roleId);
+
+      // Check if role exists
+      return role !== null;
+    }
+
+    /**
      * Get channel by ID
      * @param channelId The ID of the channel
      */

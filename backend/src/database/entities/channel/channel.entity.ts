@@ -7,7 +7,9 @@ export enum ChannelTypeFormat {
     VOICE = 'voice',
 };
 
-@Entity()
+@Entity({
+    name: 'channel',
+})
 export class ChannelEntity extends BaseEntity {
 
     @PrimaryGeneratedColumn()
@@ -31,26 +33,4 @@ export class ChannelEntity extends BaseEntity {
 
     @UpdateDateColumn({ name: 'updated_at' })
     updatedAt: Date;
-
-    constructor(
-        partial: Partial<ChannelEntity>,
-        private readonly discordService: DiscordService,
-    ) {
-        super();
-        Object.assign(this, partial);
-    }
-
-    /**
-     * Returns the Discord channel
-     */
-    get discordChannel(): Promise<Channel> {
-        return this.discordService.getChannelById(this.discordId);
-    }
-
-    /**
-     * Returns true if the channel exists on Discord
-     */
-    get isValid(): boolean {
-        return this.discordChannel !== null;
-    }
 }

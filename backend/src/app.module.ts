@@ -14,8 +14,9 @@ import { DiscordService } from './discord/discord.service';
 import { TypeORMSession } from './database/entities/session.entity';
 import { DatabaseModule } from './database/database.module';
 import { join } from 'path';
-import { AdminPanelModule } from './admin-panel/admin-panel.module';
+// import { AdminPanelModule } from './admin-panel/admin-panel.module';
 import { ApexApiModule } from './apex-api/apex-api.module';
+import { TourneyModule } from './database/entities/tourney/tourney.module';
 
 let envFilePath = '.env.development';
 let ignoreEnvFile = false;
@@ -51,8 +52,9 @@ if (process.env.NODE_ENV === 'production') {
     AuthModule,
     UserModule,
     ChannelModule,
-    AdminPanelModule,
-    ApexApiModule,
+    // AdminPanelModule,
+    // ApexApiModule,
+    TourneyModule,
   ],
   controllers: [
     AppController,
@@ -61,7 +63,6 @@ if (process.env.NODE_ENV === 'production') {
     AppService,
     SessionSerializer,
     DiscordStrategy,
-    DiscordService,
     TypeORMSession,
   ],
 })

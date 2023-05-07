@@ -1,88 +1,36 @@
 import { Module } from '@nestjs/common';
 import { AdminModule } from '@adminjs/nestjs';
-import { UserEntity } from 'src/database/entities/user/user.entity';
 
 import * as AdminJSTypeorm from '@adminjs/typeorm';
 import AdminJS from 'adminjs';
-import theme from '@adminjs/design-system';
-import { ChannelEntity } from 'src/database/entities/channel/channel.entity';
 import { UserResource } from './resources/user.resource';
 import { AdminPanelLocale } from './admin-panel.locale';
 import { ChannelResource } from './resources/channel.resource';
 import { componentLoader } from './components/components';
-import { AuthenticatedGuard } from 'src/auth/guards/authenticated.guard';
-import { UserService } from 'src/database/entities/user/user.service';
-import { UserModule } from 'src/database/entities/user/user.module';
-import { DiscordModule } from 'src/discord/discord.module';
-import { DiscordService } from 'src/discord/discord.service';
+import { AuthModule } from 'src/auth/auth.module';
+import { AuthService } from 'src/auth/auth.service';
+import { TourneyResource } from './resources/tourney.resource';
+import { TourneyTeamResource } from './resources/tourney-team.resource';
 
 AdminJS.registerAdapter({
     Resource: AdminJSTypeorm.Resource,
     Database: AdminJSTypeorm.Database,
 });
 
-type CurrentAdmin = {
-    /**
-     * Admin has one required field which is an email
-     */
-    email: string;
-    /**
-     * Optional title/role of an admin - this will be presented below the email
-     */
-    title?: string;
-    /**
-     * Optional url for an avatar photo
-     */
-    avatarUrl?: string;
-    /**
-     * Id of your admin user
-     */
-    id?: string;
-    /**
-     * Also you can put as many other fields to it as you like.
-     */
-    [key: string]: any;
-};
-
-const authenticate = async (email: string, password: string, userService: UserService, discordService: DiscordService) => {
-    const user: UserEntity = await userService.findByEmail(email);
-
-    if (!user || user?.isAdmin === false)
-        return null;
-
-    // Check if password is equal .env ADMIN_PASSWORD
-    if (password === process.env.ADMIN_PASSWORD) {
-        const discordUser = await discordService.getUserById(user.discordId);
-
-        if (!discordUser)
-            return null;
-
-        const adminProfile: CurrentAdmin = {
-            email: user.email,
-            title: await discordUser.username,
-            avatarUrl: await discordUser.displayAvatarURL(),
-            id: user.id.toString(),
-        }
-
-        return adminProfile;
-    }
-    
-    return null;
-};
-
-
 
 @Module({
     imports: [
         AdminModule.createAdminAsync({
             //   imports: [TypeOrmModule.forFeature([UserEntity])],
-            imports: [UserModule, DiscordModule],
-            useFactory: async (userService: UserService, discordService: DiscordService) => ({
+            imports: [AuthModule],
+            useFactory: async (authService: AuthService) => ({
                 adminJsOptions: {
                     rootPath: '/admin',
                     resources: [
                         UserResource,
-                        ChannelResource
+                        ChannelResource,
+                        // TourneyResource,
+                        TourneyTeamResource
                     ],
                     componentLoader: componentLoader,
                     locale: AdminPanelLocale,
@@ -95,7 +43,7 @@ const authenticate = async (email: string, password: string, userService: UserSe
                 },
                 auth: {
                     authenticate: (email: string, password: string) => {
-                        return authenticate(email, password, userService, discordService);
+                        return authService.adminLogin(email, password);
                     },
                     cookieName: 'adminjs',
                     cookiePassword: 'adminjs-password',
@@ -110,7 +58,7 @@ const authenticate = async (email: string, password: string, userService: UserSe
                     app: '1.0.0',
                 },
             }),
-            inject: [UserService, DiscordService],
+            inject: [AuthService],
         }),
     ],
     controllers: [],
@@ -118,3 +66,5 @@ const authenticate = async (email: string, password: string, userService: UserSe
     exports: [],
 })
 export class AdminPanelModule {}
+
+console.log('Admin Panel Module Loaded: ', AdminJS.bundle);

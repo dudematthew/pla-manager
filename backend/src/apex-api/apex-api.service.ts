@@ -11,7 +11,6 @@ export class ApexApiService {
     ) {}
 
     public async scrapeClubData() {
-        // const browser = await puppeteer.launch();
         const page = await this.browser.newPage();
         await page.goto('https://apexlegendsstatus.com/clubs/5109a8f5-5fb6-4a8b-88f0-8c3c47ff627b');
 

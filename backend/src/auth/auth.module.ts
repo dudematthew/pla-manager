@@ -9,6 +9,8 @@ import { DiscordAuthGuard } from "./guards/discord.guard";
 import { SessionSerializer } from "./session.serializer";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { UserEntity } from "src/database/entities/user/user.entity";
+import { DiscordService } from "src/discord/discord.service";
+import { UserService } from "src/database/entities/user/user.service";
 
 
 @Module({
@@ -26,6 +28,8 @@ import { UserEntity } from "src/database/entities/user/user.entity";
         DiscordStrategy,
         DiscordAuthGuard,
         SessionSerializer,
+        DiscordService,
+        UserService,
     ],
     controllers: [
         DiscordAuthController,
@@ -35,6 +39,8 @@ import { UserEntity } from "src/database/entities/user/user.entity";
         PassportModule,
         DiscordAuthGuard,
         SessionSerializer,
+        DiscordService,
+        UserService
     ]
 })
 export class AuthModule {}

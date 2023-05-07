@@ -22,6 +22,11 @@ const router = createRouter({
       path: "/discord-panel",
       name: "discord-panel",
       component: DiscordPanelView,
+    },
+    {
+      path: '/tourney',
+      name: 'tourney',
+      component: () => import('../views/TourneyView.vue'),
     }
   ],
 });
