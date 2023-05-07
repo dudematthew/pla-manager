@@ -3,7 +3,7 @@
         data() {
             return {
                 tourney: null,
-                tourneyId: this.$route.params.id,
+                tourneyId: this.$route.params.id || null,
                 tourneyName: null,
                 tourneyDate: null,
                 tourneyLocation: null,
@@ -14,7 +14,6 @@
                 tourneyImagePreview: null,
                 tourneyImagePreviewName: null,
                 tourneyImagePreviewFile: null,
-                tourney
             }
         }
     }
@@ -24,8 +23,8 @@
     <main>
         <header class="hero">
             <div class="hero-wrap">
-                <p class="intro" id="intro">flexbox</p>
-                <h1 id="headline">Tournament</h1>
+                <p class="intro" id="intro">PLA Tourney Series</p>
+                <h1 id="headline">Turniej Gun Run</h1>
                 <p class="year"><i class="fa fa-star"></i> 2015 <i class="fa fa-star"></i></p>
                 <p>Ballin' Outta Control</p>
             </div>

@@ -7,13 +7,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({
   imports: [
-    DiscordModule,
     TypeOrmModule.forFeature([RoleEntity]),
   ],
   providers: [
     RoleService,
     DiscordService,
   ],
-  exports: [RoleService],
+  exports: [
+    RoleService
+  ],
 })
 export class RoleModule {}
