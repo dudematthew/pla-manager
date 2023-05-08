@@ -1,2 +1,6 @@
 images:
   logo: 'https://i.imgur.com/u4DEkaz.png'
+
+theme:
+  color-primary: '#FF4343'
+  color-secondary: '#C02D2D'
