@@ -13,7 +13,8 @@
     "build:backend": "cd backend && npm run build",
     "deploy": "npm-run-all --parallel deploy:frontend deploy:backend",
     "deploy:frontend": "cd frontend && npm run deploy",
-    "deploy:backend": "cd backend && npm run deploy"
+    "deploy:backend": "cd backend && npm run deploy",
+    "push:prod": "push-prod.sh"
   },
   "keywords": [
     "pla",
