@@ -9,7 +9,10 @@
     "start:backend": "cd backend && npm run start:dev",
     "build": "npm-run-all --parallel build:frontend build:backend",
     "build:frontend": "cd frontend && npm run build",
-    "build:backend": "cd backend && npm run build"
+    "build:backend": "cd backend && npm run build",
+    "deploy": "npm-run-all --parallel deploy:frontend deploy:backend",
+    "deploy:frontend": "cd frontend && npm run deploy",
+    "deploy:backend": "cd backend && npm run deploy"
   },
   "keywords": [
     "pla",
