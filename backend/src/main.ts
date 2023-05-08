@@ -27,16 +27,16 @@ const connectionString = `${dbC.protocol}://${dbC.username}:${dbC.password}@${db
 
 async function bootstrap() {
 
-  // const forestAdminAgent = createAgent({
-  //   authSecret: process.env.FOREST_AUTH_SECRET,
-  //   envSecret: process.env.FOREST_ENV_SECRET,
-  //   isProduction: process.env.NODE_ENV === 'production',
-  //   typingsPath: './typings.ts',
-  //   typingsMaxDepth: 5,
-  // });
+  const forestAdminAgent = createAgent({
+    authSecret: process.env.FOREST_AUTH_SECRET,
+    envSecret: process.env.FOREST_ENV_SECRET,
+    isProduction: process.env.NODE_ENV === 'production',
+    typingsPath: './typings.ts',
+    typingsMaxDepth: 5,
+  });
   
   // Create your SQL datasource
-  // forestAdminAgent.addDataSource(createSqlDataSource(connectionString));
+  forestAdminAgent.addDataSource(createSqlDataSource(connectionString));
 
   const app = await NestFactory.create(AppModule);
 
@@ -68,7 +68,7 @@ async function bootstrap() {
   app.use(passport.session());
 0
   // Start the Forest Admin server
-  // await forestAdminAgent.mountOnNestJs(app).start();
+  await forestAdminAgent.mountOnNestJs(app).start();
 
   await app.listen(3000);
 }
