@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule as NestConfigModule } from '@nestjs/config';
-import fs from 'fs';
+import * as fs from 'fs';
 
 import configuration from './configuration';
 
