@@ -7,7 +7,6 @@
   "license": "UNLICENSED",
   "scripts": {
     "prebuild": "rimraf dist",
-    "preinstall": "npx npm-force-resolutions",
     "build": "nest build public_nodejs",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start --config ./nest-cli.json",
@@ -95,6 +94,12 @@
   "resolutions": {
     "@discordjs/rest/file-type": "16.5.4",
     "file-type": "16.5.4"
+  },
+  "overrides": {
+    "file-type": "12.4.2",
+    "@discordjs/rest": {
+      "file-type": "12.4.2"
+    }
   },
   "jest": {
     "moduleFileExtensions": [
