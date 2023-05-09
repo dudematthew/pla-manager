@@ -7,6 +7,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "prebuild": "rimraf dist",
+    "preinstall": "npx npm-force-resolutions",
     "build": "nest build public_nodejs",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start --config ./nest-cli.json",
@@ -52,6 +53,7 @@
     "nest-puppeteer": "^1.1.1",
     "nest-winston": "^1.9.1",
     "node-fetch": "^2.6.6",
+    "npm-force-resolutions": "^0.0.10",
     "passport": "^0.6.0",
     "passport-discord": "^0.1.4",
     "puppeteer": "^20.1.0",
