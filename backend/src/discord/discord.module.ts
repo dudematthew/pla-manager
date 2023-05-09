@@ -9,7 +9,7 @@ import { RoleModule } from "src/database/entities/role/role.module";
 @Module({
     imports: [CommandsModule,
         NecordModule.forRoot({
-            token: process.env.DISCORD_CLIENT_SECRET,
+            token: process.env.DISCORD_TOKEN,
             intents: [IntentsBitField.Flags.Guilds]
         }),
         CommandsModule,
