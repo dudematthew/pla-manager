@@ -70,6 +70,6 @@ async function bootstrap() {
   // Start the Forest Admin server
   await forestAdminAgent.mountOnNestJs(app).start();
 
-  await app.listen(3000);
+  await app.listen(process.env.PORT || 3000);
 }
 bootstrap();
