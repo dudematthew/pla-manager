@@ -1,10 +1,18 @@
-<script setup>
+<script>
+import DefaultNavbar from '@/components/navigation/DefaultNavbar.vue'
+
+export default {
+  name: 'HomeView',
+  components: {
+    DefaultNavbar
+  }
+}
 </script>
 
 <template>
   <main>
     <DefaultNavbar />
     
-    Jakiś prosty tekst spierdalaj
+    Tutaj będzie się znajdować zawartość strony domowej
   </main>
 </template>

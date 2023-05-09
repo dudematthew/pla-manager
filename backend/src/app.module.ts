@@ -22,7 +22,7 @@ import { ConfigModule } from './config/config.module';
   imports: [
     ConfigModule,
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '../../frontend/dist'),
+      rootPath: join(__dirname, '../../../frontend/dist'),
       exclude: ['/api*', '/auth*', '/admin*'],
     }),
     DatabaseModule,

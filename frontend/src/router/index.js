@@ -27,7 +27,12 @@ const router = createRouter({
       path: '/tourney',
       name: 'tourney',
       component: () => import('../views/TourneyView.vue'),
-    }
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      name: '404',
+      component: () => import('../views/404View.vue'),
+    },
   ],
 });
 
