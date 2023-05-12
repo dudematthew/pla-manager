@@ -28,8 +28,6 @@ import { UserService } from "src/database/entities/user/user.service";
         DiscordStrategy,
         DiscordAuthGuard,
         SessionSerializer,
-        DiscordService,
-        UserService,
     ],
     controllers: [
         DiscordAuthController,
@@ -39,8 +37,6 @@ import { UserService } from "src/database/entities/user/user.service";
         PassportModule,
         DiscordAuthGuard,
         SessionSerializer,
-        DiscordService,
-        UserService
     ]
 })
 export class AuthModule {}

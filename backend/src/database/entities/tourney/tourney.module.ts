@@ -9,5 +9,8 @@ import { TeamModule } from './entities/team/tourney-team.module';
   ],
   controllers: [TourneyController],
   providers: [TourneyService],
+  exports: [
+    TourneyService,
+  ]
 })
 export class TourneyModule {}

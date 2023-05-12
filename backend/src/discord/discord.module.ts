@@ -9,6 +9,7 @@ import { LfgModule } from './lfg/lfg.module';
 import DiscordListeners from "./discord.listeners";
 import { LfgService } from "./lfg/lfg.service";
 import { ChannelModule } from "src/database/entities/channel/channel.module";
+import { DiscordStrategy } from "src/auth/discord.strategy";
 
 @Module({
     imports: [
@@ -24,7 +25,6 @@ import { ChannelModule } from "src/database/entities/channel/channel.module";
             ],
         }),
         CommandsModule,
-        CommandsModule,
         RoleModule,
         LfgModule,
         forwardRef(() => ChannelModule),
@@ -38,8 +38,6 @@ import { ChannelModule } from "src/database/entities/channel/channel.module";
     ],
     exports: [
         DiscordService,
-        DiscordUpdate,
-        NecordModule,
         DiscordUpdate,
     ]
 })

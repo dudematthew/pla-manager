@@ -7,5 +7,6 @@ import { PuppeteerModule } from 'nest-puppeteer';
   imports: [PuppeteerModule.forRoot()],
   providers: [ApexApiService],
   controllers: [ApexApiController],
+  exports: [ApexApiService],
 })
 export class ApexApiModule {}

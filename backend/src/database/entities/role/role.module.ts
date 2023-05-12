@@ -13,7 +13,6 @@ import { forwardRef } from '@nestjs/common';
   ],
   providers: [
     RoleService,
-    DiscordService,
   ],
   exports: [
     RoleService

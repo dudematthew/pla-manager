@@ -45,7 +45,6 @@ import { CacheModule } from '@nestjs/cache-manager';
   providers: [
     AppService,
     SessionSerializer,
-    DiscordStrategy,
     TypeORMSession,
   ],
 })
