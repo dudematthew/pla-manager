@@ -20,7 +20,8 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "depcheck": "npx depcheck --detailed"
+    "depcheck": "npx depcheck --detailed",
+    "circulardep": "npx madge --circular src/main.ts"
   },
   "dependencies": {
     "@adminjs/express": "5.1.0",
@@ -28,6 +29,7 @@
     "@adminjs/typeorm": "4.0.0",
     "@forestadmin/agent": "^1.8.13",
     "@forestadmin/datasource-sql": "^1.5.1",
+    "@nestjs/cache-manager": "^1.0.0",
     "@nestjs/common": "^9.4.0",
     "@nestjs/config": "^2.3.1",
     "@nestjs/core": "^9.4.0",
@@ -39,6 +41,7 @@
     "@nestjs/typeorm": "^9.0.1",
     "@tiptap/pm": "^2.0.3",
     "adminjs": "6.8.7",
+    "cache-manager": "^5.2.1",
     "class-validator": "^0.14.0",
     "connect-typeorm": "^2.0.0",
     "discord.js": "^14.9.0",
@@ -46,6 +49,7 @@
     "express-formidable": "^1.2.0",
     "express-session": "^1.17.3",
     "js-yaml": "^4.1.0",
+    "madge": "^6.0.0",
     "mysql": "^2.18.1",
     "mysql2": "^3.2.4",
     "necord": "^5.7.3",
@@ -63,6 +67,7 @@
     "scheduler": "^0.23.0",
     "tslib": "^2.5.0",
     "typeorm": "^0.3.15",
+    "wildcard-match": "^5.1.2",
     "winston": "^3.8.2"
   },
   "devDependencies": {

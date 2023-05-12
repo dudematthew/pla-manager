@@ -40,6 +40,10 @@ export class RoleService {
     return await this.roleRepository.findOneBy({ discordId });
   }
 
+  async findByName(name: string): Promise<RoleEntity> {
+    return await this.roleRepository.findOneBy({ name });
+  }
+
   async update(id: number, properties: UpdateRoleDto) {
     const role = await this.findById(id);
 

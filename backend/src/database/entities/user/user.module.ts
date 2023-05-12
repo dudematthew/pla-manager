@@ -2,19 +2,19 @@ import { Module } from "@nestjs/common";
 import { UserEntity } from "./user.entity";
 import { UserService } from "./user.service";
 import { DiscordModule } from "src/discord/discord.module";
-import { DatabaseModule } from "src/database/database.module";
 import { TypeOrmModule } from "@nestjs/typeorm";
+import { forwardRef } from "@nestjs/common";
 
 @Module({
+    imports: [
+        forwardRef(() => DiscordModule),
+        TypeOrmModule.forFeature([UserEntity]),
+    ],
     providers: [
         UserService,
     ],
     exports: [
         UserService,
-    ],
-    imports: [
-        DiscordModule,
-        TypeOrmModule.forFeature([UserEntity]),
     ],
 })
 export class UserModule {}

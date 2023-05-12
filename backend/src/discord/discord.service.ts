@@ -75,4 +75,26 @@ export class DiscordService {
     async getChannelById(channelId: string): Promise<Channel> {
       return await this.client.channels.fetch(channelId) as TextChannel;
     }
+
+    /**
+     * Get channel by name
+     * @param channelName The name of the channel
+     * @returns The channel
+     */
+    async getChannelByName(channelName: string): Promise<Channel> {
+      // Get main guild from env variable
+      const guild: Guild = this.client.guilds.cache.get(process.env.MAIN_GUILD_ID);
+
+      // Get channel from guild
+      return await guild.channels.cache.find(channel => channel.name === channelName);
+    }
+
+    /**
+     * Check if a channel exists
+     * @param channelId The ID of the channel
+     * @returns Whether the channel exists
+     */
+    async channelExists(channelId: string): Promise<boolean> {
+      return await this.getChannelById(channelId) !== null;
+    }
 }

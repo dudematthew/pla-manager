@@ -1,14 +1,13 @@
 import { Module } from '@nestjs/common';
 import { ChannelService } from './channel.service';
 import { DiscordModule } from 'src/discord/discord.module';
-import { DatabaseModule } from 'src/database/database.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ChannelEntity } from './channel.entity';
+import { forwardRef } from '@nestjs/common';
 
 @Module({
     imports: [
-        DiscordModule,
-        DatabaseModule,
+        forwardRef(() => DiscordModule),
         TypeOrmModule.forFeature([ChannelEntity]),
     ],
     controllers: [],

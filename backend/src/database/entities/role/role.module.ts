@@ -4,10 +4,12 @@ import { DiscordModule } from 'src/discord/discord.module';
 import { DiscordService } from 'src/discord/discord.service';
 import { RoleEntity } from './entities/role.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { forwardRef } from '@nestjs/common';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([RoleEntity]),
+    forwardRef(() => DiscordModule),
   ],
   providers: [
     RoleService,
