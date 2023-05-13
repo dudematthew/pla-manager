@@ -4,3 +4,11 @@ images:
 theme:
   color-primary: '#FF4343'
   color-secondary: '#C02D2D'
+
+channel-names:
+  lfg: 'lfg'
+  lfg-output: 'lfgoutput'
+
+lfg:
+  post-cooldown: 20
+  rank-cooldown: 600

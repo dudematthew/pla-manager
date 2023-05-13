@@ -4,9 +4,19 @@ import { Inject } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { RoleService } from 'src/database/entities/role/role.service';
 import { Cache } from 'cache-manager';
+import { Logger } from '@nestjs/common';
+import { DiscordService } from '../discord.service';
+import { RoleEntity } from 'src/database/entities/role/entities/role.entity';
+import { ColorResolvable, Embed, EmbedBuilder, GuildEmoji, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, APIActionRowComponent, APIMessageActionRowComponent } from 'discord.js';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class LfgService {
+
+    /**
+     * The logger instance
+     */
+    private readonly logger = new Logger(LfgService.name);
 
     /**
      * The wildcard-match module
@@ -50,6 +60,9 @@ export class LfgService {
             'diament',
             'diamenta',
             'diamentem',
+            'diax',
+            'diaxem',
+            'diaxa',
         ],
         master: [
             'master',
@@ -64,6 +77,15 @@ export class LfgService {
             'predy',
             'predem',
         ],
+        pubs: [
+            'puby',
+            'pub',
+            'pubach',
+            'pubsy',
+            'pubsach',
+            'publiczne',
+            'publicznych',
+        ],
     }
 
     constructor(
@@ -71,8 +93,27 @@ export class LfgService {
         private readonly cache: Cache,
         @Inject(forwardRef(() => RoleService))
         private readonly roleService: RoleService,
+        private readonly discordService: DiscordService,
+        private readonly configService: ConfigService,
     ) {
         this.wcmatch = require('wildcard-match');
+    }
+
+    /**
+     * Check if a value matches a pattern
+     * 
+     * Wildcard-match supports the following glob syntax in patterns:
+     * [?] matches exactly one arbitrary character excluding separators
+     * [*] matches zero or more arbitrary characters excluding separators
+     * [**] matches any number of segments when used as a whole segment in a separated pattern
+     * [\] escapes the following character making it be treated literally
+     * 
+     * @param value value to check
+     * @param pattern pattern to check against
+     * @returns true if value matches pattern, false otherwise
+     */
+    private matchPattern(value: string, pattern: string): boolean {
+        return this.wcmatch(pattern)(value);
     }
 
     /**
@@ -82,26 +123,278 @@ export class LfgService {
      * Every post is cached for 5 minutes to prevent spam
      * @param message 
      */
-    public handleLfgMessage(message: MessageData) {
+    public async handleLfgMessage(message: MessageData) { 
         console.log(`LFG message received: ${message.message.content}`);
-        
+
+        // Check if the message is sent by a bot
+        if (message.message.author.bot) {
+            return;
+        }
+
         const messageContent = message.message.content.toLowerCase();
 
         // Check if the message contains any of the role types
+        const mentionedRoles = await this.getMentionedRoles(messageContent);
 
-    }
+        if(mentionedRoles.length === 0) {
+            console.log('No roles mentioned');
+            return;
+        }
 
-    private getMentionedRolesIds(messageContent: string) {
-        const mentionedRolesIds = [];
+        // Check if the message is cached
+        let userCacheData: any = await this.getCachedUserLfg(message.message.author.id);
 
+        if(userCacheData) {
+            this.reactWithTimeInfo(message);
+            return;
+        }
+
+        // Cache the user lfg cooldown
+        userCacheData = await this.setCachedUserLfg(message.message.author.id);
+
+        // Get the lfg embed
+        const embed = await this.getLfgEmbed(message, mentionedRoles, parseInt(userCacheData));
         
+        let roleMentions = '';
+        const globalCache = await this.getCachedGlobalLfg();
+        
+        // Check for each role if it's in a cachedCooldowns
+        // If it is, then add the cooldown to the embed
+        // If it's not, then add role mention
+        for (const role of mentionedRoles) {
 
-        return mentionedRolesIds;
+            const cooldown = globalCache[role.name];
+
+            console.log(`Testing global cache for ${role.name} with cooldown: ${cooldown}`);
+
+            if(!cooldown) {
+                console.log(`Global cache for ${role.name} is not set: ${cooldown}, setting it now`);
+
+                this.setCachedGlobalLfg(role);
+                roleMentions += `<@&${role.discordId}> `;
+            } else {
+                console.log(`Global cache for ${role.name} is set: ${cooldown}`);
+
+                // roleMentions += `${role.name.toUpperCase()} (<t:${cooldown}:R>) `;
+                roleMentions += `${role.name.toUpperCase()} (⏱) `;
+            }
+        }
+
+        // Get the user voice channel
+        const voiceChannel = this.discordService.getUserVoiceChannel(message.message.author.id);
+        let components: APIActionRowComponent<APIMessageActionRowComponent>[] = [];
+
+        if(voiceChannel) {
+            const button = new ButtonBuilder()
+                .setLabel('Wejdź na kanał')
+                .setStyle(ButtonStyle.Link)
+                .setURL(voiceChannel.url)
+                .setEmoji('🔊');
+    
+            const row = new ActionRowBuilder({
+                components: [button],
+            });
+
+            components.push(row.toJSON() as APIActionRowComponent<APIMessageActionRowComponent>);
+        } else {
+            await this.reactWithMute(message);
+        }
+
+        // React to the message
+        await this.reactToLfgMessage(message, mentionedRoles);
+
+        // Send the embed to the channel
+        message.message.channel.send({
+            content: roleMentions,
+            embeds: [embed],
+            components,
+        });
     }
 
-    private async getRoleIdFromDatabase(roleName: string) {
+    private async getLfgEmbed(message: MessageData, mentionedRoles: RoleEntity[], cooldownTimestamp: number) {
+        const emojis = await this.getRoleEmojis(mentionedRoles);
+
+        const embed = new EmbedBuilder()
+            .setColor(this.configService.get<ColorResolvable>('theme.color-primary'))
+            .setTitle(message.message.member.nickname)
+            .setAuthor({
+                name: 'LFG - Szukam graczy',
+                iconURL: this.configService.get<string>('images.logo'),
+            })
+            .setThumbnail(message.message.member.displayAvatarURL())
+            .setDescription('*' + message.message.content + '*')
+            .setTimestamp()
+            .setFooter({
+                text: `LFG`,
+            });
+
+        const voiceChannel = this.discordService.getUserVoiceChannel(message.message.author.id);
+
+        if (voiceChannel)
+            embed.addFields({
+                name: '🔊 Kanał Głosowy',
+                value: `<@${message.message.author.id}> jest teraz na \nkanale <#${voiceChannel.id}>!`,
+            });
+        
+        embed.addFields(
+            {
+                name: '⏱ Cooldown',
+                value: `<t:${cooldownTimestamp}:R>`
+            }
+        );
+
+        return embed;
+    }
+
+    /**
+     * Get the mentioned roles ids from the message
+     * @param messageContent
+     * @returns 
+     */
+    private async getMentionedRoles(messageContent: string): Promise<RoleEntity[]> {
+        const mentionedRoles: RoleEntity[] = [];
+
+        /**
+         * Loop through all the role types and check 
+         * if the message contains any of the role types
+         */
+        outerLoop:
+        for (const roleType in this.roleTypes) {
+            for (let rolePattern of this.roleTypes[roleType]) {
+
+                rolePattern = `*${rolePattern}*`;
+
+                if (this.matchPattern(messageContent, rolePattern)) {
+                    console.log(`Role ${roleType} mentioned in ${messageContent}`);
+                    const role: RoleEntity = await this.getRoleFromDatabase(roleType);
+
+                    if(!role)
+                        continue outerLoop;
+
+                    mentionedRoles.push(role);
+                    continue outerLoop;
+                }
+            }
+        }
+
+        return mentionedRoles;
+    }
+
+    /**
+     * Get the role from the database
+     * @param message 
+     * @param mentionedRoles 
+     */
+    private async reactToLfgMessage(message: MessageData, mentionedRoles: RoleEntity[]) {
+        const emojis = await this.getRoleEmojis(mentionedRoles);
+
+        console.log(`Reacting to message ${message.message.content} with ${emojis.length} emojis`);
+
+        await message.message.react('📣');
+
+        emojis.forEach(async (emoji) => {
+            try {
+                await message.message.react(emoji);
+            } catch (error) {
+                this.logger.error(`Failed to react to message ${message.message.content} with ${emoji}: ${error}`);
+            }
+        });
+    }
+
+    private async reactWithTimeInfo(message: MessageData) {
+        await message.message.react('👀');
+        await message.message.react('⏱');
+    }
+
+    private async reactWithMute(message: MessageData) {
+        await message.message.react('🔇');
+    }
+
+    private async getRoleEmojis(mentionedRoles: RoleEntity[]) {
+        const emojis: GuildEmoji[] = [];
+
+        for(const role of mentionedRoles) {
+            let emoji: GuildEmoji;
+
+            try {
+                emoji = await this.discordService.getServerEmojiByName(role.name);
+
+                if(!emoji) {
+                    this.logger.error(`Could not find emoji for role ${role.name}`);
+                    return;
+                }
+
+                emojis.push(emoji);
+            } catch (error) {
+                this.logger.error(`Could not find emoji for role ${role.name}`);
+            }
+        }
+
+        return emojis;
+    }
+
+    /**
+     * Get the role from the database
+     * @param roleName
+     * @returns 
+     */
+    private async getRoleFromDatabase(roleName: string): Promise<RoleEntity> {
         const role = await this.roleService.findByName(roleName);
 
-        return role.id;
+        if(!role) {
+            this.logger.error(`Role ${roleName} not found in the database`);
+            return null;
+        }
+
+        return role;
+    }
+
+    /**
+     * Get limits for the lfg message
+     * @returns
+     */
+    private async getCachedGlobalLfg() {
+        let cacheData = {};
+
+        for(const roleType in this.roleTypes) {
+            cacheData[roleType] = await this.cache.get(`lfg-role-${roleType}`) || null;
+        }
+
+        return cacheData;
+    }
+
+    /**
+     * Set limits for the lfg message
+     * @param role 
+     * @param ttl 
+     * @returns time until expiration
+     */
+    private async setCachedGlobalLfg(role: RoleEntity, ttl: number = this.configService.get<number>('lfg.rank-cooldown')) {
+        const timeUntilExpiration = Math.floor(Date.now() / 1000) + ttl;
+
+        console.log(`Setting cache for role ${role.name} with key lfg-role-${role.name} for ${ttl} seconds`);
+
+        await this.cache.set(`lfg-role-${role.name}`, timeUntilExpiration, ttl * 1000);
+
+        return timeUntilExpiration;
+    }
+
+    /**
+     * Get limits for the lfg message
+     * @param userId 
+     * @returns time until expiration
+     */
+    private async getCachedUserLfg(userId: string) {
+        return await this.cache.get(`lfg-user-${userId}`) || null;
+    }
+
+    private async setCachedUserLfg(userId: string, ttl: number = this.configService.get<number>('lfg.post-cooldown')) {
+        const timeUntilExpiration = Math.floor(Date.now() / 1000) + ttl;
+
+        console.log(`Setting cache for user ${userId} with key lfg-user-${userId} for ${ttl} seconds`);
+
+        await this.cache.set(`lfg-user-${userId}`, timeUntilExpiration, ttl * 1000);
+
+        return timeUntilExpiration;
     }
 }

@@ -3,6 +3,8 @@ import { LfgService } from "./lfg/lfg.service";
 import { Message, User, Channel } from "discord.js";
 import { ChannelService } from "src/database/entities/channel/channel.service";
 import { ChannelEntity } from "src/database/entities/channel/channel.entity";
+import { Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 
 interface MessageCreateListener {
     channelPattern: string;
@@ -29,38 +31,46 @@ export default class DiscordListeners {
      */
     private readonly wcmatch: any;
 
+    private readonly messageCreateListeners: MessageCreateListener[];
+
+    /**
+     * The logger instance
+     */
+    private readonly logger = new Logger(LfgService.name);
+
     constructor(
         private readonly lfgService: LfgService,
         private readonly channelService: ChannelService,
+        private readonly configService: ConfigService,
     ) {
         this.wcmatch = require('wildcard-match');
-    }
-
-    /**
-     * The message create listeners - these are the listeners that should be
-     * activated when a message is created.
-     * @var MessageCreateListener[]
-     */
-    private messageCreateListeners: MessageCreateListener[] = [
-        // The lfg message listener
-        {
-            channelPattern: 'lfg',
-            messagePattern: '*',
-            userPattern: '*',
-            callback: (messageData: MessageData) => {
-                this.lfgService.handleLfgMessage(messageData);
+        
+        /**
+         * The message create listeners - these are the listeners that should be
+         * activated when a message is created.
+         * @var MessageCreateListener[]
+         */
+        this.messageCreateListeners = [
+            // The lfg message listener
+            {
+                channelPattern: this.configService.get<string>('channel-names.lfg'),
+                messagePattern: '*',
+                userPattern: '*',
+                callback: (messageData: MessageData) => {
+                    this.lfgService.handleLfgMessage(messageData);
+                },
             },
-        },
-    ];
+        ];
+    }
 
     /**
      * Check if a value matches a pattern
      * 
      * Wildcard-match supports the following glob syntax in patterns:
-     * ? matches exactly one arbitrary character excluding separators
-     * * matches zero or more arbitrary characters excluding separators
-     * ** matches any number of segments when used as a whole segment in a separated pattern
-     * \ escapes the following character making it be treated literally
+     * [?] matches exactly one arbitrary character excluding separators
+     * [*] matches zero or more arbitrary characters excluding separators
+     * [**] matches any number of segments when used as a whole segment in a separated pattern
+     * [\] escapes the following character making it be treated literally
      * 
      * @param value value to check
      * @param pattern pattern to check against
@@ -90,8 +100,9 @@ export default class DiscordListeners {
 
             // If channel is in database
             if (dbChannel) {
-                if (dbChannel.discordId !== messageData.channel.id)
+                if (dbChannel.discordId !== messageData.channel.id) {
                     return; // (skip to next listener
+                }
             } 
             // If channel id matches pattern
             else if (!this.matchPattern(messageData.channel.id, listener.channelPattern))
