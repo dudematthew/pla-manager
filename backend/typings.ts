@@ -19,6 +19,7 @@ export type Schema = {
       'name': string;
       'created_at': string;
       'updated_at': string;
+      'priority': number;
     };
     nested: {};
     flat: {};
