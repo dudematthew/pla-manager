@@ -35,7 +35,7 @@ import { CacheModule } from '@nestjs/cache-manager';
     UserModule,
     ChannelModule,
     // AdminPanelModule,
-    // ApexApiModule,
+    ApexApiModule,
     TourneyModule,
     ConfigModule,
   ],

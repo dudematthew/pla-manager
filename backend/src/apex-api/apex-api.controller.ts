@@ -1,7 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApexApiService } from './apex-api.service';
 
-@Controller('/api/apex-api')
+@Controller('/api/club')
 export class ApexApiController {
 
     constructor(
@@ -9,11 +9,9 @@ export class ApexApiController {
     ) {}
 
     @Get()
-    async apexApi(): Promise<string> {
+    async apexApi(): Promise<object> {
         console.log("Starting Apex API scrape...");
 
-        await this.apexApiService.scrapeClubData();
-
-        return 'OK';
+        return await this.apexApiService.scrapeClubData();
     }
 }
