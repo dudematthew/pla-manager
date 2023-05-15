@@ -14,6 +14,9 @@ export class RoleEntity extends BaseEntity {
     @Column()
     name: string;
 
+    @Column({ name: 'priority', default: 0 })
+    priority: number;
+
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 

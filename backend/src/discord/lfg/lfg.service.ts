@@ -7,8 +7,10 @@ import { Cache } from 'cache-manager';
 import { Logger } from '@nestjs/common';
 import { DiscordService } from '../discord.service';
 import { RoleEntity } from 'src/database/entities/role/entities/role.entity';
-import { ColorResolvable, Embed, EmbedBuilder, GuildEmoji, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, APIActionRowComponent, APIMessageActionRowComponent } from 'discord.js';
+import { ColorResolvable, Embed, EmbedBuilder, GuildEmoji, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, APIActionRowComponent, APIMessageActionRowComponent, Channel } from 'discord.js';
 import { ConfigService } from '@nestjs/config';
+import { ChannelService } from 'src/database/entities/channel/channel.service';
+import { channel } from 'diagnostics_channel';
 
 @Injectable()
 export class LfgService {
@@ -46,14 +48,22 @@ export class LfgService {
             'złoto',
             'złocie',
             'złotem',
+            'złota',
+            'złote',
         ],
         platinum: [
             'platinum',
-            'platyna',
-            'platyne',
-            'platynę',
-            'platyną',
-            'platynie',
+            'platyna', 
+            'platyny', 
+            'platynie', 
+            'platyno',
+            'platyna', 
+            'platyny',
+            'platyna', 
+            'platynie', 
+            'platinie', 
+            'platynę', 
+            'platyno'
         ],
         diamond: [
             'diamond',
@@ -63,6 +73,11 @@ export class LfgService {
             'diax',
             'diaxem',
             'diaxa',
+            'diaxy',
+            'diaxiem',
+            'diamenty',
+            'diamentach',
+            'diamentami',
         ],
         master: [
             'master',
@@ -95,6 +110,7 @@ export class LfgService {
         private readonly roleService: RoleService,
         private readonly discordService: DiscordService,
         private readonly configService: ConfigService,
+        private readonly channelService: ChannelService,
     ) {
         this.wcmatch = require('wildcard-match');
     }
@@ -124,12 +140,13 @@ export class LfgService {
      * @param message 
      */
     public async handleLfgMessage(message: MessageData) { 
-        console.log(`LFG message received: ${message.message.content}`);
 
         // Check if the message is sent by a bot
         if (message.message.author.bot) {
             return;
         }
+
+        console.log(`LFG message received: ${message.message.content}`);
 
         const messageContent = message.message.content.toLowerCase();
 
@@ -180,6 +197,8 @@ export class LfgService {
             }
         }
 
+        roleMentions += ` <@${message.message.author.id}>`
+
         // Get the user voice channel
         const voiceChannel = this.discordService.getUserVoiceChannel(message.message.author.id);
         let components: APIActionRowComponent<APIMessageActionRowComponent>[] = [];
@@ -203,12 +222,21 @@ export class LfgService {
         // React to the message
         await this.reactToLfgMessage(message, mentionedRoles);
 
+        const outputChannelId = await this.getLfgOutputChannelId();
+
+        console.log("Sending message to channel: " + outputChannelId);
+
         // Send the embed to the channel
-        message.message.channel.send({
-            content: roleMentions,
-            embeds: [embed],
-            components,
-        });
+        this.discordService.sendMessage(outputChannelId, roleMentions, [embed], components);
+
+    }
+
+    private async getLfgOutputChannelId(): Promise<string> {
+        const channel = await this.channelService.findByName(this.configService.get<string>('channel-names.lfg-output'));
+        
+        console.log(`CHANNEL THAT WAS FOUND BY ${this.configService.get<string>('channels.lfg-output')}: `, channel);
+
+        return channel.discordId;
     }
 
     private async getLfgEmbed(message: MessageData, mentionedRoles: RoleEntity[], cooldownTimestamp: number) {

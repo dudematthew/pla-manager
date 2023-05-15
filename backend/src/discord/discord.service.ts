@@ -14,11 +14,15 @@ export class DiscordService {
       private readonly client: Client
   ) {}
   
-  async sendMessage(channelId: string, message: string): Promise<void> {
+  async sendMessage(channelId: string, content: string, embeds: any[] = [], components: any[] = []): Promise<void> {
     const channel = await this.client.channels.fetch(channelId);
-    if (channel.type === ChannelType.GuildText) {
+    if (channel.type !== ChannelType.GuildVoice) {
       const textChannel = channel as TextChannel;
-      await textChannel.send(message);
+      await textChannel.send({
+        content,
+        embeds,
+        components,
+      });
     } else {
       throw new Error('Channel is not a text channel');
     }
