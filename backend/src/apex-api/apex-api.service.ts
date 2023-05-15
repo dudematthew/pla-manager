@@ -1,79 +1,141 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { CacheTTL, Inject, Injectable, UseInterceptors } from '@nestjs/common';
 import { InjectBrowser } from 'nest-puppeteer';
-import type { Browser } from 'puppeteer';
-
+import { ApexApiScraperService } from './apex-api-scraper.service';
+import { Logger } from '@nestjs/common';
+import { RateLimitedAxiosInstance } from 'axios-rate-limit';
+import { HttpService } from '@nestjs/axios';
+import { PlayerStatisticsParamsDto } from './dtos/player-statistics-params.dto';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
+import * as hash from 'object-hash';
+import { PlayerStatistics } from './player-statistics.interface';
 
 @Injectable()
 export class ApexApiService {
 
+    /**
+     * Logger instance
+     */
+    private logger = new Logger('ApexApiService');
+
+    /**
+     * Axios instance with rate limiting
+     */
+    private http: RateLimitedAxiosInstance;
+
+    private apiKey = process.env.APEX_API_KEY;
+
     constructor(
-        @InjectBrowser()
-        private readonly browser: Browser,
-    ) {}
+        private readonly apexApiScraperService: ApexApiScraperService,
+        private readonly httpService: HttpService,
+        @Inject(CACHE_MANAGER)
+        private readonly cache: Cache,
+    ) {
+       const rateLimit = require('axios-rate-limit');
+
+        // Rate limit the http service 
+        this.http = rateLimit(this.httpService.axiosRef, {
+            maxRequests: parseInt(process.env.APEX_API_RATE_LIMIT || '1'),
+            perMilliseconds: parseInt(process.env.APEX_API_RATE_MILISECONDS_TRESHOLD || '2000'),
+        });
+    }
+
+    /**
+     * Get player statistics by UID
+     * @param playerUID
+     * @param platform 
+     * @param options 
+     * @returns Player statistics
+     */
+    public async getPlayerStatisticsByUID(playerUID: string, platform: 'PC' | 'PS4' | 'X1' | 'SWITCH', options: PlayerStatisticsParamsDto): Promise<PlayerStatistics> {
+        const cachedValue = await this.cache.get(`player-statistics-${hash(options)}`);
+        if (cachedValue) {
+            return cachedValue;
+        }
+
+
+        let url = `https://api.mozambiquehe.re/bridge?auth=${this.apiKey}&uuid=${playerUID}&platform=${platform}`;
+
+        // Add all options to the url except already added
+        for (const option in options) {
+            if (option != 'player' && option != 'platform' && option != 'uuid')
+                url += `&${option}=${options[option]}`;
+        }
+
+        try {
+            const response = await this.http.get(url);
+            this.cache.set(`player-statistics-${hash(options)}`, response.data, 10000);
+            return response.data;
+        }
+        catch (e) {
+            this.logger.error(e, playerUID, platform, options);
+            return {
+                error: 'Error fetching player statistics: ' + e.message || 'Unknown error',
+            };
+        }
+    }
+
+    /**
+     * Get player statistics by name
+     * @param playerName 
+     * @param platform 
+     * @param options 
+     * @returns Player statistics
+     */
+    public async getPlayerStatisticsByName(playerName: string, platform: 'PC' | 'PS4' | 'X1' | 'SWITCH', options: PlayerStatisticsParamsDto): Promise<PlayerStatistics> {
+
+        const cachedValue = await this.cache.get(`player-statistics-${hash(options)}`);
+        if (cachedValue) {
+            return cachedValue;
+        }
+
+
+        let url = `https://api.mozambiquehe.re/bridge?auth=${this.apiKey}&player=${playerName}&platform=${platform}`;
+
+        // Add all options to the url except already added
+        for (const option in options) {
+            if (option != 'player' && option != 'platform' && option != 'uuid')
+                url += `&${option}=${options[option]}`;
+        }
+
+        try {
+            const response = await this.http.get(url);
+            this.cache.set(`player-statistics-${hash(options)}`, response.data, 10000);
+            return response.data;
+        }
+        catch (e) {
+            this.logger.error(e, playerName, platform, options);
+            return {
+                error: 'Error fetching player statistics: ' + e.message || 'Unknown error',
+            };
+        }
+    }
+
+    public async getPlayerUUIDByName(playerName: string, platform: 'PC' | 'PS4' | 'X1' | 'SWITCH') {
+        const url = `https://api.mozambiquehe.re/nametouid?auth=${this.apiKey}&platform=${platform}&player=${playerName}`;
+
+        try {
+            const response = await this.http.get(url);
+            return response.data;
+        }
+        catch (e) {
+            this.logger.error(e);
+            return {
+                error: 'Error fetching player UUID: ' + e.message || 'Unknown error',
+            };
+        }
+    }
 
     public async scrapeClubData() {
-        const page = await this.browser.newPage();
-        await page.goto('https://apexlegendsstatus.com/clubs/5109a8f5-5fb6-4a8b-88f0-8c3c47ff627b');
-
-        // Extract club name
-        const clubName = await page.$eval('.col-md-3 .legpickrate p', (element) => element.textContent.trim());
-
-        // // Extract club banner image
-        // const clubBanner = await page.$eval('.card-header img', (element) => element.getAttribute('src'));
-
-        // const clubBanner = await page.$eval('.card-header img', (element) => element.getAttribute('src'));
-
-        // Extract club members
-        const members = await page.$$eval('.table-responsive .table tbody tr', (rows) => {
-            let skip = true;
-            return rows.map((row) => {
-                if (skip) {
-                    skip = false;
-                    return;
-                }
-                const returnObj: any = {};
-
-                // Get name
-                returnObj.name = row.querySelector(':nth-child(1)')?.textContent.trim();
-
-                // Get penultimate element of href
-                returnObj.uuid = row.querySelector(':nth-child(1) a')?.getAttribute('href').split('/').slice(-2)[0];
-
-                // Get level
-                returnObj.level = row.querySelector(':nth-child(3)')?.textContent.trim();
-
-                // Get brRankImg
-                returnObj.brRankImg = row.querySelector(':nth-child(4) img')?.getAttribute('src');
-
-                // Get brRank from brRankImg
-                returnObj.brRank = returnObj.brRankImg ? returnObj.brRankImg.split('/').pop().split('.')[0] : null;
-                
-                // If rank is admin, get rank from next column
-                if (returnObj.brRankImg.includes('club_rank_icon')) {
-                    returnObj.brRankImg = row.querySelector(':nth-child(5) img')?.getAttribute('src');
-                    returnObj.brRank = returnObj.brRankImg ? returnObj.brRankImg.split('/').pop().split('.')[0] : null;
-                }
-
-                // Get brRank data from brRank
-                const brRank = returnObj.brRank;
-                if (brRank) {
-                    returnObj.brRankNumber = brRank.split('').pop();
-                    // Get brRank without last character
-                    returnObj.brRank = brRank.slice(0, -1);
-                }
-                // const joined = row.querySelector('td:nth-child(7) i:first-child').textContent.trim().split(' ')[1];
-                // const updated = row.querySelector('td:nth-child(7) i:last-child').textContent.trim().split(' ')[1];
-                
-                return returnObj;
-            });
-        });
-
-        // Close page
-        await page.close();
-
-        // Remove first element of members array (it's empty)
-        members.shift();
-
-        return { clubName, members };
+        try {
+            return this.apexApiScraperService.getClubData();
+        } catch (e) {
+            this.logger.error(e);
+            return {
+                clubName: null,
+                members: [],
+                error: 'Error scraping club data: ' + e.message || 'Unknown error',
+            };
+        }
     }
 }
