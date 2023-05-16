@@ -62,8 +62,13 @@ export class LfgService {
             'platyna', 
             'platynie', 
             'platinie', 
-            'platynę', 
-            'platyno'
+            'platynę',
+            'platyne',
+            'platyno',
+            'plat',
+            'platy',
+            'plata',
+            'platem',
         ],
         diamond: [
             'diamond',
