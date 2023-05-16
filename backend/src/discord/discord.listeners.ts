@@ -54,8 +54,8 @@ export default class DiscordListeners {
             // The lfg message listener
             {
                 channelPattern: this.configService.get<string>('channel-names.lfg'),
-                messagePattern: '*',
-                userPattern: '*',
+                messagePattern: '**',
+                userPattern: '**',
                 callback: (messageData: MessageData) => {
                     this.lfgService.handleLfgMessage(messageData);
                 },
