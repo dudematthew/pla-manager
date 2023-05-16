@@ -36,7 +36,7 @@ export default class DiscordListeners {
     /**
      * The logger instance
      */
-    private readonly logger = new Logger(LfgService.name);
+    private readonly logger = new Logger(DiscordListeners.name);
 
     constructor(
         private readonly lfgService: LfgService,
@@ -122,7 +122,12 @@ export default class DiscordListeners {
 
         // Call all callbacks
         callbacks.forEach((callback: (message: MessageData) => void) => {
-            callback(messageData);
+            try {
+                callback(messageData);
+            } catch (e) {
+                this.logger.error(e);
+            }
+
         });
     }
 }
