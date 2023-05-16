@@ -156,6 +156,11 @@ export class LfgService {
             'master',
             'predator',
         ],
+        rookie: [
+            'bronze',
+            'silver',
+            'gold',
+        ]
     }
 
     constructor(
