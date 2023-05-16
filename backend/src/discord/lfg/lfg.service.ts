@@ -102,6 +102,20 @@ export class LfgService {
     }
 
     /**
+     * The rank images that are used in the lfg messages
+     */
+    private rankImages = {
+        rookie: 'https://i.imgur.com/869PhXt.png',
+        bronze: 'https://i.imgur.com/qFiMv7w.png',
+        silver: 'https://i.imgur.com/CMqLQhe.png',
+        gold: 'https://i.imgur.com/6vjq5Mx.png',
+        platinum: 'https://i.imgur.com/RRxBvCF.png',
+        diamond: 'https://i.imgur.com/EF2HeVR.png',
+        master: 'https://i.imgur.com/qdXR2Z7.png',
+        predator: 'https://i.imgur.com/7mhAyCl.png',
+    };
+
+    /**
      * The role relations that are used in the lfg messages
      */
     private roleRelations = {
@@ -292,21 +306,39 @@ export class LfgService {
     }
 
     private async getLfgEmbed(message: MessageData, mentionedRoles: RoleEntity[], cooldownTimestamp: number) {
-        const emojis = await this.getRoleEmojis(mentionedRoles);
+        const rankRole = await this.discordService.getUserRankRole(message.message.author.id);
+        let rank = await this.roleService.findByDiscordId(rankRole.id);
+
+
+        // If the user doesn't have a rank role, then set it to rookie
+        const rankIcon = rankRole ? this.rankImages[rank.name.toLowerCase()] : this.rankImages['rookie'];
+        console.log(`Rank icon: ${rankIcon}`);
+
+        // If the message is longer than 60 characters cut it
+        let messageContent = message.message.content;
+        if (messageContent && messageContent.length > 0) {
+            messageContent = messageContent.substring(0, Math.min(200, messageContent.length));
+            if (messageContent.length < message.message.content.length) {
+                messageContent = messageContent.trim();
+                messageContent += '...';
+            }
+                
+        }
 
         const embed = new EmbedBuilder()
             .setColor(this.configService.get<ColorResolvable>('theme.color-primary'))
-            .setTitle(message.message.member.nickname)
+            .setTitle('LFG - Szukam graczy:')
             .setAuthor({
-                name: 'LFG - Szukam graczy',
-                iconURL: this.configService.get<string>('images.logo'),
+                name: message.message.member.nickname ?? message.message.author.username,
+                iconURL: rankIcon,
             })
             .setURL(message.message.url)
             .setThumbnail(message.message.member.displayAvatarURL())
-            .setDescription('*"' + message.message.content + '"*')
+            .setDescription('"' + messageContent + '"')
             .setTimestamp()
             .setFooter({
                 text: `LFG`,
+                iconURL: this.configService.get<string>('images.logo'),
             });
 
         const voiceChannel = this.discordService.getUserVoiceChannel(message.message.author.id);
