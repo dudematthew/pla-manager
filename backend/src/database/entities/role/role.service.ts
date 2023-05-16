@@ -3,7 +3,7 @@ import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { RoleEntity } from './entities/role.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { DiscordService } from 'src/discord/discord.service';
 
 @Injectable()
@@ -43,6 +43,20 @@ export class RoleService {
   async findByName(name: string): Promise<RoleEntity> {
     return await this.roleRepository.findOneBy({ name });
   }
+
+  /**
+   * Find roles by their names
+   * @param {String[]} names The names of the roles
+   * @returns The roles
+   */
+  async findByNames(names: string[]): Promise<RoleEntity[]> {
+    return await this.roleRepository.find({
+        where: {
+            name: In(names)
+        }
+    });
+  }
+    
 
   async update(id: number, properties: UpdateRoleDto) {
     const role = await this.findById(id);

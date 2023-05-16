@@ -12,3 +12,6 @@ channel-names:
 lfg:
   post-cooldown: 20
   rank-cooldown: 600
+  
+discord:
+  rank-roles: ['rookie', 'bronze', 'silver', 'gold', 'platinum', 'diamond', 'master', 'predator']

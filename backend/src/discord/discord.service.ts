@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { Client, TextChannel, ChannelType, User, GuildMember, PermissionsBitField, Guild, UserResolvable, PermissionResolvable, Channel, ReactionEmoji, GuildEmoji, VoiceChannel, VoiceBasedChannel } from 'discord.js';
+import { Client, TextChannel, ChannelType, User, GuildMember, PermissionsBitField, Guild, UserResolvable, PermissionResolvable, Channel, ReactionEmoji, GuildEmoji, VoiceChannel, VoiceBasedChannel, Role } from 'discord.js';
 import { Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class DiscordService {
@@ -11,7 +12,8 @@ export class DiscordService {
   private readonly logger = new Logger(DiscordService.name);
 
   constructor(
-      private readonly client: Client
+      private readonly client: Client,
+      private readonly configService: ConfigService,
   ) {}
   
   async sendMessage(channelId: string, content: string, embeds: any[] = [], components: any[] = []): Promise<void> {
@@ -133,6 +135,30 @@ export class DiscordService {
     const emojiCode = emoji.animated ? `<a:${emoji.name}:${emoji.id}>` : `<:${emoji.name}:${emoji.id}>`;
     console.log("Emoji code: ", emojiCode);
     return emojiCode;
+  }
+
+  /**
+   * Get rank role of user
+   * @param userId 
+   * @returns 
+   */
+  async getUserRankRole(userId: string): Promise<Role> {
+
+    const rankRoles = this.configService.get<string[]>('discord.rank-roles');
+    
+    // Get main guild from env variable
+    const guild: Guild = this.client.guilds.cache.get(process.env.MAIN_GUILD_ID);
+
+    // Get member from guild
+    const member: GuildMember = await guild.members.fetch(userId);
+
+    // Get roles of member
+    const roles = member.roles.cache;
+
+    // Get rank role of member
+    const rankRole = roles.find(role => rankRoles.includes(role.name.toLowerCase()));
+
+    return rankRole;
   }
 
   public getUserVoiceChannel(userId: string): VoiceBasedChannel {

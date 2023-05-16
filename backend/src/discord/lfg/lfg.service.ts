@@ -7,7 +7,7 @@ import { Cache } from 'cache-manager';
 import { Logger } from '@nestjs/common';
 import { DiscordService } from '../discord.service';
 import { RoleEntity } from 'src/database/entities/role/entities/role.entity';
-import { ColorResolvable, Embed, EmbedBuilder, GuildEmoji, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, APIActionRowComponent, APIMessageActionRowComponent, Channel } from 'discord.js';
+import { ColorResolvable, Embed, EmbedBuilder, GuildEmoji, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, APIActionRowComponent, APIMessageActionRowComponent, Channel, Role } from 'discord.js';
 import { ConfigService } from '@nestjs/config';
 import { ChannelService } from 'src/database/entities/channel/channel.service';
 import { channel } from 'diagnostics_channel';
@@ -103,6 +103,61 @@ export class LfgService {
         ],
     }
 
+    /**
+     * The role relations that are used in the lfg messages
+     */
+    private roleRelations = {
+        bronze: [
+            'bronze',
+            'silver',
+            'gold',
+        ],
+        silver: [
+            'bronze',
+            'silver',
+            'gold',
+        ],
+        gold: [
+            'bronze',
+            'silver',
+            'gold',
+            'platinum',
+        ],
+        platinum: [
+            'bronze',
+            'silver',
+            'gold',
+            'platinum',
+            'diamond',
+        ],
+        diamond: [
+            'bronze',
+            'silver',
+            'gold',
+            'platinum',
+            'diamond',
+            'master',
+        ],
+        master: [
+            'bronze',
+            'silver',
+            'gold',
+            'platinum',
+            'diamond',
+            'master',
+            'predator',
+        ],
+        predator: [
+            'bronze',
+            'silver',
+            'gold',
+            'platinum',
+            'diamond',
+            'master',
+            'predator',
+        ],
+    }
+
     constructor(
         @Inject(CACHE_MANAGER)
         private readonly cache: Cache,
@@ -148,10 +203,8 @@ export class LfgService {
 
         console.log(`LFG message received: ${message.message.content}`);
 
-        const messageContent = message.message.content.toLowerCase();
-
         // Check if the message contains any of the role types
-        const mentionedRoles = await this.getMentionedRoles(messageContent);
+        const mentionedRoles = await this.getMentionedRoles(message);
 
         if(mentionedRoles.length === 0) {
             console.log('No roles mentioned');
@@ -174,6 +227,10 @@ export class LfgService {
         
         let roleMentions = '';
         const globalCache = await this.getCachedGlobalLfg();
+
+        // Get the user rank role
+        const userRankRole = await this.discordService.getUserRankRole(message.message.author.id);
+        const userRankRoleName = userRankRole.name.toLowerCase();
         
         // Check for each role if it's in a cachedCooldowns
         // If it is, then add the cooldown to the embed
@@ -184,17 +241,28 @@ export class LfgService {
 
             console.log(`Testing global cache for ${role.name} with cooldown: ${cooldown}`);
 
-            if(!cooldown) {
-                console.log(`Global cache for ${role.name} is not set: ${cooldown}, setting it now`);
-
-                this.setCachedGlobalLfg(role);
-                roleMentions += `<@&${role.discordId}> `;
-            } else {
+            if(cooldown) {
                 console.log(`Global cache for ${role.name} is set: ${cooldown}`);
 
                 // roleMentions += `${role.name.toUpperCase()} (<t:${cooldown}:R>) `;
                 roleMentions += `${role.name.toUpperCase()} (⏱) `;
+
+                continue;
             }
+
+            // Check if the role can be mentioned
+            if(!this.canMentionRole(userRankRoleName, role.name)) {
+                console.log(`User ${message.message.author.username} with ${userRankRoleName} cannot mention role ${role.name}`);
+
+                roleMentions += `${role.name.toUpperCase()} (👮‍♂️) `;
+
+                continue;
+            }
+
+            console.log(`Global cache for ${role.name} is not set: ${cooldown}, setting it now`);
+
+            this.setCachedGlobalLfg(role);
+            roleMentions += `<@&${role.discordId}> `;
         }
 
         roleMentions += ` <@${message.message.author.id}>`
@@ -249,8 +317,9 @@ export class LfgService {
                 name: 'LFG - Szukam graczy',
                 iconURL: this.configService.get<string>('images.logo'),
             })
+            .setURL(message.message.url)
             .setThumbnail(message.message.member.displayAvatarURL())
-            .setDescription('*' + message.message.content + '*')
+            .setDescription('*"' + message.message.content + '"*')
             .setTimestamp()
             .setFooter({
                 text: `LFG`,
@@ -274,13 +343,33 @@ export class LfgService {
         return embed;
     }
 
+    private canMentionRole(rankRole: string, mentionedRole: string): boolean {
+
+        if(mentionedRole === 'pubs')
+            return true;
+
+        const availableRoleNamesToMention = this.roleRelations[rankRole];
+
+        if(!availableRoleNamesToMention)
+            return false;
+
+        return availableRoleNamesToMention.includes(mentionedRole);
+    }
+
     /**
      * Get the mentioned roles ids from the message
-     * @param messageContent
+     * @param messageData
      * @returns 
      */
-    private async getMentionedRoles(messageContent: string): Promise<RoleEntity[]> {
+    private async getMentionedRoles(messageData: MessageData): Promise<RoleEntity[]> {
         const mentionedRoles: RoleEntity[] = [];
+        const messageContent = messageData.message.content.toLowerCase();
+
+        const rankRole = await this.discordService.getUserRankRole(messageData.message.author.id);
+
+        // Check if the user has a rank role
+        if(!rankRole)
+            return mentionedRoles;
 
         /**
          * Loop through all the role types and check 
@@ -307,6 +396,7 @@ export class LfgService {
 
         return mentionedRoles;
     }
+
 
     /**
      * Get the role from the database
