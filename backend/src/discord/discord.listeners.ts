@@ -81,6 +81,17 @@ export default class DiscordListeners {
     }
 
     /**
+     * Escape special characters in a string
+     * @param value The value to escape
+     * @returns The escaped value
+     */
+    private escapeSpecialCharacters(value: string): string {
+        const result = value.replace(/[.+?^${}()|[\]\\]/g, "\\$&");
+        console.log('Escaped value: ' + result);
+        return result;
+    }
+
+    /**
      * Handle a message create event
      * @param message The message that was created
      */
@@ -95,7 +106,7 @@ export default class DiscordListeners {
 
         // Check if message matches any of the listeners
         for(const listener of this.messageCreateListeners) {
-            console.log('Checking listener: ' + listener.messagePattern);
+            console.log('Checking listener: ' + listener);
             
             // Check if channel matches database channel ------------------------------
             let dbChannel: ChannelEntity = await this.channelService.findByName(listener.channelPattern);
@@ -107,18 +118,24 @@ export default class DiscordListeners {
                 }
             } 
             // If channel id matches pattern
-            else if (!this.matchPattern(messageData.channel.id, listener.channelPattern))
+            else if (!this.matchPattern(messageData.channel.id, this.escapeSpecialCharacters(listener.channelPattern))) {
+                console.log('Channel id does not match pattern: ' + listener.channelPattern);
                 return; // (skip to next listener)
+            }
 
             // Check if message matches pattern ------------------------------
-            if (!this.matchPattern(messageData.message.content, listener.messagePattern))
+            if (!this.matchPattern(messageData.message.content, this.escapeSpecialCharacters(listener.messagePattern))) {
+                console.log('Message does not match pattern: ' + listener.messagePattern);
                 return; // (skip to next listener)
+            }
 
             // Check if user matches pattern ------------------------------
-            if (!this.matchPattern(messageData.user.id, listener.userPattern))
+            if (!this.matchPattern(messageData.user.id, this.escapeSpecialCharacters(listener.userPattern))) {
+                console.log('User does not match pattern: ' + listener.userPattern);
                 return; // (skip to next listener)
+            }
 
-            console.log('Matched listener: ' + listener.messagePattern);
+            console.log('Matched listener: ' + listener);
 
             // If all patterns match, add callback to callbacks
             callbacks.push(listener.callback);

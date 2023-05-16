@@ -10,7 +10,6 @@ import { RoleEntity } from 'src/database/entities/role/entities/role.entity';
 import { ColorResolvable, Embed, EmbedBuilder, GuildEmoji, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, APIActionRowComponent, APIMessageActionRowComponent, Channel, Role } from 'discord.js';
 import { ConfigService } from '@nestjs/config';
 import { ChannelService } from 'src/database/entities/channel/channel.service';
-import { channel } from 'diagnostics_channel';
 
 @Injectable()
 export class LfgService {
@@ -19,11 +18,6 @@ export class LfgService {
      * The logger instance
      */
     private readonly logger = new Logger(LfgService.name);
-
-    /**
-     * The wildcard-match module
-     */
-    private readonly wcmatch: any;
 
     /**
      * The role types that are used in the lfg messages
@@ -175,26 +169,7 @@ export class LfgService {
         private readonly discordService: DiscordService,
         private readonly configService: ConfigService,
         private readonly channelService: ChannelService,
-    ) {
-        this.wcmatch = require('wildcard-match');
-    }
-
-    /**
-     * Check if a value matches a pattern
-     * 
-     * Wildcard-match supports the following glob syntax in patterns:
-     * [?] matches exactly one arbitrary character excluding separators
-     * [*] matches zero or more arbitrary characters excluding separators
-     * [**] matches any number of segments when used as a whole segment in a separated pattern
-     * [\] escapes the following character making it be treated literally
-     * 
-     * @param value value to check
-     * @param pattern pattern to check against
-     * @returns true if value matches pattern, false otherwise
-     */
-    private matchPattern(value: string, pattern: string): boolean {
-        return this.wcmatch(pattern)(value);
-    }
+    ) {}
 
     /**
      * This method handles the lfg message
@@ -388,9 +363,7 @@ export class LfgService {
         for (const roleType in this.roleTypes) {
             for (let rolePattern of this.roleTypes[roleType]) {
 
-                rolePattern = `**${rolePattern}**`;
-
-                if (this.matchPattern(messageContent, rolePattern)) {
+                if (messageContent.includes(rolePattern)) {
                     console.log(`Role ${roleType} mentioned in ${messageContent}`);
                     const role: RoleEntity = await this.getRoleFromDatabase(roleType);
 
