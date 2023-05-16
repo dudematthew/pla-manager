@@ -389,7 +389,7 @@ export class LfgService {
         for (const roleType in this.roleTypes) {
             for (let rolePattern of this.roleTypes[roleType]) {
 
-                rolePattern = `*${rolePattern}*`;
+                rolePattern = `**${rolePattern}**`;
 
                 if (this.matchPattern(messageContent, rolePattern)) {
                     console.log(`Role ${roleType} mentioned in ${messageContent}`);
