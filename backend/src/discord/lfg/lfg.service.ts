@@ -312,7 +312,7 @@ export class LfgService {
     private async getLfgOutputChannelId(): Promise<string> {
         const channel = await this.channelService.findByName(this.configService.get<string>('channel-names.lfg-output'));
         
-        console.log(`CHANNEL THAT WAS FOUND BY ${this.configService.get<string>('channels.lfg-output')}: `, channel);
+        console.log(`CHANNEL THAT WAS FOUND BY ${this.configService.get<string>('channel-names.lfg-output')}: `, channel);
 
         return channel.discordId;
     }

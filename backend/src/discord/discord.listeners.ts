@@ -95,13 +95,15 @@ export default class DiscordListeners {
 
         // Check if message matches any of the listeners
         for(const listener of this.messageCreateListeners) {
+            console.log('Checking listener: ' + listener.messagePattern);
+            
             // Check if channel matches database channel ------------------------------
             let dbChannel: ChannelEntity = await this.channelService.findByName(listener.channelPattern);
 
             // If channel is in database
             if (dbChannel) {
                 if (dbChannel.discordId !== messageData.channel.id) {
-                    return; // (skip to next listener
+                    return; // (skip to next listener)
                 }
             } 
             // If channel id matches pattern
@@ -116,6 +118,8 @@ export default class DiscordListeners {
             if (!this.matchPattern(messageData.user.id, listener.userPattern))
                 return; // (skip to next listener)
 
+            console.log('Matched listener: ' + listener.messagePattern);
+
             // If all patterns match, add callback to callbacks
             callbacks.push(listener.callback);
         }
@@ -123,6 +127,7 @@ export default class DiscordListeners {
         // Call all callbacks
         callbacks.forEach((callback: (message: MessageData) => void) => {
             try {
+                this.logger.log('Calling callback: ' + callback.name);
                 callback(messageData);
             } catch (e) {
                 this.logger.error(e);
