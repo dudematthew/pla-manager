@@ -61,7 +61,6 @@ export class LfgService {
             'platyny',
             'platyna', 
             'platynie', 
-            'platinie', 
             'platynę',
             'platyne',
             'platyno',
