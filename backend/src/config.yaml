@@ -10,7 +10,7 @@ channel-names:
   lfg-output: 'lfgoutput'
 
 lfg:
-  post-cooldown: 20
+  post-cooldown: 60
   rank-cooldown: 600
   
 discord:
