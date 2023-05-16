@@ -26,7 +26,7 @@ export class ApexApiService {
     private apiKey = process.env.APEX_API_KEY;
 
     constructor(
-        private readonly apexApiScraperService: ApexApiScraperService,
+        // private readonly apexApiScraperService: ApexApiScraperService,
         private readonly httpService: HttpService,
         @Inject(CACHE_MANAGER)
         private readonly cache: Cache,
@@ -126,16 +126,16 @@ export class ApexApiService {
         }
     }
 
-    public async scrapeClubData() {
-        try {
-            return this.apexApiScraperService.getClubData();
-        } catch (e) {
-            this.logger.error(e);
-            return {
-                clubName: null,
-                members: [],
-                error: 'Error scraping club data: ' + e.message || 'Unknown error',
-            };
-        }
-    }
+    // public async scrapeClubData() {
+    //     try {
+    //         return this.apexApiScraperService.getClubData();
+    //     } catch (e) {
+    //         this.logger.error(e);
+    //         return {
+    //             clubName: null,
+    //             members: [],
+    //             error: 'Error scraping club data: ' + e.message || 'Unknown error',
+    //         };
+    //     }
+    // }
 }

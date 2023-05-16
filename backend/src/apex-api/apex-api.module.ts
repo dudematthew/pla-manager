@@ -7,12 +7,12 @@ import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [
-    PuppeteerModule.forRoot(),
+    // PuppeteerModule.forRoot(),
     HttpModule,
   ],
   providers: [
     ApexApiService,
-    ApexApiScraperService,
+    // ApexApiScraperService,
   ],
   controllers: [ApexApiController],
   exports: [ApexApiService],

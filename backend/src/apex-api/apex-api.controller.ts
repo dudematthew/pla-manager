@@ -10,12 +10,12 @@ export class ApexApiController {
         private readonly apexApiService: ApexApiService,
     ) {}
 
-    @Get('club')
-    async apexApi(): Promise<object> {
-        console.log("Starting Apex API scrape...");
+    // @Get('club')
+    // async apexApi(): Promise<object> {
+    //     console.log("Starting Apex API scrape...");
 
-        return await this.apexApiService.scrapeClubData();
-    }
+    //     return await this.apexApiService.scrapeClubData();
+    // }
 
     /**
      * Get player statistics by UUID
