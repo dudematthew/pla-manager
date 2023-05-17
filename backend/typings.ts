@@ -1,5 +1,30 @@
 /* eslint-disable */
 export type Schema = {
+  'apex_account': {
+    plain: {
+      'id': number;
+      'name': string;
+      'uid': string;
+      'avatar_url': string;
+      'platform': string;
+      'rank_score': number;
+      'rank_name': string;
+      'rank_division': string;
+      'rank_img': string;
+      'level': number;
+      'percent_to_next_level': number;
+      'br_total_kills': number;
+      'br_total_wins': number;
+      'br_total_games_played': number;
+      'br_kdr': number;
+      'br_total_damage': number;
+      'last_legend_played': string;
+      'created_at': string;
+      'updated_at': string;
+    };
+    nested: {};
+    flat: {};
+  };
   'channel': {
     plain: {
       'id': number;

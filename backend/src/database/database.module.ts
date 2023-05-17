@@ -6,11 +6,8 @@ import { ConfigModule, ConfigService} from "@nestjs/config";
 import { ChannelEntity } from "src/database/entities/channel/channel.entity";
 import { TourneyEntity } from "./entities/tourney/entities/tourney.entity";
 import { TourneyTeamEntity } from "./entities/tourney/entities/team/entities/tourney-team.entity";
-import { UserModule } from "./entities/user/user.module";
-import { ChannelModule } from "./entities/channel/channel.module";
-import { TourneyModule } from "./entities/tourney/tourney.module";
-import { RoleModule } from './entities/role/role.module';
 import { RoleEntity } from "./entities/role/entities/role.entity";
+import { ApexAccountEntity } from "./entities/apex-account/entities/apex-account.entity";
 
 @Module({
     imports: [
@@ -31,13 +28,13 @@ import { RoleEntity } from "./entities/role/entities/role.entity";
                     TypeORMSession,
                     TourneyEntity,
                     TourneyTeamEntity,
+                    ApexAccountEntity,
                 ],
                 synchronize: true,
             }),
             inject: [ConfigService]
         }),
         TypeOrmModule.forFeature([TypeORMSession]),
-        RoleModule,
     ],
     providers: [
         TypeORMSession,
