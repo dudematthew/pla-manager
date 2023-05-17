@@ -1,13 +1,15 @@
 import { Injectable } from "@nestjs/common";
 import { LfgService } from "./lfg/lfg.service";
-import { Message, User, Channel } from "discord.js";
+import { Message, User, Channel, ChannelType } from "discord.js";
 import { ChannelService } from "src/database/entities/channel/channel.service";
 import { ChannelEntity } from "src/database/entities/channel/channel.entity";
 import { Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { ApexConnectService } from "./apex-connect/apex-connect.service";
 
 interface MessageCreateListener {
     channelPattern: string;
+    channelType: ChannelType[];
     messagePattern: string;
     userPattern: string;
     callback: (message: MessageData) => void;
@@ -42,12 +44,20 @@ export default class DiscordListeners {
         private readonly lfgService: LfgService,
         private readonly channelService: ChannelService,
         private readonly configService: ConfigService,
+        private readonly apexConnectService: ApexConnectService,
     ) {
         this.wcmatch = require('wildcard-match');
         
         /**
          * The message create listeners - these are the listeners that should be
          * activated when a message is created.
+         * 
+         * Available patterns:
+         * channelPattern: The pattern to match against the channel name or database name
+         * channelType: The channel type to match against
+         * messagePattern: The pattern to match the message content against
+         * userPattern: The pattern to match the user name against
+         * 
          * @var MessageCreateListener[]
          */
         this.messageCreateListeners = [
@@ -56,8 +66,19 @@ export default class DiscordListeners {
                 channelPattern: this.configService.get<string>('channel-names.lfg'),
                 messagePattern: '**',
                 userPattern: '**',
+                channelType: [],
                 callback: (messageData: MessageData) => {
                     this.lfgService.handleLfgMessage(messageData);
+                },
+            },
+            // The apex connect private message listener
+            {
+                channelPattern: '**',
+                messagePattern: '**',
+                userPattern: '**',
+                channelType: [ChannelType.DM],
+                callback: (messageData: MessageData) => {
+                    this.apexConnectService.handlePrivateMessage(messageData);
                 },
             },
         ];
@@ -107,6 +128,24 @@ export default class DiscordListeners {
         // Check if message matches any of the listeners
         for(const listener of this.messageCreateListeners) {
             console.log('Checking listener: ' + listener);
+
+            // Check if channel type matches pattern ------------------------------
+            if (listener.channelType.length != 0 && message.channel.type in listener.channelType) {
+                console.log('Channel type ' + messageData.channel.type + ' does not match pattern: ' + listener.channelType);
+                continue;
+            }
+
+            // Check if user matches pattern ------------------------------
+            if (!this.matchPattern(messageData.user.id, this.escapeSpecialCharacters(listener.userPattern))) {
+                console.log('User does not match pattern: ' + listener.userPattern);
+                continue;
+            }
+
+            // Check if message matches pattern ------------------------------
+            if (!this.matchPattern(messageData.message.content, this.escapeSpecialCharacters(listener.messagePattern))) {
+                console.log('Message does not match pattern: ' + listener.messagePattern);
+                continue;
+            }
             
             // Check if channel matches database channel ------------------------------
             let dbChannel: ChannelEntity = await this.channelService.findByName(listener.channelPattern);
@@ -114,25 +153,13 @@ export default class DiscordListeners {
             // If channel is in database
             if (dbChannel) {
                 if (dbChannel.discordId !== messageData.channel.id) {
-                    return; // (skip to next listener)
+                    continue;
                 }
             } 
             // If channel id matches pattern
             else if (!this.matchPattern(messageData.channel.id, this.escapeSpecialCharacters(listener.channelPattern))) {
                 console.log('Channel id does not match pattern: ' + listener.channelPattern);
-                return; // (skip to next listener)
-            }
-
-            // Check if message matches pattern ------------------------------
-            if (!this.matchPattern(messageData.message.content, this.escapeSpecialCharacters(listener.messagePattern))) {
-                console.log('Message does not match pattern: ' + listener.messagePattern);
-                return; // (skip to next listener)
-            }
-
-            // Check if user matches pattern ------------------------------
-            if (!this.matchPattern(messageData.user.id, this.escapeSpecialCharacters(listener.userPattern))) {
-                console.log('User does not match pattern: ' + listener.userPattern);
-                return; // (skip to next listener)
+                continue;
             }
 
             console.log('Matched listener: ' + listener);

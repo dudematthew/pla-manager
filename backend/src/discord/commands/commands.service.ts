@@ -1,16 +1,22 @@
 import { Injectable } from '@nestjs/common';
-import { Context, SlashCommand, SlashCommandContext } from 'necord';
+import { Context, Options, SlashCommand, SlashCommandContext } from 'necord';
 import { RoleService } from 'src/database/entities/role/role.service';
 import { EmbedBuilder } from 'discord.js';
 import { ConfigService } from '@nestjs/config';
+import { ApexConnectService } from '../apex-connect/apex-connect.service';
+import { Logger } from '@nestjs/common';
+import { handleConnectCommandDto } from './dtos/handle-connect.command.dto';
 // import * as paginationEmbed from 'discord.js-pagination';
 
 @Injectable()
 export class CommandsService {
 
+    private readonly logger = new Logger(CommandsService.name);
+
     constructor(
         private readonly roleService: RoleService,
         private readonly configService: ConfigService,
+        private readonly apexConnectService: ApexConnectService,
     ) {}
     
     /**
@@ -92,5 +98,18 @@ export class CommandsService {
         // const embed = paginationEmbed(Interaction, pages, ['⏪', '⏩'], 30000);
         
         // return Interaction.reply({ embeds: [roleEmbed], ephemeral: true});
+    }
+
+    /**
+     * Get all roles from the database
+     * @returns All roles
+     */
+    @SlashCommand({
+        name: 'połącz',
+        description: 'Połącz swoje konto Apex z kontem na Discordzie PLA',
+    })
+    public async onApexAccountConnect(@Context() [Interaction]: SlashCommandContext, @Options() { username, platform }: handleConnectCommandDto) {
+        this.logger.log(`User ${Interaction.user.username} requested to connect their Apex account`);
+        this.apexConnectService.handleConnectCommand(Interaction, { username, platform });
     }
 }

@@ -1,6 +1,6 @@
 import { Module, forwardRef } from "@nestjs/common";
 import { NecordModule } from 'necord';
-import { IntentsBitField } from 'discord.js';
+import { IntentsBitField, Partials } from 'discord.js';
 import { DiscordUpdate } from './discord.update';
 import { CommandsModule } from './commands/commands.module';
 import { DiscordService } from "./discord.service";
@@ -9,7 +9,7 @@ import { LfgModule } from './lfg/lfg.module';
 import DiscordListeners from "./discord.listeners";
 import { LfgService } from "./lfg/lfg.service";
 import { ChannelModule } from "src/database/entities/channel/channel.module";
-import { DiscordStrategy } from "src/auth/discord.strategy";
+import { ApexConnectModule } from './apex-connect/apex-connect.module';
 
 @Module({
     imports: [
@@ -22,11 +22,18 @@ import { DiscordStrategy } from "src/auth/discord.strategy";
                 IntentsBitField.Flags.GuildMembers,
                 IntentsBitField.Flags.GuildVoiceStates,
                 IntentsBitField.Flags.MessageContent,
+                IntentsBitField.Flags.DirectMessages,
+                IntentsBitField.Flags.DirectMessageReactions,
             ],
+            partials: [
+                Partials.Channel,
+                Partials.Message,
+            ]
         }),
         CommandsModule,
         RoleModule,
         LfgModule,
+        ApexConnectModule,
         forwardRef(() => ChannelModule),
     ],
     controllers: [],
@@ -34,7 +41,6 @@ import { DiscordStrategy } from "src/auth/discord.strategy";
         DiscordUpdate,
         DiscordService,
         DiscordListeners,
-        LfgService,
     ],
     exports: [
         DiscordService,
