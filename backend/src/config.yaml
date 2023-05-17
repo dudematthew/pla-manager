@@ -5,13 +5,14 @@ theme:
   color-primary: '#FF4343'
   color-secondary: '#C02D2D'
 
+# DO NOT TOUCH
 channel-names:
   lfg: 'lfg'
   lfg-output: 'lfgoutput'
 
 lfg:
-  post-cooldown: 60
-  rank-cooldown: 600
+  post-cooldown: 120
+  rank-cooldown: 1200
   
 discord:
   rank-roles: ['rookie', 'bronze', 'silver', 'gold', 'platinum', 'diamond', 'master', 'predator']
