@@ -7,7 +7,7 @@ import { Cache } from 'cache-manager';
 import { Logger } from '@nestjs/common';
 import { DiscordService } from '../discord.service';
 import { RoleEntity } from 'src/database/entities/role/entities/role.entity';
-import { ColorResolvable, Embed, EmbedBuilder, GuildEmoji, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, APIActionRowComponent, APIMessageActionRowComponent, Channel, Role } from 'discord.js';
+import { ColorResolvable, Embed, EmbedBuilder, GuildEmoji, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, APIActionRowComponent, APIMessageActionRowComponent, Channel, Role, AnyComponentBuilder } from 'discord.js';
 import { ConfigService } from '@nestjs/config';
 import { ChannelService } from 'src/database/entities/channel/channel.service';
 
@@ -268,22 +268,33 @@ export class LfgService {
         // Get the user voice channel
         const voiceChannel = this.discordService.getUserVoiceChannel(message.message.author.id);
         let components: APIActionRowComponent<APIMessageActionRowComponent>[] = [];
+        const rowComponents: AnyComponentBuilder[] = [];
+
+        const respondButton = new ButtonBuilder()
+            .setLabel('Odpowiedz')
+            .setStyle(ButtonStyle.Link)
+            .setURL(message.message.url)
+            .setEmoji('💬');
+
+        rowComponents.push(respondButton);
 
         if(voiceChannel) {
-            const button = new ButtonBuilder()
-                .setLabel('Wejdź na kanał')
-                .setStyle(ButtonStyle.Link)
-                .setURL(voiceChannel.url)
-                .setEmoji('🔊');
-    
-            const row = new ActionRowBuilder({
-                components: [button],
-            });
-
-            components.push(row.toJSON() as APIActionRowComponent<APIMessageActionRowComponent>);
+            const voiceChannelButton = new ButtonBuilder()
+            .setLabel('Wejdź na kanał')
+            .setStyle(ButtonStyle.Link)
+            .setURL(voiceChannel.url)
+            .setEmoji('🔊');
+            
+            rowComponents.push(voiceChannelButton)
         } else {
             await this.reactWithMute(message);
         }
+
+        const row = new ActionRowBuilder({
+            components: rowComponents,
+        });
+
+        components.push(row.toJSON() as APIActionRowComponent<APIMessageActionRowComponent>);
 
         // React to the message
         await this.reactToLfgMessage(message, mentionedRoles);
