@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Context, On, Once, ContextOf } from 'necord';
-import { Client } from 'discord.js';
+import { ActivityType, Client } from 'discord.js';
 import { ConfigService } from '@nestjs/config';
 import DiscordListeners from './discord.listeners';
 
@@ -20,6 +20,12 @@ export class DiscordUpdate {
     @Once('ready')
     public onReady(@Context() [client]: ContextOf<'ready'>) {
         this.logger.log(`Bot logged in as ${client.user.username}`);
+
+        // Set the bot's activity
+        this.client.user.setActivity({
+            type: ActivityType.Listening,
+            name: '/pomoc',
+        });
     }
 
     /**
