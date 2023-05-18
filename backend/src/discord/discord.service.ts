@@ -1,10 +1,20 @@
 import { Injectable } from '@nestjs/common';
-import { Client, TextChannel, ChannelType, User, GuildMember, PermissionsBitField, Guild, UserResolvable, PermissionResolvable, Channel, ReactionEmoji, GuildEmoji, VoiceChannel, VoiceBasedChannel, Role } from 'discord.js';
+import { Client, TextChannel, ChannelType, User, GuildMember, PermissionsBitField, Guild, UserResolvable, PermissionResolvable, Channel, ReactionEmoji, GuildEmoji, VoiceChannel, VoiceBasedChannel, Role, Collection } from 'discord.js';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class DiscordService {
+
+  /**
+   * The ID of the main guild
+   */
+  public readonly guildId: string;
+
+  /**
+   * Main guild
+   */
+  public guild: Guild;
 
   /**
   * The logger instance
@@ -14,7 +24,40 @@ export class DiscordService {
   constructor(
       private readonly client: Client,
       private readonly configService: ConfigService,
-  ) {}
+  ) {
+    // Set main guild ID from env variable
+    this.guildId = process.env.MAIN_GUILD_ID;
+
+    this.init();
+  }
+
+  public async init() {
+    await this.isReady();
+
+    this.guild = await this.client.guilds.fetch(this.guildId);
+  }
+
+  public isReady(): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      this.client.on('ready', () => {
+        resolve(true);
+      });
+    });
+  }
+
+  private async cache(element: 'members' | 'roles' | 'channels') {
+    switch (element) {
+      case 'members':
+        await this.guild.members.fetch();
+        break;
+      case 'roles':
+        await this.guild.roles.fetch();
+        break;
+      case 'channels':
+        await this.guild.channels.fetch();
+        break;
+    }
+  }
   
   async sendMessage(channelId: string, content: string, embeds: any[] = [], components: any[] = []): Promise<void> {
     const channel = await this.client.channels.fetch(channelId);
@@ -71,22 +114,39 @@ export class DiscordService {
    * @returns Whether the role exists
    */
   async roleExists(roleId: string): Promise<boolean> {
-    // Get main guild from env variable
-    const guild: Guild = this.client.guilds.cache.get(process.env.MAIN_GUILD_ID);
-    
-    // Get role from guild
-    const role = await guild.roles.fetch(roleId);
-
-    // Check if role exists
-    return role !== null;
+    return await this.getRoleById(roleId) !== null;
   }
+
+  /**
+   * Get role by ID
+   * @param roleId The ID of the role
+   * @returns The role
+   */
+  async getRoleById(roleId: string): Promise<Role> {
+    // Get role from guild
+    return await this.guild.roles.fetch(roleId);
+  }
+
+  /**
+   * Get user with given role id
+   * @param roleId The ID of the role
+   * @returns The user with given role id
+   */
+  async getUsersWithRole(roleId: string): Promise<Collection<string, GuildMember>> {
+
+    const role = await this.getRoleById(roleId);
+
+    return (await this.guild.members.fetch()).filter(member => member.roles.cache.has(role.id));
+  }
+
 
   /**
    * Get channel by ID
    * @param channelId The ID of the channel
    */
   async getChannelById(channelId: string): Promise<Channel> {
-    return await this.client.channels.fetch(channelId) as TextChannel;
+    // Get channel but not from cache
+    return await this.client.channels.fetch(channelId);
   }
 
   /**
@@ -95,11 +155,8 @@ export class DiscordService {
    * @returns The channel
    */
   async getChannelByName(channelName: string): Promise<Channel> {
-    // Get main guild from env variable
-    const guild: Guild = this.client.guilds.cache.get(process.env.MAIN_GUILD_ID);
-
     // Get channel from guild
-    return await guild.channels.cache.find(channel => channel.name === channelName);
+    return await this.guild.channels.cache.find(channel => channel.name === channelName);
   }
 
   /**
@@ -112,11 +169,8 @@ export class DiscordService {
   }
 
   async getServerEmojiByName(emojiName: string): Promise<GuildEmoji> {
-    // Get main guild from env variable
-    const guild: Guild = this.client.guilds.cache.get(process.env.MAIN_GUILD_ID);
-
     // Get emoji from guild
-    const emoji = await guild.emojis.cache.find(emoji => emoji.name === emojiName);
+    const emoji = await this.guild.emojis.cache.find(emoji => emoji.name === emojiName);
 
     // Check if emoji exists
     if (emoji === null) {
@@ -146,11 +200,8 @@ export class DiscordService {
 
     const rankRoles = this.configService.get<string[]>('discord.rank-roles');
     
-    // Get main guild from env variable
-    const guild: Guild = this.client.guilds.cache.get(process.env.MAIN_GUILD_ID);
-
     // Get member from guild
-    const member: GuildMember = await guild.members.fetch(userId);
+    const member: GuildMember = await this.guild.members.fetch(userId);
 
     // Get roles of member
     const roles = member.roles.cache;
@@ -162,11 +213,8 @@ export class DiscordService {
   }
 
   public getUserVoiceChannel(userId: string): VoiceBasedChannel {
-    // Get main guild from env variable
-    const guild: Guild = this.client.guilds.cache.get(process.env.MAIN_GUILD_ID);
-
     // Get member from guild
-    const member: GuildMember = guild.members.cache.get(userId);
+    const member: GuildMember = this.guild.members.cache.get(userId);
 
     // Get voice channel of member
     const voiceChannel = member.voice.channel;

@@ -5,6 +5,7 @@ import { RoleEntity } from './entities/role.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { DiscordService } from 'src/discord/discord.service';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class RoleService {
@@ -13,6 +14,7 @@ export class RoleService {
     @InjectRepository(RoleEntity)
     private readonly roleRepository: Repository<RoleEntity>,
     private readonly discordService: DiscordService,
+    private readonly configService: ConfigService,
   ) {}
 
   async create(role: CreateRoleDto): Promise<RoleEntity> {
@@ -30,6 +32,25 @@ export class RoleService {
 
   async findAll() {
     return await this.roleRepository.find();
+  }
+
+  async getAllInsideRoles() {
+    const insideRoleNames = this.configService.get<string[]>('role-names.pla-inside.team.teams');
+
+    console.log(insideRoleNames);
+
+    // Add prefix to role names
+    insideRoleNames.forEach((roleName, index) => {
+        insideRoleNames[index] = this.configService.get<string>('role-names.pla-inside.team.prefix') + roleName;
+    });
+
+    console.log(insideRoleNames);
+
+    return await this.roleRepository.find({
+      where: {
+          name: In(insideRoleNames)
+        }
+    });
   }
 
   async findById(id: number): Promise<RoleEntity> {

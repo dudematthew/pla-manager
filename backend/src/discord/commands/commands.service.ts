@@ -3,6 +3,7 @@ import { Context, SlashCommand, SlashCommandContext } from 'necord';
 import { RoleService } from 'src/database/entities/role/role.service';
 import { EmbedBuilder } from 'discord.js';
 import { ConfigService } from '@nestjs/config';
+import { InsideService } from '../inside/inside.service';
 // import * as paginationEmbed from 'discord.js-pagination';
 
 @Injectable()
@@ -11,6 +12,7 @@ export class CommandsService {
     constructor(
         private readonly roleService: RoleService,
         private readonly configService: ConfigService,
+        private readonly insideService: InsideService,
     ) {}
     
     /**
@@ -92,5 +94,16 @@ export class CommandsService {
         // const embed = paginationEmbed(Interaction, pages, ['⏪', '⏩'], 30000);
         
         // return Interaction.reply({ embeds: [roleEmbed], ephemeral: true});
+    }
+
+    /**
+     * Get all members of PLA Inside
+     */
+    @SlashCommand({
+        name: 'pla-inside-wykaz',
+        description: 'Wykaz członków PLA Inside',
+    })
+    public async onGetInsideMembers(@Context() [Interaction]: SlashCommandContext) {
+        this.insideService.handleGetInsideMembers(Interaction);
     }
 }

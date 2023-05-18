@@ -10,6 +10,7 @@ import DiscordListeners from "./discord.listeners";
 import { LfgService } from "./lfg/lfg.service";
 import { ChannelModule } from "src/database/entities/channel/channel.module";
 import { DiscordStrategy } from "src/auth/discord.strategy";
+import { InsideModule } from './inside/inside.module';
 
 @Module({
     imports: [
@@ -27,7 +28,8 @@ import { DiscordStrategy } from "src/auth/discord.strategy";
         CommandsModule,
         RoleModule,
         LfgModule,
-        forwardRef(() => ChannelModule),
+        ChannelModule,
+        InsideModule,
     ],
     controllers: [],
     providers: [

@@ -1,5 +1,6 @@
 images:
   logo: 'https://i.imgur.com/u4DEkaz.png'
+  pla-inside-logo: 'https://i.imgur.com/VERHZ25.png'
 
 theme:
   color-primary: '#FF4343'
@@ -9,6 +10,15 @@ theme:
 channel-names:
   lfg: 'lfg'
   lfg-output: 'lfgoutput'
+
+role-names:
+  pla-inside: 
+    main: 'plainside'
+    reserve: 'plainsidereserve'
+    captain: 'plainsidecaptain'
+    team:
+      prefix: 'plainsideteam'
+      teams: ['o', 'c', 'y', 'p', 'b', 'g']
 
 lfg:
   post-cooldown: 120
