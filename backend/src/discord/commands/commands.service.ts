@@ -156,6 +156,8 @@ export class CommandsService {
             if (!newEmoji) {
                 Interaction.reply({ content: 'Nie udało się dodać emoji', ephemeral: true});
             }
+
+            Interaction.reply({ content: `Dodano emoji!`, ephemeral: true});
         } else {
             // Update emoji
             const updatedEmoji = await this.emojiService.update(dbEmoji.id, emojiData);

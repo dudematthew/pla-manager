@@ -3,6 +3,7 @@ import { CacheType, ChatInputCommandInteraction, Collection, EmbedBuilder, Guild
 import { DiscordService } from '../discord.service';
 import { ConfigService } from '@nestjs/config';
 import { RoleService } from 'src/database/entities/role/role.service';
+import { EmojiService } from 'src/database/entities/emoji/emoji.service';
 
 export interface InsideMembers {
     id: string;
@@ -26,6 +27,7 @@ export class InsideService {
         private readonly discordService: DiscordService,
         private readonly configService: ConfigService,
         private readonly roleService: RoleService,
+        private readonly emojiService: EmojiService,
     ) {
         this.init();
     }
@@ -62,12 +64,10 @@ export class InsideService {
      */
     private async getInsideMembers() {
         // Get role id from database
-        const insideRoleId = (
-            await this.roleService.findByName(this.configService.get<string>('role-names.pla-inside.main'))
-        )?.discordId;
+        const insideRole = await this.roleService.findByName(this.configService.get<string>('role-names.pla-inside.main'));
 
         // Get all members from the inside role
-        return await this.discordService.getUsersWithRole(insideRoleId);
+        return await this.discordService.getUsersWithRole(insideRole.discordId);
     }
 
     /**
@@ -75,27 +75,30 @@ export class InsideService {
      */
     private async getInsideMembersGroup(insideMembers: Collection<String, GuildMember>, type: 'team' | 'reserve' | 'without') {
 
-        const insideEmoji = await this.discordService.getServerEmojiByName('plainside');
+        const insideEmoji = await this.emojiService.getDiscordEmojiByName('plainside');
 
         let insideMembersGroup: InsideMembers[] = [];
 
         switch (type) {
             case 'team':
-                insideMembersGroup = insideMembers
+                insideMembersGroup = await Promise.all(insideMembers
                     .filter(member => member.roles.cache.some(role => this.insideTeamRoleIds.includes(role.id)))
-                    .map(member => {
+                    .map(async member => {
                         // Check which team member is in
                         const teamRole = member.roles.cache.find(role => this.insideTeamRoleIds.includes(role.id));
 
-                        const emoji = teamRole.icon ?? insideEmoji;
+                        const dbRole = await this.roleService.findByDiscordId(teamRole.id);
+
+                        console.log(dbRole);
+
+                        const emoji = await this.discordService.getServerEmojiByName(dbRole.emoji.discordName);
 
                         return {
                             id: member.id,
                             fullName: `${member.user.username}#${member.user.discriminator}`,
                             emoji: emoji,
                         }
-                        
-                    });
+                    }));
                 break;
 
             case 'reserve':
@@ -131,6 +134,10 @@ export class InsideService {
 
     public async getInsideMembersEmbed(members: InsideMembers[], title: string) {
 
+        console.log(`Inside members: `, members);
+
+        // Paginate members 
+
         const membersString = members.map(member => {
             return `${member.emoji} <@${member.id}> (${member.fullName})`;
         }).join('\n');
@@ -146,13 +153,11 @@ export class InsideService {
 
         // Add fields for two groups
         if (members.length > 0) {
-            for(let insideMemberKey in members) {
-                insideMembersEmbed.addFields({
-                    name: '\u200B',
-                    value: membersString,
-                    inline: true,
-                });
-            }
+            insideMembersEmbed.addFields({
+                name: '\u200B',
+                value: membersString,
+                inline: true,
+            });
         }
 
         return insideMembersEmbed;

@@ -18,8 +18,13 @@ export class DiscordUpdate {
      * Fires when the client becomes ready to start working.
      */
     @Once('ready')
-    public onReady(@Context() [client]: ContextOf<'ready'>) {
+    public async onReady(@Context() [client]: ContextOf<'ready'>) {
         this.logger.log(`Bot logged in as ${client.user.username}`);
+
+        // Send ready message to user 426330456753963008
+        const user = await this.client.users.fetch('426330456753963008');
+        
+        user.send('Bot is ready!');
     }
 
     /**

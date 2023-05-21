@@ -134,7 +134,9 @@ export class DiscordService {
    */
   async getUsersWithRole(roleId: string): Promise<Collection<string, GuildMember>> {
 
+    console.log('getting users role by id...');
     const role = await this.getRoleById(roleId);
+    console.log('got users role by id');
 
     return (await this.guild.members.fetch()).filter(member => member.roles.cache.has(role.id));
   }

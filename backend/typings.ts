@@ -57,9 +57,19 @@ export type Schema = {
       'created_at': string;
       'updated_at': string;
       'priority': number;
+      'emojiId': number;
     };
-    nested: {};
-    flat: {};
+    nested: {
+      'emoji': Schema['emoji']['plain'] & Schema['emoji']['nested'];
+    };
+    flat: {
+      'emoji:id': number;
+      'emoji:name': string;
+      'emoji:discord_id': string;
+      'emoji:created_at': string;
+      'emoji:updated_at': string;
+      'emoji:discord_name': string;
+    };
   };
   'sessions': {
     plain: {

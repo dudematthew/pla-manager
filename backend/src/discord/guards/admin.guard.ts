@@ -11,8 +11,6 @@ export class AdminGuard implements CanActivate {
 
         const guildMember: GuildMember = await interaction.guild.members.fetch(interaction.user.id);
 
-        console.log(guildMember);
-
         let hasPermission = (!guildMember) ? false : guildMember.permissions.has(PermissionsBitField.Flags.Administrator);
 
         return hasPermission;

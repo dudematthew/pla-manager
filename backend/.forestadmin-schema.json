@@ -514,6 +514,23 @@
         {
           "defaultValue": null,
           "enums": null,
+          "field": "roles",
+          "integration": null,
+          "inverseOf": "emoji",
+          "isFilterable": false,
+          "isPrimaryKey": false,
+          "isReadOnly": false,
+          "isRequired": false,
+          "isSortable": true,
+          "isVirtual": false,
+          "reference": "role.id",
+          "relationship": "HasMany",
+          "type": ["Number"],
+          "validations": []
+        },
+        {
+          "defaultValue": null,
+          "enums": null,
           "field": "updated_at",
           "integration": null,
           "inverseOf": null,
@@ -572,6 +589,23 @@
           "reference": null,
           "type": "String",
           "validations": [{"type": "is present", "message": "Field is required"}]
+        },
+        {
+          "defaultValue": null,
+          "enums": null,
+          "field": "emoji",
+          "integration": null,
+          "inverseOf": "roles",
+          "isFilterable": true,
+          "isPrimaryKey": false,
+          "isReadOnly": false,
+          "isRequired": false,
+          "isSortable": true,
+          "isVirtual": false,
+          "reference": "emoji.id",
+          "relationship": "BelongsTo",
+          "type": "Number",
+          "validations": []
         },
         {
           "defaultValue": null,

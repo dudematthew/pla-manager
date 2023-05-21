@@ -34,6 +34,7 @@ import { EmojiEntity } from "./entities/emoji/entities/emoji.entity";
                     EmojiEntity
                 ],
                 synchronize: true,
+                autoLoadEntities: true,
             }),
             inject: [ConfigService]
         }),
