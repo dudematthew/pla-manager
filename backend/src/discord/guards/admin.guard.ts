@@ -15,14 +15,6 @@ export class AdminGuard implements CanActivate {
 
         let hasPermission = (!guildMember) ? false : guildMember.permissions.has(PermissionsBitField.Flags.Administrator);
 
-        if (!hasPermission) {
-            interaction.reply({
-                content: 'Nie masz uprawnień do wykonania tej komendy!',
-                ephemeral: true,
-            });
-        }
-
         return hasPermission;
-
     }
 }

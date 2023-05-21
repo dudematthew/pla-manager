@@ -1,4 +1,4 @@
-import { Injectable, UseGuards } from '@nestjs/common';
+import { Injectable, UseFilters, UseGuards } from '@nestjs/common';
 import { Context, SlashCommand, SlashCommandContext } from 'necord';
 import { RoleService } from 'src/database/entities/role/role.service';
 import { EmbedBuilder } from 'discord.js';
@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { InsideService } from '../inside/inside.service';
 import { AdminGuard } from '../guards/admin.guard';
 import { EmojiService } from 'src/database/entities/emoji/emoji.service';
+import { ForbiddenExceptionFilter } from '../filters/forbidden-exception.filter';
 // import * as paginationEmbed from 'discord.js-pagination';
 
 @Injectable()
@@ -114,6 +115,7 @@ export class CommandsService {
     }
 
     @UseGuards(AdminGuard)
+    @UseFilters(ForbiddenExceptionFilter)
     @SlashCommand({
         name: 'admin-emoji',
         description: 'Ustaw emoji w bazie danych',
@@ -121,5 +123,6 @@ export class CommandsService {
     })
     public async onAdminEmoji(@Context() [Interaction]: SlashCommandContext) {
         Interaction.reply({ content: 'Niezaimplementowano', ephemeral: true});
+
     }
 }
