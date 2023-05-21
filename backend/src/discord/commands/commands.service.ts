@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UseGuards } from '@nestjs/common';
 import { Context, SlashCommand, SlashCommandContext } from 'necord';
 import { RoleService } from 'src/database/entities/role/role.service';
 import { EmbedBuilder } from 'discord.js';
 import { ConfigService } from '@nestjs/config';
 import { InsideService } from '../inside/inside.service';
+import { AdminGuard } from '../guards/admin.guard';
 // import * as paginationEmbed from 'discord.js-pagination';
 
 @Injectable()
@@ -105,5 +106,13 @@ export class CommandsService {
     })
     public async onGetInsideMembers(@Context() [Interaction]: SlashCommandContext) {
         this.insideService.handleGetInsideMembers(Interaction);
+    }
+
+    @UseGuards(AdminGuard)
+    @SlashCommand({
+        name: 'admin-emoji',
+        description: 'Ustaw emoji w bazie danych',
+    })
+    public async onAdminEmoji(@Context() [Interaction]: SlashCommandContext) {
     }
 }
