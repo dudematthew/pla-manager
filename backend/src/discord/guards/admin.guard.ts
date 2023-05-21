@@ -15,6 +15,6 @@ export class AdminGuard implements CanActivate {
 
         let hasPermission = (!guildMember) ? false : guildMember.permissions.has(PermissionsBitField.Flags.Administrator);
 
-        return !hasPermission;
+        return hasPermission;
     }
 }
