@@ -10,6 +10,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     forwardRef(() => DiscordModule),
     TypeOrmModule.forFeature([EmojiEntity]),
   ],
-  providers: [EmojiService]
+  providers: [EmojiService],
+  exports: [EmojiService],
 })
 export class EmojiModule {}

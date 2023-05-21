@@ -5,6 +5,7 @@ import { EmbedBuilder } from 'discord.js';
 import { ConfigService } from '@nestjs/config';
 import { InsideService } from '../inside/inside.service';
 import { AdminGuard } from '../guards/admin.guard';
+import { EmojiService } from 'src/database/entities/emoji/emoji.service';
 // import * as paginationEmbed from 'discord.js-pagination';
 
 @Injectable()
@@ -14,6 +15,7 @@ export class CommandsService {
         private readonly roleService: RoleService,
         private readonly configService: ConfigService,
         private readonly insideService: InsideService,
+        private readonly emojiService: EmojiService,
     ) {}
     
     /**
