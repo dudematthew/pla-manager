@@ -37,14 +37,10 @@ export class RoleService {
   async getAllInsideRoles() {
     const insideRoleNames = this.configService.get<string[]>('role-names.pla-inside.team.teams');
 
-    console.log(insideRoleNames);
-
     // Add prefix to role names
     insideRoleNames.forEach((roleName, index) => {
         insideRoleNames[index] = this.configService.get<string>('role-names.pla-inside.team.prefix') + roleName;
     });
-
-    console.log(insideRoleNames);
 
     return await this.roleRepository.find({
       where: {

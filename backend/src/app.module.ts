@@ -19,6 +19,7 @@ import { ConfigModule } from './config/config.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ApexAccountModule } from './database/entities/apex-account/apex-account.module';
 import { RoleModule } from './database/entities/role/role.module';
+import { EmojiModule } from './database/entities/emoji/emoji.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { RoleModule } from './database/entities/role/role.module';
     ApexAccountModule,
     UserModule,
     RoleModule,
+    EmojiModule,
   ],
   controllers: [
     AppController,
