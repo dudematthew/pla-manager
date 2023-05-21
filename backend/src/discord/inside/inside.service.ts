@@ -1,9 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { CacheType, ChatInputCommandInteraction, Collection, EmbedBuilder, GuildMember } from 'discord.js';
+import { CacheType, ChatInputCommandInteraction, Collection, EmbedBuilder, GuildEmoji, GuildMember } from 'discord.js';
 import { DiscordService } from '../discord.service';
 import { ConfigService } from '@nestjs/config';
 import { RoleService } from 'src/database/entities/role/role.service';
-// import { sendPaginatedEmbeds } from 'discord.js-embed-pagination';
+
+export interface InsideMembers {
+    id: string;
+    fullName: string;
+    emoji: string | GuildEmoji;
+}
 
 @Injectable()
 export class InsideService {
@@ -34,10 +39,20 @@ export class InsideService {
     public async handleGetInsideMembers(interaction: ChatInputCommandInteraction<CacheType>) {
 
         const insideMembers = await this.getInsideMembers();
-        const insideMembersEmbed = await this.getInsideMembersEmbed(insideMembers);
+        const insideTeamMembersGroup = await this.getInsideMembersGroup(insideMembers, 'team');
+        const insideReserveMembersGroup = await this.getInsideMembersGroup(insideMembers, 'reserve');
+        const insideWithoutMembersGroup = await this.getInsideMembersGroup(insideMembers, 'without');
+        
+        const insideTeamMembersEmbed = await this.getInsideMembersEmbed(insideTeamMembersGroup, 'Lista członków PLA Inside należących do drużyny');
+        const insideReserveMembersEmbed = await this.getInsideMembersEmbed(insideReserveMembersGroup, 'Lista członków PLA Inside należących do rezerwy');
+        const insideWithoutMembersEmbed = await this.getInsideMembersEmbed(insideWithoutMembersGroup, 'Lista członków PLA Inside nie należących do żadnej drużyny');
 
         interaction.reply({
-            embeds: [insideMembersEmbed]
+            embeds: [
+                insideTeamMembersEmbed,
+                insideReserveMembersEmbed,
+                insideWithoutMembersEmbed,
+            ]
         })
     }
 
@@ -58,87 +73,86 @@ export class InsideService {
     /**
      * Create return message
      */
-    private async getInsideMembersEmbed(insideMembers: Collection<String, GuildMember>) {
+    private async getInsideMembersGroup(insideMembers: Collection<String, GuildMember>, type: 'team' | 'reserve' | 'without') {
+
+        const insideEmoji = await this.discordService.getServerEmojiByName('plainside');
+
+        let insideMembersGroup: InsideMembers[] = [];
+
+        switch (type) {
+            case 'team':
+                insideMembersGroup = insideMembers
+                    .filter(member => member.roles.cache.some(role => this.insideTeamRoleIds.includes(role.id)))
+                    .map(member => {
+                        // Check which team member is in
+                        const teamRole = member.roles.cache.find(role => this.insideTeamRoleIds.includes(role.id));
+
+                        const emoji = teamRole.icon ?? insideEmoji;
+
+                        return {
+                            id: member.id,
+                            fullName: `${member.user.username}#${member.user.discriminator}`,
+                            emoji: emoji,
+                        }
+                        
+                    });
+                break;
+
+            case 'reserve':
+                insideMembersGroup = insideMembers
+                    .filter(member => member.roles.cache.some(role => role.id === this.insideReserveRoleId))
+                    .map(member => {
+                        return {
+                            id: member.id,
+                            fullName: `${member.user.username}#${member.user.discriminator}`,
+                            emoji: insideEmoji,
+                        }
+                    });
+                break;
+            
+            case 'without':
+                insideMembersGroup = insideMembers
+                    .filter(member => {
+                        return !member.roles.cache.some(role => this.insideTeamRoleIds.includes(role.id))
+                            && !member.roles.cache.some(role => role.id === this.insideReserveRoleId);
+                    })
+                    .map(member => {
+                        return {
+                            id: member.id,
+                            fullName: `${member.user.username}#${member.user.discriminator}`,
+                            emoji: insideEmoji,
+                        }
+                    });
+                break;
+        }
+
+        return insideMembersGroup;
+    }
+
+    public async getInsideMembersEmbed(members: InsideMembers[], title: string) {
+
+        const membersString = members.map(member => {
+            return `${member.emoji} <@${member.id}> (${member.fullName})`;
+        }).join('\n');
+
         const insideMembersEmbed = new EmbedBuilder()
-            .setTitle('Lista członków PLA Inside')
+            .setTitle(title)
             .setColor(this.configService.get('theme.color-primary'))
             .setTimestamp()
             .setAuthor({
                 name: 'Polskie Legendy Apex',
                 iconURL: this.configService.get('images.logo')
-            });
-
-        const insideEmoji = await this.discordService.getServerEmojiByName('plainside');
-
-        const membersWithoutTeam = insideMembers
-            .filter(member => {
-                return !member.roles.cache.some(role => this.insideTeamRoleIds.includes(role.id))
-                    && !member.roles.cache.some(role => role.id === this.insideReserveRoleId);
             })
-            .map(member => {
-                return {
-                    id: member.id,
-                    fullName: `${member.user.username}#${member.user.discriminator}`,
-                    emoji: insideEmoji,
-                }
-            });
-
-        const membersInReserve = insideMembers
-            .filter(member => member.roles.cache.some(role => role.id === this.insideReserveRoleId))
-            .map(member => {
-                return {
-                    id: member.id,
-                    fullName: `${member.user.username}#${member.user.discriminator}`,
-                    emoji: insideEmoji,
-                }
-            });
-
-        const membersWithTeam = insideMembers
-            .filter(member => member.roles.cache.some(role => this.insideTeamRoleIds.includes(role.id)))
-            .map(member => {
-                // Check which team member is in
-                const teamRole = member.roles.cache.find(role => this.insideTeamRoleIds.includes(role.id));
-
-                const emoji = teamRole.icon ?? insideEmoji;
-
-                return {
-                    id: member.id,
-                    fullName: `${member.user.username}#${member.user.discriminator}`,
-                    emoji: emoji,
-                }
-            });
-
-        const membersWithoutTeamString = membersWithoutTeam.map(member => {
-            return `${member.emoji} <@${member.id}> (${member.fullName})`;
-        }).join('\n');
-        const membersWithTeamString = membersWithTeam.map(member => {
-            return `${member.emoji} <@${member.id}> (${member.fullName})`;
-        }).join('\n');
-        const membersInReserveString = membersInReserve.map(member => {
-            return `${member.emoji} <@${member.id}> (${member.fullName})`;
-        }).join('\n');
 
         // Add fields for two groups
-        if (membersWithTeam.length > 0) {
-            insideMembersEmbed.addFields({
-                name: 'Członkowie z drużyną',
-                value: membersWithTeamString,
-                inline: false
-            });
-        }
-        if (membersInReserve.length > 0) {
-            insideMembersEmbed.addFields({
-                name: 'Członkowie rezerwy',
-                value: membersInReserveString,
-                inline: false
-            });
-        }
-        if (membersWithoutTeam.length > 0) {
-            insideMembersEmbed.addFields({
-                name: 'Pozostali członkowie',
-                value: membersWithoutTeamString,
-                inline: false
-            });
+        if (members.length > 0) {
+            for(let insideMemberKey in members) {
+                insideMembersEmbed.addFields({
+                    name: '\u200B',
+                    value: membersString,
+                    inline: true,
+                });
+            }
         }
 
         return insideMembersEmbed;
