@@ -24,6 +24,7 @@ export class EmojiService {
       const newEmoji = this.emojiRepository.create({
         discordId: emoji.discordId,
         name: emoji.name,
+        discordName: emoji.discordName,
     });
 
     return await this.emojiRepository.save(newEmoji);
@@ -35,6 +36,10 @@ export class EmojiService {
 
   findById(id: number) {
     return this.emojiRepository.findOneBy({ id });
+  }
+
+  findByName(name: string) {
+    return this.emojiRepository.findOneBy({ name });
   }
 
   findByDiscordId(discordId: string) {

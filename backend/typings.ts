@@ -44,6 +44,7 @@ export type Schema = {
       'discord_id': string;
       'created_at': string;
       'updated_at': string;
+      'discord_name': string;
     };
     nested: {};
     flat: {};

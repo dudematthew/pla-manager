@@ -1,5 +1,5 @@
 import { Injectable, UseFilters, UseGuards } from '@nestjs/common';
-import { Context, SlashCommand, SlashCommandContext } from 'necord';
+import { Context, Options, SlashCommand, SlashCommandContext } from 'necord';
 import { RoleService } from 'src/database/entities/role/role.service';
 import { EmbedBuilder } from 'discord.js';
 import { ConfigService } from '@nestjs/config';
@@ -7,6 +7,7 @@ import { InsideService } from '../inside/inside.service';
 import { AdminGuard } from '../guards/admin.guard';
 import { EmojiService } from 'src/database/entities/emoji/emoji.service';
 import { ForbiddenExceptionFilter } from '../filters/forbidden-exception.filter';
+import { AdminEmojiDto } from './dtos/admin-emoji.dto';
 // import * as paginationEmbed from 'discord.js-pagination';
 
 @Injectable()
@@ -121,8 +122,49 @@ export class CommandsService {
         description: 'Ustaw emoji w bazie danych',
         guilds: [process.env.MAIN_GUILD_ID]
     })
-    public async onAdminEmoji(@Context() [Interaction]: SlashCommandContext) {
-        Interaction.reply({ content: 'Niezaimplementowano', ephemeral: true});
+    public async onAdminEmoji(@Context() [Interaction]: SlashCommandContext, @Options() options: AdminEmojiDto) {
+        console.log(`[CommandsService] onAdminEmoji: ${options.emoji} - ${options.emojiName}`);
 
+        const emoteRegex = /<:.+?:\d+>/g;
+        const animatedEmoteRegex = /<a:.+:(\d+)>/gm;
+
+        let emojis = [];
+
+        if (emoteRegex.test(options.emoji)) {
+            emojis = options.emoji.match(emoteRegex);
+        } else if (animatedEmoteRegex.test(options.emoji)) {
+            Interaction.reply({ content: 'Animowane emoji nie są jeszcze wspierane!', ephemeral: true});
+        return false;
+        } else {
+            Interaction.reply({ content: 'Niepoprawne emoji!', ephemeral: true});
+        }
+
+        const dbEmoji = await this.emojiService.findByName(options.emojiName);
+
+        const emojiData = {
+            discordId: emojis[0].match(/\d+/g)[0],
+            discordName: emojis[0].split(":")[1],
+            name: options.emojiName,
+        }
+
+        console.log('Prepared emoji data: ', emojiData);
+
+        if (!dbEmoji) {
+            // Create emoji
+            const newEmoji = await this.emojiService.create(emojiData);
+
+            if (!newEmoji) {
+                Interaction.reply({ content: 'Nie udało się dodać emoji', ephemeral: true});
+            }
+        } else {
+            // Update emoji
+            const updatedEmoji = await this.emojiService.update(dbEmoji.id, emojiData);
+
+            if (!updatedEmoji) {
+                Interaction.reply({ content: 'Nie udało się zaktualizować emoji', ephemeral: true});
+            }
+
+            Interaction.reply({ content: `Emoji zaktualizowane!`, ephemeral: true});
+        }
     }
 }

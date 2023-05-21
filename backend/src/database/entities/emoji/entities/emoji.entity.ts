@@ -15,6 +15,11 @@ export class EmojiEntity extends BaseEntity {
     })
     discordId: string;
 
+    @Column({
+        name: "discord_name",
+    })
+    discordName: string;
+
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 
