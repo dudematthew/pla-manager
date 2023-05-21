@@ -25,6 +25,7 @@ export class CommandsService {
     @SlashCommand({
         name: 'ping',
         description: 'Ping!',
+        guilds: [process.env.MAIN_GUILD_ID]
     })
     public async onPing(@Context() [Interaction]: SlashCommandContext) {
         return Interaction.reply({ content: 'Pong!', ephemeral: true});
@@ -37,6 +38,7 @@ export class CommandsService {
     @SlashCommand({
         name: 'getroles',
         description: 'Lista wszystkich ról',
+        guilds: [process.env.MAIN_GUILD_ID]
     })
     public async onGetRoles(@Context() [Interaction]: SlashCommandContext) {
         const roles = await this.roleService.findAll();
@@ -105,6 +107,7 @@ export class CommandsService {
     @SlashCommand({
         name: 'pla-inside-wykaz',
         description: 'Wykaz członków PLA Inside',
+        guilds: [process.env.MAIN_GUILD_ID]
     })
     public async onGetInsideMembers(@Context() [Interaction]: SlashCommandContext) {
         this.insideService.handleGetInsideMembers(Interaction);
@@ -114,7 +117,9 @@ export class CommandsService {
     @SlashCommand({
         name: 'admin-emoji',
         description: 'Ustaw emoji w bazie danych',
+        guilds: [process.env.MAIN_GUILD_ID]
     })
     public async onAdminEmoji(@Context() [Interaction]: SlashCommandContext) {
+        Interaction.reply({ content: 'Niezaimplementowano', ephemeral: true});
     }
 }
