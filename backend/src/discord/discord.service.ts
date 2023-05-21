@@ -180,6 +180,10 @@ export class DiscordService {
     return emoji;
   }
 
+  async serverEmojiExists(emojiName: string): Promise<boolean> {
+    return await this.getServerEmojiByName(emojiName) !== null;
+  }
+
   /**
    * Get the emoji code
    * @param emoji The emoji
