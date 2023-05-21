@@ -37,6 +37,17 @@ export type Schema = {
     nested: {};
     flat: {};
   };
+  'emoji': {
+    plain: {
+      'id': number;
+      'name': string;
+      'discord_id': string;
+      'created_at': string;
+      'updated_at': string;
+    };
+    nested: {};
+    flat: {};
+  };
   'role': {
     plain: {
       'id': number;

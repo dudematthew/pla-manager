@@ -3,7 +3,7 @@ import { CacheType, ChatInputCommandInteraction, Collection, EmbedBuilder, Guild
 import { DiscordService } from '../discord.service';
 import { ConfigService } from '@nestjs/config';
 import { RoleService } from 'src/database/entities/role/role.service';
-import { sendPaginatedEmbeds } from 'discord.js-embed-pagination';
+// import { sendPaginatedEmbeds } from 'discord.js-embed-pagination';
 
 @Injectable()
 export class InsideService {
