@@ -183,7 +183,7 @@ export class InsideService {
                 content: insideWithoutMembersEmbed[0],
                 rows: (() => { 
                     const rows = [
-                        menuPageButton('insideTeamMembers'),
+                        menuPageButton('insideWithoutMembers'),
                     ];
 
                     // Add page buttons if there is more than one page
@@ -200,14 +200,6 @@ export class InsideService {
         ]);
 
         menu.start();
-
-        // interaction.reply({
-        //     embeds: [
-        //         insideTeamMembersEmbed,
-        //         insideReserveMembersEmbed,
-        //         insideWithoutMembersEmbed,
-        //     ]
-        // })
     }
 
     /**
