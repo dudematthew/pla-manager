@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { CacheType, ChatInputCommandInteraction, Client, Collection, EmbedBuilder, GuildEmoji, GuildMember } from 'discord.js';
+import { ButtonInteraction, CacheType, ChatInputCommandInteraction, Client, Collection, Embed, EmbedBuilder, GuildEmoji, GuildMember } from 'discord.js';
 import { DiscordService } from '../discord.service';
 import { ConfigService } from '@nestjs/config';
 import { RoleService } from 'src/database/entities/role/role.service';
@@ -22,9 +22,13 @@ export class InsideService {
      */
     private readonly logger = new Logger(InsideService.name);
 
+    // Role ids
     private insideRoleId: string;
     private insideReserveRoleId: string;
     private insideTeamRoleIds: string[];
+
+    // User pages amount
+    private readonly usersPerPage = 1;
 
     constructor(
         private readonly discordService: DiscordService,
@@ -52,144 +56,146 @@ export class InsideService {
         const insideReserveMembersEmbed = await this.getInsideMembersEmbed(insideReserveMembersGroup, 'Lista członków PLA Inside należących do rezerwy');
         const insideWithoutMembersEmbed = await this.getInsideMembersEmbed(insideWithoutMembersGroup, 'Lista członków PLA Inside nie należących do żadnej drużyny');
 
+        const pagesNumbers = {
+            insideTeamMembersPage: 0,
+            insideReserveMembersPage: 0,
+            insideWithoutMembersPage: 0,
+        };
+
+        const menuPageButton = (currentMenu) => {
+            return new Row([
+                new MenuOption(
+                    {
+                        label: "Członkowie w drużynach",
+                        description: "Członkowie którzy należą do jednej z drużyn PLA Inside",
+                        value: "teams",
+                        default: currentMenu == 'insideTeamMembers',
+                        emoji: "👥",
+                    },
+                    'insideTeamMembers'
+                ),
+                new MenuOption(
+                    {
+                        label: "Członkowie w rezerwie",
+                        description: "Członkowie którzy należą do rezerwy PLA Inside",
+                        value: "reserves",
+                        default: currentMenu == 'insideReserveMembers',
+                        emoji: "👤",
+                    },
+                    'insideReserveMembers'
+                ),
+                new MenuOption(
+                    {
+                        label: "Członkowie bez drużyny i poza rezerwą",
+                        description: "Członkowie którzy nie należą do żadnej drużyny i nie są w rezerwie",
+                        value: "others",
+                        default: currentMenu == 'insideWithoutMembers',
+                        emoji: "👽",
+                    },
+                    'insideWithoutMembers'
+                ),
+            ], RowTypes.SelectMenu)
+        };
+
+        const changePageHandler = (i: ButtonInteraction<CacheType>, pagesAmountKey: string, pages: EmbedBuilder[], buttonType: 'next' | 'previous') => {
+            console.log(`Changing page to ${buttonType}: `, pagesNumbers[pagesAmountKey], pages.length, buttonType);
+
+            i.deferUpdate();
+            // Change page number but check if it's not less than 0 and not more than pages amount
+            pagesNumbers[pagesAmountKey] = buttonType == 'previous' ? pagesNumbers[pagesAmountKey] - 1 < 0 ? pages.length - 1 : pagesNumbers[pagesAmountKey] - 1 : pagesNumbers[pagesAmountKey] + 1 > pages.length - 1 ? 0 : pagesNumbers[pagesAmountKey] + 1;
+
+            console.log(pages);
+
+            // replace embed with new one
+            i.message.edit({
+                embeds: [
+                    pages[pagesNumbers[pagesAmountKey]]
+                ]
+            })
+
+            console.log(pages);
+        }
+
+        const createPageButtons = (name: string, teamMembersEmbeds: EmbedBuilder[]) => {
+            return [
+                new ButtonOption(
+                    {
+                        type: ComponentType.Button,
+                        customId: `${name}PreviousPage`,
+                        style: ButtonStyle.Primary,
+                        label: "◀"
+                    },
+                    (i) => changePageHandler(i, `${name}Page`, teamMembersEmbeds, 'previous')
+                ),
+                new ButtonOption(
+                    {
+                        type: ComponentType.Button,
+                        customId: `${name}NextPage`,
+                        style: ButtonStyle.Primary,
+                        label: "▶"
+                    },
+                    (i) => changePageHandler(i, `${name}Page`, teamMembersEmbeds, 'next')
+                )
+            ];
+        }
+
         const menu = new Menu(interaction.channel, interaction.user.id, [
             {
                 name: 'insideTeamMembers',
-                content: insideTeamMembersEmbed,
-                rows: [
-                    new Row([
-                        new ButtonOption(
-                            {
-                                type: ComponentType.Button,
-                                customId: "insideTeamMembersPreviousPage",
-                                style: ButtonStyle.Primary,
-                                label: "◀"
-                            },
-                            (i) => {
-                                i.deferUpdate();
-                                console.log("Clicked button1 " + i.customId)
+                content: insideTeamMembersEmbed[0],
+                rows: (() => { 
+                    const rows = [
+                        menuPageButton('insideTeamMembers'),
+                    ];
 
-                                // replace embed with new one
-                                i.message.edit({
-                                    embeds: [
-                                        new EmbedBuilder()
-                                            .setTitle("New title")
-                                            .setDescription("New description")
-                                            .setColor(this.configService.get('theme.color-primary'))
-                                            .setTimestamp()
-                                            .setAuthor({
-                                                name: 'Polskie Legendy Apex',
-                                                iconURL: this.configService.get('images.logo')
-                                            })
-                                    ]
-                                })
-                            }
-                        ),
-                        new ButtonOption(
-                            {
-                                type: ComponentType.Button,
-                                customId: "insideTeamMembersNextPage",
-                                style: ButtonStyle.Primary,
-                                label: "▶"
-                            },
-                            (i) => {
-                                i.deferUpdate();
-                                console.log("Clicked button1 " + i.customId)
-                                
-                            }
-                        )
-                    ], RowTypes.ButtonMenu),
-                    new Row([
-                        new MenuOption(
-                            {
-                                label: "Członkowie w drużynach",
-                                description: "Członkowie którzy należą do jednej z drużyn PLA Inside",
-                                value: "teams",
-                                default: true,
-                                emoji: "👥",
-                            },
-                            'insideTeamMembers'
-                        ),
-                        new MenuOption(
-                            {
-                                label: "Członkowie w rezerwie",
-                                description: "Członkowie którzy należą do rezerwy PLA Inside",
-                                value: "reserves",
-                                emoji: "👤",
-                            },
-                            'insideReserveMembers'
-                        ),
-                        new MenuOption(
-                            {
-                                label: "Członkowie bez drużyny i poza rezerwą",
-                                description: "Członkowie którzy nie należą do żadnej drużyny i nie są w rezerwie",
-                                value: "others",
-                                emoji: "👽",
-                            },
-                            'insideWithoutMembers'
-                        ),
-                    ], RowTypes.SelectMenu),
-                    // new Row([
-                    //     new MenuOption(
-                    //         {
-                    //             label: "label",
-                    //             description: "description",
-                    //             value: "val"
-                    //         },
-                    //         "page2"
-                    //     )
-                    // ], RowTypes.SelectMenu)
-                ]
+                    // Add page buttons if there is more than one page
+                    if (insideTeamMembersEmbed.length > 1)
+                        rows.push(
+                            new Row(
+                                createPageButtons('insideTeamMembers', insideTeamMembersEmbed), 
+                                RowTypes.ButtonMenu
+                            )
+                        );
+                    return rows;
+                })()
             },
             {
                 name: "insideReserveMembers",
-                content: insideReserveMembersEmbed,
-                rows: [
-                    new Row([
-                        new MenuOption(
-                            {
-                                label: "label1",
-                                value: "value1",
-                            },
-                            (i) => {
-                                i.deferUpdate();
-                                console.log(i.values[0]);
-                            }
-                        ),
-                        new MenuOption(
-                            {
-                                label: "go to page1",
-                                value: "value2"
-                            },
-                            "page1"
-                        )
-                    ], RowTypes.SelectMenu)
-                ]
+                content: insideReserveMembersEmbed[0],
+                rows: (() => { 
+                    const rows = [
+                        menuPageButton('insideReserveMembers'),
+                    ];
+
+                    // Add page buttons if there is more than one page
+                    if (insideReserveMembersEmbed.length > 1)
+                        rows.push(
+                            new Row(
+                                createPageButtons('insideReserveMembers', insideReserveMembersEmbed), 
+                                RowTypes.ButtonMenu
+                            )
+                        );
+                    return rows;
+                })()
             },
             {
                 name: "insideWithoutMembers",
-                content: insideReserveMembersEmbed,
-                rows: [
-                    new Row([
-                        new MenuOption(
-                            {
-                                label: "label1",
-                                value: "value1",
-                            },
-                            (i) => {
-                                i.deferUpdate();
-                                console.log(i.values[0]);
-                            }
-                        ),
-                        new MenuOption(
-                            {
-                                label: "go to page1",
-                                value: "value2"
-                            },
-                            "page1"
-                        )
-                    ], RowTypes.SelectMenu)
-                ]
+                content: insideWithoutMembersEmbed[0],
+                rows: (() => { 
+                    const rows = [
+                        menuPageButton('insideTeamMembers'),
+                    ];
+
+                    // Add page buttons if there is more than one page
+                    if (insideWithoutMembersEmbed.length > 1)
+                        rows.push(
+                            new Row(
+                                createPageButtons('insideTeamMembers', insideWithoutMembersEmbed), 
+                                RowTypes.ButtonMenu
+                            )
+                        );
+                    return rows;
+                })()
             }
         ]);
 
@@ -275,38 +281,63 @@ export class InsideService {
                 break;
         }
 
-        return insideMembersGroup;
+        // Paginate into an array of 10 members
+        const insideMembersGroupPaginated = insideMembersGroup.reduce((resultArray, item, index) => {
+            const chunkIndex = Math.floor(index / this.usersPerPage)
+
+            if (!resultArray[chunkIndex]) {
+                resultArray[chunkIndex] = []
+            }
+
+            resultArray[chunkIndex].push(item)
+
+            return resultArray
+        }, []);
+
+        return insideMembersGroupPaginated;
     }
 
-    public async getInsideMembersEmbed(members: InsideMembers[], title: string) {
+    public async getInsideMembersEmbed(membersPages: InsideMembers[][], title: string): Promise<EmbedBuilder[]> {
 
-        console.log(`Inside members: `, members);
+        const insideMembersEmbeds: EmbedBuilder[] = [];
 
-        // Paginate members 
+        for (let i = 0; i < membersPages.length; i++) {
 
-        const membersString = members.map(member => {
-            return `${member.emoji} <@${member.id}> (${member.fullName})`;
-        }).join('\n');
+            const members = membersPages[i];
 
-        const insideMembersEmbed = new EmbedBuilder()
-            .setTitle(title)
-            .setColor(this.configService.get('theme.color-primary'))
-            .setTimestamp()
-            .setAuthor({
-                name: 'Polskie Legendy Apex',
-                iconURL: this.configService.get('images.logo')
-            })
+            // Get page number
+            const pageNumber = i + 1;
 
-        // Add fields for two groups
-        if (members.length > 0) {
-            insideMembersEmbed.addFields({
-                name: '\u200B',
-                value: membersString,
-                inline: true,
-            });
+            const membersString = members.map(member => {
+                return `${member.emoji} <@${member.id}> (${member.fullName})`;
+            }).join('\n');
+
+            const insideMembersEmbed = new EmbedBuilder()
+                .setTitle(title)
+                .setColor(this.configService.get('theme.color-primary'))
+                .setTimestamp()
+                .setAuthor({
+                    name: 'Polskie Legendy Apex',
+                    iconURL: this.configService.get('images.logo-transparent')
+                })
+                .setDescription(membersString)
+                .setFooter({
+                    text: `Strona ${pageNumber}/${membersPages.length}`,
+                });
+
+            // Add fields for two groups
+            // if (members.length > 0) {
+            //     insideMembersEmbed.addFields({
+            //         name: '\u200B',
+            //         value: membersString,
+            //         inline: true,
+            //     });
+            // }
+
+            insideMembersEmbeds.push(insideMembersEmbed);
         }
 
-        return insideMembersEmbed;
+        return insideMembersEmbeds;
     }
 
 }
