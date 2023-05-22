@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Client, TextChannel, ChannelType, User, GuildMember, PermissionsBitField, Guild, UserResolvable, PermissionResolvable, Channel, ReactionEmoji, GuildEmoji, VoiceChannel, VoiceBasedChannel, Role, Collection } from 'discord.js';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { setClient } from 'discord.js-menu-buttons';
 
 @Injectable()
 export class DiscordService {
@@ -35,6 +36,7 @@ export class DiscordService {
     await this.isReady();
 
     this.guild = await this.client.guilds.fetch(this.guildId);
+    setClient(this.client);
   }
 
   public isReady(): Promise<boolean> {
@@ -43,6 +45,10 @@ export class DiscordService {
         resolve(true);
       });
     });
+  }
+
+  public getClient(): Client {
+    return this.client;
   }
 
   private async cache(element: 'members' | 'roles' | 'channels') {
