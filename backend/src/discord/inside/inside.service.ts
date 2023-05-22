@@ -28,7 +28,7 @@ export class InsideService {
     private insideTeamRoleIds: string[];
 
     // User pages amount
-    private readonly usersPerPage = 1;
+    private readonly usersPerPage = 10;
 
     constructor(
         private readonly discordService: DiscordService,
