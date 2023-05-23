@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Client, TextChannel, ChannelType, User, GuildMember, PermissionsBitField, Guild, UserResolvable, PermissionResolvable, Channel, ReactionEmoji, GuildEmoji, VoiceChannel, VoiceBasedChannel, Role, Collection } from 'discord.js';
+import { Client, TextChannel, ChannelType, User, GuildMember, PermissionsBitField, Guild, UserResolvable, PermissionResolvable, Channel, ReactionEmoji, GuildEmoji, VoiceChannel, VoiceBasedChannel, Role, Collection, EmbedBuilder } from 'discord.js';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { setClient } from 'discord.js-menu-buttons';
@@ -37,6 +37,11 @@ export class DiscordService {
 
     this.guild = await this.client.guilds.fetch(this.guildId);
     setClient(this.client);
+
+    // Send message to log channel on process uncaught exception
+    process.on('uncaughtException', (e) => this.sendErrorToLogChannel(e));
+
+    this.logger.log('Discord client initialized');
   }
 
   public isReady(): Promise<boolean> {
@@ -49,6 +54,48 @@ export class DiscordService {
 
   public getClient(): Client {
     return this.client;
+  }
+
+  /**
+   * Send error embed to log channel with error details
+   */
+  private sendErrorToLogChannel(error: Error) {
+    const logChannelId = process.env.DISCORD_LOG_CHANNEL_ID;
+    const mainAdminId = process.env.DISCORD_MAIN_ADMIN_ID;
+
+    if (!logChannelId || !mainAdminId)
+      return;
+
+    console.log(`Sending error to log channel: ${logChannelId}`);
+
+    const content = `<@${mainAdminId}>`;
+
+    const embed = new EmbedBuilder()
+      .setTitle('✋ Błąd krytyczny')
+      .setDescription(`**Bot zakończył działanie z następującym błędem:** \n\n\`${error.message}\``)
+      .setColor('#ff0000')
+      .setAuthor({
+        name: 'PLA Manager',
+        iconURL: this.configService.get<string>('images.logo-transparent'),
+      })
+      .setFooter({
+        text: error.name,
+        iconURL: this.configService.get<string>('images.danger'),
+      })
+      .setTimestamp();
+
+    embed.addFields(
+      {
+        name: 'Stack trace',
+        value: `\`\`\`${error.stack}\`\`\``,
+      },
+      {
+        name: 'Cause',
+        value: `\`\`\`${error.cause}\`\`\``,
+      }
+    );
+    
+    this.sendMessage(logChannelId, content, [embed]);
   }
 
   private async cache(element: 'members' | 'roles' | 'channels') {
