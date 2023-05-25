@@ -10,6 +10,8 @@ import { RoleEntity } from "./entities/role/entities/role.entity";
 import { ApexAccountEntity } from "./entities/apex-account/entities/apex-account.entity";
 import { EmojiModule } from './entities/emoji/emoji.module';
 import { EmojiEntity } from "./entities/emoji/entities/emoji.entity";
+import { RoleModule } from './entities/role/role.module';
+import { ApexAccountModule } from './entities/apex-account/apex-account.module';
 
 @Module({
     imports: [
@@ -39,6 +41,8 @@ import { EmojiEntity } from "./entities/emoji/entities/emoji.entity";
             inject: [ConfigService]
         }),
         TypeOrmModule.forFeature([TypeORMSession]),
+        RoleModule,
+        ApexAccountModule,
     ],
     providers: [
         TypeORMSession,
