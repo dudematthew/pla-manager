@@ -1,6 +1,13 @@
 import { StringOption } from "necord";
 
-export class handleConnectCommandDto {
+const platformAliases = {
+    'PC': 'PC',
+    'Xbox': 'X1',
+    'PlayStation': 'PS4',
+    'Nintendo Switch': 'SWITCH'
+}
+
+class handleConnectCommandDto {
     @StringOption({
         name: 'nazwa-użytkownika',
         description: 'Nazwa użytkownika w Apex Legends',
@@ -21,11 +28,11 @@ export class handleConnectCommandDto {
             },
             {
                 name: 'Xbox',
-                value: 'XBOX'
+                value: 'X1'
             },
             {
                 name: 'PlayStation',
-                value: 'PS',
+                value: 'PS4',
             },
             {
                 name: 'Nintendo Switch',
@@ -33,5 +40,7 @@ export class handleConnectCommandDto {
             }
         ]
     })
-    platform: string;
+    platform: 'PC' | 'PS4' | 'X1' | 'SWITCH';
 }
+
+export { platformAliases, handleConnectCommandDto };

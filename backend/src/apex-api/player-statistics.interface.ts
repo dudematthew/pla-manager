@@ -6,6 +6,7 @@ export interface PlayerStatistics {
     ALS?: Als
     total?: Total,
     error?: string,
+    errorCode?: number,
   }
   
   export interface Global {

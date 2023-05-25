@@ -184,8 +184,8 @@ export class CommandsService {
         name: 'połącz',
         description: 'Połącz swoje konto Apex z kontem na Discordzie PLA',
     })
-    public async onApexAccountConnect(@Context() [Interaction]: SlashCommandContext, @Options() { username, platform }: handleConnectCommandDto) {
+    public async onApexAccountConnect(@Context() [Interaction]: SlashCommandContext, @Options() options: handleConnectCommandDto) {
         this.logger.log(`User ${Interaction.user.username} requested to connect their Apex account`);
-        this.apexConnectService.handleConnectCommand(Interaction, { username, platform });
+        this.apexConnectService.handleConnectCommand(Interaction, options);
     }
 }

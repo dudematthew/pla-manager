@@ -80,9 +80,9 @@ export class ApexApiService {
      * @param playerName 
      * @param platform 
      * @param options 
-     * @returns Player statistics
+     * @returns Player statistics or null if not found
      */
-    public async getPlayerStatisticsByName(playerName: string, platform: 'PC' | 'PS4' | 'X1' | 'SWITCH', options: PlayerStatisticsParamsDto): Promise<PlayerStatistics> {
+    public async getPlayerStatisticsByName(playerName: string, platform: 'PC' | 'PS4' | 'X1' | 'SWITCH', options: PlayerStatisticsParamsDto = {}): Promise<PlayerStatistics> {
 
         const cachedValue = await this.cache.get(`player-statistics-${hash(options)}`);
         if (cachedValue) {
@@ -100,6 +100,7 @@ export class ApexApiService {
 
         try {
             const response = await this.http.get(url);
+
             this.cache.set(`player-statistics-${hash(options)}`, response.data, 10000);
             return response.data;
         }
@@ -107,6 +108,7 @@ export class ApexApiService {
             this.logger.error(e, playerName, platform, options);
             return {
                 error: 'Error fetching player statistics: ' + e.message || 'Unknown error',
+                errorCode: e.response?.status,
             };
         }
     }
@@ -122,6 +124,7 @@ export class ApexApiService {
             this.logger.error(e);
             return {
                 error: 'Error fetching player UUID: ' + e.message || 'Unknown error',
+                errorCode: e.response?.status,
             };
         }
     }
