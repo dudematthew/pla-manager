@@ -36,7 +36,6 @@ import { InsideModule } from './inside/inside.module';
         DiscordUpdate,
         DiscordService,
         DiscordListeners,
-        LfgService,
     ],
     exports: [
         DiscordService,

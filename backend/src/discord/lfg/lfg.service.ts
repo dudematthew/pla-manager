@@ -10,6 +10,7 @@ import { RoleEntity } from 'src/database/entities/role/entities/role.entity';
 import { ColorResolvable, Embed, EmbedBuilder, GuildEmoji, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, APIActionRowComponent, APIMessageActionRowComponent, Channel, Role, AnyComponentBuilder } from 'discord.js';
 import { ConfigService } from '@nestjs/config';
 import { ChannelService } from 'src/database/entities/channel/channel.service';
+import { EmojiService } from 'src/database/entities/emoji/emoji.service';
 
 @Injectable()
 export class LfgService {
@@ -99,6 +100,13 @@ export class LfgService {
             'publiczne',
             'publicznych',
         ],
+        '1v1': [
+            '1v1',
+            'versus',
+            'sparing',
+            'sparingi',
+            'sparingach',
+        ],
     }
 
     /**
@@ -183,6 +191,7 @@ export class LfgService {
         private readonly discordService: DiscordService,
         private readonly configService: ConfigService,
         private readonly channelService: ChannelService,
+        private readonly emojiService: EmojiService,
     ) {}
 
     /**
@@ -372,7 +381,7 @@ export class LfgService {
 
     private canMentionRole(rankRole: string, mentionedRole: string): boolean {
 
-        if(mentionedRole === 'pubs')
+        if(mentionedRole === 'pubs' || mentionedRole === '1v1')
             return true;
 
         const availableRoleNamesToMention = this.roleRelations[rankRole];
@@ -460,7 +469,7 @@ export class LfgService {
             let emoji: GuildEmoji;
 
             try {
-                emoji = await this.discordService.getServerEmojiByName(role.name);
+                emoji = await this.emojiService.getDiscordEmojiByName(role.emoji.name);
 
                 if(!emoji) {
                     this.logger.error(`Could not find emoji for role ${role.name}`);
