@@ -17,8 +17,6 @@ import { ApexApiModule } from './apex-api/apex-api.module';
 import { TourneyModule } from './database/entities/tourney/tourney.module';
 import { ConfigModule } from './config/config.module';
 import { CacheModule } from '@nestjs/cache-manager';
-import { ApexAccountModule } from './database/entities/apex-account/apex-account.module';
-import { RoleModule } from './database/entities/role/role.module';
 
 @Module({
   imports: [
@@ -30,19 +28,16 @@ import { RoleModule } from './database/entities/role/role.module';
       rootPath: join(__dirname, '../../../frontend/dist'),
       exclude: ['/api*', '/auth*', '/admin*'],
     }),
+    DatabaseModule,
     DiscordModule,
     LoggerModule,
     AuthModule,
+    UserModule,
     ChannelModule,
     // AdminPanelModule,
     ApexApiModule,
     TourneyModule,
     ConfigModule,
-    // Database Modules --
-    DatabaseModule,
-    ApexAccountModule,
-    UserModule,
-    RoleModule,
   ],
   controllers: [
     AppController,

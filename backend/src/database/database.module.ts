@@ -8,6 +8,8 @@ import { TourneyEntity } from "./entities/tourney/entities/tourney.entity";
 import { TourneyTeamEntity } from "./entities/tourney/entities/team/entities/tourney-team.entity";
 import { RoleEntity } from "./entities/role/entities/role.entity";
 import { ApexAccountEntity } from "./entities/apex-account/entities/apex-account.entity";
+import { EmojiModule } from './entities/emoji/emoji.module';
+import { EmojiEntity } from "./entities/emoji/entities/emoji.entity";
 
 @Module({
     imports: [
@@ -29,8 +31,10 @@ import { ApexAccountEntity } from "./entities/apex-account/entities/apex-account
                     TourneyEntity,
                     TourneyTeamEntity,
                     ApexAccountEntity,
+                    EmojiEntity
                 ],
                 synchronize: true,
+                autoLoadEntities: true,
             }),
             inject: [ConfigService]
         }),

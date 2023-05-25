@@ -10,6 +10,7 @@ import DiscordListeners from "./discord.listeners";
 import { LfgService } from "./lfg/lfg.service";
 import { ChannelModule } from "src/database/entities/channel/channel.module";
 import { ApexConnectModule } from './apex-connect/apex-connect.module';
+import { InsideModule } from './inside/inside.module';
 
 @Module({
     imports: [
@@ -34,7 +35,8 @@ import { ApexConnectModule } from './apex-connect/apex-connect.module';
         RoleModule,
         LfgModule,
         ApexConnectModule,
-        forwardRef(() => ChannelModule),
+        ChannelModule,
+        InsideModule,
     ],
     controllers: [],
     providers: [

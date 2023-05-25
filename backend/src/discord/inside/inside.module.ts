@@ -1,22 +1,19 @@
-import { Module, forwardRef } from '@nestjs/common';
-import { LfgService } from './lfg.service';
+import { Module } from '@nestjs/common';
+import { InsideService } from './inside.service';
 import { RoleModule } from 'src/database/entities/role/role.module';
 import { DiscordModule } from '../discord.module';
-import { ChannelModule } from 'src/database/entities/channel/channel.module';
+import { forwardRef } from '@nestjs/common';
 import { EmojiModule } from 'src/database/entities/emoji/emoji.module';
 
 @Module({
   imports: [
     RoleModule,
-    ChannelModule,
-    EmojiModule,
     forwardRef(() => DiscordModule),
+    EmojiModule,
   ],
   providers: [
-    LfgService,
+    InsideService,
   ],
-  exports: [
-    LfgService,
-  ]
+  exports: [InsideService],
 })
-export class LfgModule {}
+export class InsideModule {}

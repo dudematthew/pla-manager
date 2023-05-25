@@ -1,8 +1,13 @@
-import { Injectable } from '@nestjs/common';
-import { Context, Options, SlashCommand, SlashCommandContext } from 'necord';
+import { Injectable, UseFilters, UseGuards } from '@nestjs/common';
+import { Context, Options, Options, SlashCommand, SlashCommandContext } from 'necord';
 import { RoleService } from 'src/database/entities/role/role.service';
 import { EmbedBuilder } from 'discord.js';
 import { ConfigService } from '@nestjs/config';
+import { InsideService } from '../inside/inside.service';
+import { AdminGuard } from '../guards/admin.guard';
+import { EmojiService } from 'src/database/entities/emoji/emoji.service';
+import { ForbiddenExceptionFilter } from '../filters/forbidden-exception.filter';
+import { AdminEmojiDto } from './dtos/admin-emoji.dto';
 import { ApexConnectService } from '../apex-connect/apex-connect.service';
 import { Logger } from '@nestjs/common';
 import { handleConnectCommandDto } from './dtos/handle-connect.command.dto';
@@ -16,6 +21,8 @@ export class CommandsService {
     constructor(
         private readonly roleService: RoleService,
         private readonly configService: ConfigService,
+        private readonly insideService: InsideService,
+        private readonly emojiService: EmojiService,
         private readonly apexConnectService: ApexConnectService,
     ) {}
     
@@ -26,6 +33,7 @@ export class CommandsService {
     @SlashCommand({
         name: 'ping',
         description: 'Ping!',
+        guilds: [process.env.MAIN_GUILD_ID]
     })
     public async onPing(@Context() [Interaction]: SlashCommandContext) {
         return Interaction.reply({ content: 'Pong!', ephemeral: true});
@@ -38,6 +46,7 @@ export class CommandsService {
     @SlashCommand({
         name: 'getroles',
         description: 'Lista wszystkich ról',
+        guilds: [process.env.MAIN_GUILD_ID]
     })
     public async onGetRoles(@Context() [Interaction]: SlashCommandContext) {
         const roles = await this.roleService.findAll();
@@ -98,6 +107,73 @@ export class CommandsService {
         // const embed = paginationEmbed(Interaction, pages, ['⏪', '⏩'], 30000);
         
         // return Interaction.reply({ embeds: [roleEmbed], ephemeral: true});
+    }
+
+    /**
+     * Get all members of PLA Inside
+     */
+    @SlashCommand({
+        name: 'pla-inside-wykaz',
+        description: 'Wykaz członków PLA Inside',
+        guilds: [process.env.MAIN_GUILD_ID]
+    })
+    public async onGetInsideMembers(@Context() [Interaction]: SlashCommandContext) {
+        this.insideService.handleGetInsideMembers(Interaction);
+    }
+
+    @UseGuards(AdminGuard)
+    @UseFilters(ForbiddenExceptionFilter)
+    @SlashCommand({
+        name: 'admin-emoji',
+        description: 'Ustaw emoji w bazie danych',
+        guilds: [process.env.MAIN_GUILD_ID]
+    })
+    public async onAdminEmoji(@Context() [Interaction]: SlashCommandContext, @Options() options: AdminEmojiDto) {
+        console.log(`[CommandsService] onAdminEmoji: ${options.emoji} - ${options.emojiName}`);
+
+        const emoteRegex = /<:.+?:\d+>/g;
+        const animatedEmoteRegex = /<a:.+:(\d+)>/gm;
+
+        let emojis = [];
+
+        if (emoteRegex.test(options.emoji)) {
+            emojis = options.emoji.match(emoteRegex);
+        } else if (animatedEmoteRegex.test(options.emoji)) {
+            Interaction.reply({ content: 'Animowane emoji nie są jeszcze wspierane!', ephemeral: true});
+        return false;
+        } else {
+            Interaction.reply({ content: 'Niepoprawne emoji!', ephemeral: true});
+        }
+
+        const dbEmoji = await this.emojiService.findByName(options.emojiName);
+
+        const emojiData = {
+            discordId: emojis[0].match(/\d+/g)[0],
+            discordName: emojis[0].split(":")[1],
+            name: options.emojiName,
+        }
+
+        console.log('Prepared emoji data: ', emojiData);
+
+        if (!dbEmoji) {
+            // Create emoji
+            const newEmoji = await this.emojiService.create(emojiData);
+
+            if (!newEmoji) {
+                Interaction.reply({ content: 'Nie udało się dodać emoji', ephemeral: true});
+            }
+
+            Interaction.reply({ content: `Dodano emoji!`, ephemeral: true});
+        } else {
+            // Update emoji
+            const updatedEmoji = await this.emojiService.update(dbEmoji.id, emojiData);
+
+            if (!updatedEmoji) {
+                Interaction.reply({ content: 'Nie udało się zaktualizować emoji', ephemeral: true});
+            }
+
+            Interaction.reply({ content: `Emoji zaktualizowane!`, ephemeral: true});
+        }
     }
 
     /**

@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { TypeORMSession } from './database/entities/session.entity';
+import { LoggerErrorInterceptor } from 'nestjs-pino';
 import { TypeormStore } from 'connect-typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import * as passport from 'passport';
@@ -39,6 +40,8 @@ async function bootstrap() {
   forestAdminAgent.addDataSource(createSqlDataSource(connectionString));
 
   const app = await NestFactory.create(AppModule);
+
+  app.useGlobalInterceptors(new LoggerErrorInterceptor());
 
   const sessionRepository = app.get(getRepositoryToken(TypeORMSession));
 

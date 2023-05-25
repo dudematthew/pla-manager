@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, BaseEntity } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, BaseEntity, OneToOne, ManyToOne } from "typeorm";
+import { EmojiEntity } from "../../emoji/entities/emoji.entity";
 
 @Entity({
     name: 'role',
@@ -23,4 +24,6 @@ export class RoleEntity extends BaseEntity {
     @UpdateDateColumn({ name: 'updated_at' })
     updatedAt: Date;
     
+    @ManyToOne(() => EmojiEntity, emoji => emoji.roles)
+    emoji: EmojiEntity;
 }
