@@ -1,5 +1,5 @@
 import { Injectable, UseFilters, UseGuards } from '@nestjs/common';
-import { Context, Options, Options, SlashCommand, SlashCommandContext } from 'necord';
+import { Context, Options, SlashCommand, SlashCommandContext } from 'necord';
 import { RoleService } from 'src/database/entities/role/role.service';
 import { EmbedBuilder } from 'discord.js';
 import { ConfigService } from '@nestjs/config';
