@@ -12,6 +12,14 @@ export interface InsideMembers {
     id: string;
     fullName: string;
     emoji: string | GuildEmoji;
+    member: GuildMember;
+    isCaptain: boolean;
+}
+
+export interface InsideMembersGroup {
+    id: string;
+    fullName: string;
+    emoji: string | GuildEmoji;
 }
 
 @Injectable()
@@ -26,6 +34,7 @@ export class InsideService {
     private insideRoleId: string;
     private insideReserveRoleId: string;
     private insideTeamRoleIds: string[];
+    private insideCaptainRoleId: string;
 
     // User pages amount
     private readonly usersPerPage = 10;
@@ -43,6 +52,7 @@ export class InsideService {
         this.insideRoleId = await this.roleService.findByName(this.configService.get<string>('role-names.pla-inside.main')).then(role => role.discordId);
         this.insideReserveRoleId = await this.roleService.findByName(this.configService.get<string>('role-names.pla-inside.reserve')).then(role => role.discordId);
         this.insideTeamRoleIds = await this.roleService.getAllInsideRoles().then(roles => roles.map(role => role.discordId));
+        this.insideCaptainRoleId = await this.roleService.findByName(this.configService.get<string>('role-names.pla-inside.captain')).then(role => role.discordId);
     }
 
     public async handleGetInsideMembers(interaction: ChatInputCommandInteraction<CacheType>) {
@@ -51,10 +61,21 @@ export class InsideService {
         const insideTeamMembersGroup = await this.getInsideMembersGroup(insideMembers, 'team');
         const insideReserveMembersGroup = await this.getInsideMembersGroup(insideMembers, 'reserve');
         const insideWithoutMembersGroup = await this.getInsideMembersGroup(insideMembers, 'without');
+
+        const insideTeams = [
+            this.getTeamFromGroup(insideTeamMembersGroup, 'y'),
+        ]
+
+        console.log(insideTeams);
+
+        const insideTeamMembersPaginated = this.paginateInsideMembers(insideTeamMembersGroup);
+        const insideReserveMembersPaginated = this.paginateInsideMembers(insideReserveMembersGroup);
+        const insideWithoutMembersPaginated = this.paginateInsideMembers(insideWithoutMembersGroup);
         
-        const insideTeamMembersEmbed = await this.getInsideMembersEmbed(insideTeamMembersGroup, 'Lista członków PLA Inside należących do drużyny');
-        const insideReserveMembersEmbed = await this.getInsideMembersEmbed(insideReserveMembersGroup, 'Lista członków PLA Inside należących do rezerwy');
-        const insideWithoutMembersEmbed = await this.getInsideMembersEmbed(insideWithoutMembersGroup, 'Lista członków PLA Inside nie należących do żadnej drużyny');
+        const insideTeamMembersEmbed = await this.getInsideMembersEmbed(insideTeamMembersPaginated, 'Lista członków PLA Inside należących do drużyny');
+        const insideReserveMembersEmbed = await this.getInsideMembersEmbed(insideReserveMembersPaginated, 'Lista członków PLA Inside należących do rezerwy');
+        const insideWithoutMembersEmbed = await this.getInsideMembersEmbed(insideWithoutMembersPaginated, 'Lista członków PLA Inside nie należących do żadnej drużyny');
+
 
         const pagesNumbers = {
             insideTeamMembersPage: 0,
@@ -104,16 +125,12 @@ export class InsideService {
             // Change page number but check if it's not less than 0 and not more than pages amount
             pagesNumbers[pagesAmountKey] = buttonType == 'previous' ? pagesNumbers[pagesAmountKey] - 1 < 0 ? pages.length - 1 : pagesNumbers[pagesAmountKey] - 1 : pagesNumbers[pagesAmountKey] + 1 > pages.length - 1 ? 0 : pagesNumbers[pagesAmountKey] + 1;
 
-            console.log(pages);
-
             // replace embed with new one
             i.message.edit({
                 embeds: [
                     pages[pagesNumbers[pagesAmountKey]]
                 ]
             })
-
-            console.log(pages);
         }
 
         const createPageButtons = (name: string, teamMembersEmbeds: EmbedBuilder[]) => {
@@ -217,7 +234,7 @@ export class InsideService {
     /**
      * Create return message
      */
-    private async getInsideMembersGroup(insideMembers: Collection<String, GuildMember>, type: 'team' | 'reserve' | 'without') {
+    private async getInsideMembersGroup(insideMembers: Collection<String, GuildMember>, type: 'team' | 'reserve' | 'without'): Promise<InsideMembers[]> {
 
         const insideEmoji = await this.emojiService.getDiscordEmojiByName('plainside');
 
@@ -233,15 +250,14 @@ export class InsideService {
 
                         const dbRole = await this.roleService.findByDiscordId(teamRole.id);
 
-                        console.log(dbRole);
-
                         const emoji = await this.discordService.getServerEmojiByName(dbRole.emoji.discordName);
 
                         return {
                             id: member.id,
                             fullName: `${member.user.username}#${member.user.discriminator}`,
                             emoji: emoji,
-                        }
+                            member: member,
+                            isCaptain: member.roles.cache.some(role => role.id === this.insideCaptainRoleId),                        }
                     }));
                 break;
 
@@ -253,6 +269,8 @@ export class InsideService {
                             id: member.id,
                             fullName: `${member.user.username}#${member.user.discriminator}`,
                             emoji: insideEmoji,
+                            member: member,
+                            isCaptain: false,
                         }
                     });
                 break;
@@ -268,10 +286,22 @@ export class InsideService {
                             id: member.id,
                             fullName: `${member.user.username}#${member.user.discriminator}`,
                             emoji: insideEmoji,
+                            member: member,
+                            isCaptain: false,
                         }
                     });
                 break;
         }
+
+        return insideMembersGroup;
+    }
+
+    /**
+     * Gets inside members and paginates them
+     * @param insideMembers 
+     * @returns paginated inside members
+     */
+    public paginateInsideMembers(insideMembersGroup: InsideMembersGroup[]) {
 
         // Paginate into an array of 10 members
         const insideMembersGroupPaginated = insideMembersGroup.reduce((resultArray, item, index) => {
@@ -289,6 +319,24 @@ export class InsideService {
         return insideMembersGroupPaginated;
     }
 
+    public async getTeamFromGroup(insideMembers: InsideMembers[], teamSuffix: string) {
+        const teamRole = await this.roleService.findByName(this.configService.get<string>('role-names.pla-inside.team.prefix') + teamSuffix);
+
+        console.log("teamRole", teamRole);
+
+        const teamMembers = insideMembers.filter(member => member.member.roles.cache.some(role => role.id === teamRole.discordId));
+
+        console.log("teamMembers", teamMembers);
+
+        return teamMembers;
+    }
+
+    /**
+     * Creates embeds for inside members
+     * @param membersPages paginated inside members
+     * @param title embed title
+     * @returns paginated inside members embeds
+     */
     public async getInsideMembersEmbed(membersPages: InsideMembers[][], title: string): Promise<EmbedBuilder[]> {
 
         const insideMembersEmbeds: EmbedBuilder[] = [];
@@ -316,15 +364,6 @@ export class InsideService {
                 .setFooter({
                     text: `Strona ${pageNumber}/${membersPages.length}`,
                 });
-
-            // Add fields for two groups
-            // if (members.length > 0) {
-            //     insideMembersEmbed.addFields({
-            //         name: '\u200B',
-            //         value: membersString,
-            //         inline: true,
-            //     });
-            // }
 
             insideMembersEmbeds.push(insideMembersEmbed);
         }

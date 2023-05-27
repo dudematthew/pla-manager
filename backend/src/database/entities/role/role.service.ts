@@ -39,8 +39,6 @@ export class RoleService {
   async getAllInsideRoles() {
     const insideRoleNames = this.configService.get<string[]>('role-names.pla-inside.team.teams');
 
-    console.log("Before weird prefixing: ", insideRoleNames); // returns [ 'o', 'c', 'y', 'p', 'b', 'g' ]
-
     const prefixedInsideRoleNames = insideRoleNames.map(roleName => this.configService.get<string>('role-names.pla-inside.team.prefix') + roleName);
 
     return await this.roleRepository.find({
@@ -65,6 +63,11 @@ export class RoleService {
      });
   }
 
+  /**
+   * Find a role by its database name
+   * @param name The name of the role
+   * @returns The role
+   */
   async findByName(name: string): Promise<RoleEntity> {
     return await this.roleRepository.findOne({ 
       where: { name },
