@@ -250,7 +250,7 @@ export class InsideService {
 
                         const dbRole = await this.roleService.findByDiscordId(teamRole.id);
 
-                        const emoji = await this.discordService.getServerEmojiByName(dbRole.emoji.discordName);
+                        const emoji = (dbRole?.emoji == null) ? insideEmoji : await this.discordService.getServerEmojiByName(dbRole.emoji.name);
 
                         return {
                             id: member.id,
