@@ -73,7 +73,7 @@ export class InsideService {
             const teamName = "PLA-" + insideTeamSuffixes[index].toUpperCase();
 
             const teamEmoji = await this.emojiService.getDiscordEmojiByName('pla' + index);
-            
+
             const embed = await this.getInsideTeamEmbed(team, teamName, teamEmoji);
             console.info(`Created embed for team ${insideTeamSuffixes[index]}: `, embed);
             return {
@@ -459,6 +459,13 @@ export class InsideService {
     }
 
     public async getInsideTeamEmbed (teamMembers: InsideMembers[], teamName: string, teamEmoji: EmojiResolvable): Promise<EmbedBuilder> {
+
+        // Sort team members by captain
+        teamMembers.sort((a, b) => {
+            if (a.isCaptain) return -1;
+            if (b.isCaptain) return 1;
+            return 0;
+        });
 
         const teamMembersString = teamMembers.map(member => {
             
