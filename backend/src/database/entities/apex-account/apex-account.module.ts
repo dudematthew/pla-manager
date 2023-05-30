@@ -10,6 +10,9 @@ import { UserEntity } from '../user/user.entity';
   ],
   providers: [
     ApexAccountService
+  ],
+  exports: [
+    ApexAccountService,
   ]
 })
 export class ApexAccountModule {}
