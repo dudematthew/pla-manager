@@ -49,7 +49,7 @@ export class DiscordService {
       this.logger.error(`${e} - ${e?.stack}`);
       
       // If the error is in the blacklist, send it to the log channel
-      if (blacklistedErrors.some(error => e.message.includes(error)))
+      if (!blacklistedErrors.some(error => e.message.includes(error)))
         this.sendErrorToLogChannel(e);
     }
 
