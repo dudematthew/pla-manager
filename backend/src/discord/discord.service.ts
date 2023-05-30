@@ -39,8 +39,18 @@ export class DiscordService {
     setClient(this.client);
 
     const errorRedirect = (e) => {
+      // List of errors to ignore
+      const blacklistedErrors = [
+        'ECONNREFUSED',
+        'ENOTFOUND',
+      ];
+      
+      // Log the error to the console
       this.logger.error(`${e} - ${e?.stack}`);
-      this.sendErrorToLogChannel(e);
+      
+      // If the error is in the blacklist, send it to the log channel
+      if (blacklistedErrors.some(error => e.message.includes(error)))
+        this.sendErrorToLogChannel(e);
     }
 
     // Send message to log channel on process uncaught exception
