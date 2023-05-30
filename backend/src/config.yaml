@@ -3,6 +3,8 @@ images:
   logo-transparent: 'https://i.imgur.com/sBw1nps.png'
   pla-inside-logo: 'https://i.imgur.com/VERHZ25.png'
   danger: https://i.imgur.com/AXMzkaO.png
+  loading: https://i.imgur.com/ZOjdpq7.gif
+  success: https://i.imgur.com/gpEThdv.png
 
 theme:
   color-primary: '#FF4343'
