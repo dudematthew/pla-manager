@@ -8,6 +8,10 @@ theme:
   color-primary: '#FF4343'
   color-secondary: '#C02D2D'
 
+embeds:
+  color-primary: 16728899
+  color-secondary: 12594477
+
 # DO NOT TOUCH
 channel-names:
   lfg: 'lfg'
