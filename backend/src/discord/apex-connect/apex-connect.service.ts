@@ -1,13 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { MessageData } from '../discord.listeners';
-import { SlashCommandContext } from 'necord';
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CacheType, ChatInputCommandInteraction, ColorResolvable, EmbedBuilder, InteractionReplyOptions } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CacheType, ChatInputCommandInteraction, ColorResolvable, EmbedBuilder, InteractionReplyOptions, PermissionsBitField } from 'discord.js';
 import { handleConnectCommandDto, platformAliases } from '../commands/dtos/handle-connect.command.dto';
 import { ApexApiService } from 'src/apex-api/apex-api.service';
 import { Logger } from '@nestjs/common';
-import { PlayerStatisticsParamsDto } from 'src/apex-api/dtos/player-statistics-params.dto';
 import { PlayerStatistics } from 'src/apex-api/player-statistics.interface';
 import { ConfigService } from '@nestjs/config';
+import { ApexAccountService } from 'src/database/entities/apex-account/apex-account.service';
+import { UserService } from 'src/database/entities/user/user.service';
+import { UserEntity } from 'src/database/entities/user/user.entity';
 
 @Injectable()
 export class ApexConnectService {
@@ -32,6 +33,8 @@ export class ApexConnectService {
     constructor(
         private readonly apexApiService: ApexApiService,
         private readonly configService: ConfigService,
+        private readonly apexAccountService: ApexAccountService,
+        private readonly userService: UserService,
     ) {}
 
     public async handleConnectCommand(interaction: ChatInputCommandInteraction<CacheType>, options: handleConnectCommandDto) {
@@ -92,11 +95,48 @@ export class ApexConnectService {
             }
         }
 
+        const user = await this.userService.findByDiscordId(interaction.user.id);
+
+        // If user doesn't exist, create one
+        if (!user) {
+            const newUser = await this.userService.create({
+                discordId: interaction.user.id,
+                isAdmin: interaction.memberPermissions.has(PermissionsBitField.Flags.Administrator),
+            });
+        }
+
+        const account = await this.saveAccount(playerData, user);
+
+        // If account is null (something went wrong), abort
+        if (!account) {
+            await interaction.editReply(this.getErrorEmbed());
+            return;
+        }
+
         // User has chosen legend, connect account
         await interaction.editReply(this.getSuccessMessage(playerData));
+    }
 
-        // Todo: Implement account connection
-
+    public async saveAccount(playerData: PlayerStatistics, user: UserEntity) {
+        return await this.apexAccountService.create({
+            user,
+            name: playerData.global.name,
+            uid: playerData.global.uid.toString(),
+            avatarUrl: playerData.global?.avatar,
+            platform: playerData.global?.platform,
+            rankScore: playerData.global?.rank.rankScore,
+            rankName: playerData.global?.rank.rankName,
+            rankDivision: playerData.global?.rank.rankDiv.toString(),
+            rankImg: playerData.global?.rank.rankImg,
+            level: playerData.global?.level,
+            percentToNextLevel: playerData.global?.toNextLevelPercent,
+            brTotalKills: playerData.total?.kills.value,
+            brTotalWins: 0 /* playerData.total.wins.value */,
+            brTotalGamesPlayed: 0/* playerData.total?.games */,
+            brKDR: parseInt(playerData.total?.kd.value ?? '0'),
+            brTotalDamage: playerData.total?.damage.value,
+            lastLegendPlayed: playerData.realtime?.selectedLegend,
+        });
     }
 
     public async handlePrivateMessage(messageData: MessageData) {
@@ -267,7 +307,7 @@ export class ApexConnectService {
     private getPlayerDataExpiredMessage() {
         const embed = this.getBasicEmbed()
             .setTitle('Nie potwierdzono wyboru.')
-            .setDescription('Nie potwierdzono wyboru w ciągu wyznaczonego czasu. Spróbuj ponownie.')
+            .setDescription('Nie potwierdzono wyboru w wyznaczonym czasie. Spróbuj ponownie.')
             .setThumbnail(this.configService.get<string>('images.logo-transparent'));
 
         return {
@@ -329,6 +369,23 @@ export class ApexConnectService {
             .setDescription('Minął maksymalny czas na wykonanie akcji. Spróbuj ponownie.')
             .setThumbnail(this.configService.get<string>('images.logo-transparent'));
             
+        return {
+            embeds: [embed],
+            components: [],
+        }
+    }
+
+    /**
+     * Get message that informs user that action has expired
+     * @param error error message
+     * @returns message that informs user that action has expired
+     */
+    private getErrorEmbed() {
+        const embed = this.getBasicEmbed()
+            .setTitle('Wystąpił błąd')
+            .setDescription('Przepraszamy, coś poszło nie tak. Spróbuj ponownie później lub skontaktuj się z administracją.')
+            .setThumbnail(this.configService.get<string>('images.danger'));
+
         return {
             embeds: [embed],
             components: [],
