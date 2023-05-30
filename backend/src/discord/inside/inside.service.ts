@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ButtonInteraction, CacheType, ChatInputCommandInteraction, Client, Collection, Embed, EmbedBuilder, GuildEmoji, GuildMember } from 'discord.js';
+import { ButtonInteraction, CacheType, ChatInputCommandInteraction, Client, Collection, Embed, EmbedBuilder, EmojiResolvable, GuildEmoji, GuildMember, StringSelectMenuInteraction } from 'discord.js';
 import { DiscordService } from '../discord.service';
 import { ConfigService } from '@nestjs/config';
 import { RoleService } from 'src/database/entities/role/role.service';
@@ -62,11 +62,32 @@ export class InsideService {
         const insideReserveMembersGroup = await this.getInsideMembersGroup(insideMembers, 'reserve');
         const insideWithoutMembersGroup = await this.getInsideMembersGroup(insideMembers, 'without');
 
-        const insideTeams = [
-            this.getTeamFromGroup(insideTeamMembersGroup, 'y'),
-        ]
+        const insideTeamSuffixes = this.configService.get<Array<string>>('role-names.pla-inside.team.teams');
 
-        console.log(insideTeams);
+        const insideTeams = await Promise.all(insideTeamSuffixes.map(async teamSuffix => {
+            return await this.getTeamFromGroup(insideTeamMembersGroup, teamSuffix);
+        }));
+
+        const insideTeamsEmbeds = await Promise.all(insideTeams.map(async (team, index) => {
+
+            const teamName = "PLA-" + insideTeamSuffixes[index].toUpperCase();
+
+            const teamEmoji = await this.emojiService.getDiscordEmojiByName('pla' + index);
+
+            const embed = await this.getInsideTeamEmbed(team, teamName, teamEmoji);
+            console.info(`Created embed for team ${insideTeamSuffixes[index]}: `, embed);
+            return {
+                embed: embed,
+                teamName: teamName,
+                teamId: insideTeamSuffixes[index],
+                emoji: team[index]?.emoji || await this.emojiService.getDiscordEmojiByName('plainside'),
+            };
+
+        }));
+
+        const plaInsideEmoji = (await this.emojiService.getDiscordEmojiByName('plainside')).toJSON();
+
+        console.log("DONE! Inside team embeds: ", insideTeamsEmbeds);
 
         const insideTeamMembersPaginated = this.paginateInsideMembers(insideTeamMembersGroup);
         const insideReserveMembersPaginated = this.paginateInsideMembers(insideReserveMembersGroup);
@@ -77,10 +98,44 @@ export class InsideService {
         const insideWithoutMembersEmbed = await this.getInsideMembersEmbed(insideWithoutMembersPaginated, 'Lista członków PLA Inside nie należących do żadnej drużyny');
 
 
+        /**
+         * Pages numbers - current global page number for each menu
+         * All properties are set to 0 by default to show first page
+         * @property insideTeamMembersPage - current page number for inside team members
+         * @property insideReserveMembersPage - current page number for inside reserve members
+         * @property insideWithoutMembersPage - current page number for inside without members
+         */
         const pagesNumbers = {
             insideTeamMembersPage: 0,
             insideReserveMembersPage: 0,
             insideWithoutMembersPage: 0,
+        };
+
+        const teamPageButton = () => {
+            const menuOptions = [];
+
+            insideTeamsEmbeds.forEach(team => {
+                menuOptions.push(
+                    new MenuOption(
+                        {
+                            label: `${team.teamName}`,
+                            description: `Wyświetl członków drużyny ${team.teamName}`,
+                            value: team.teamId,
+                            emoji: "🤺",
+                        },
+                        (i) => {
+                            i.deferUpdate();
+                            i.message.edit({
+                                embeds: [
+                                    team.embed
+                                ]
+                            })
+                        }
+                    ),
+                )
+            });
+
+            return new Row(menuOptions, RowTypes.SelectMenu)
         };
 
         const menuPageButton = (currentMenu) => {
@@ -88,12 +143,23 @@ export class InsideService {
                 new MenuOption(
                     {
                         label: "Członkowie w drużynach",
-                        description: "Członkowie którzy należą do jednej z drużyn PLA Inside",
-                        value: "teams",
+                        description: "Członkowie którzy należą do dowolnej drużyny PLA Inside",
+                        value: "teamMembers",
                         default: currentMenu == 'insideTeamMembers',
                         emoji: "👥",
                     },
                     'insideTeamMembers'
+                ),
+                new MenuOption(
+                    {
+                        label: "Drużyny PLA Inside",
+                        description: "Członkowie konkretnych drużyn PLA Inside",
+                        value: "teams",
+                        default: currentMenu == 'insideTeams',
+                        // emoji: plaInsideEmoji,
+                        emoji: '🤺'
+                    },
+                    'insideTeams'
                 ),
                 new MenuOption(
                     {
@@ -158,6 +224,9 @@ export class InsideService {
 
         const menu = new Menu(interaction.channel, interaction.user.id, [
             {
+                /**
+                 * Menu for all teams
+                 */
                 name: 'insideTeamMembers',
                 content: insideTeamMembersEmbed[0],
                 rows: (() => { 
@@ -177,6 +246,24 @@ export class InsideService {
                 })()
             },
             {
+                /**
+                 * Menu for specific team
+                 * This menu identifies as the same as insideTeamMembers
+                */
+               name: 'insideTeams',
+               content: insideTeamsEmbeds[0].embed,
+               rows: (() => { 
+                   const rows = [
+                        teamPageButton(),
+                        menuPageButton('insideTeams'),
+                    ];
+                    return rows;
+                })()
+            },
+            {
+                /**
+                 * Menu for reserve members
+                 */
                 name: "insideReserveMembers",
                 content: insideReserveMembersEmbed[0],
                 rows: (() => { 
@@ -196,6 +283,9 @@ export class InsideService {
                 })()
             },
             {
+                /**
+                 * Menu for members without team
+                 */
                 name: "insideWithoutMembers",
                 content: insideWithoutMembersEmbed[0],
                 rows: (() => { 
@@ -250,7 +340,7 @@ export class InsideService {
 
                         const dbRole = await this.roleService.findByDiscordId(teamRole.id);
 
-                        const emoji = await this.discordService.getServerEmojiByName(dbRole.emoji.discordName);
+                        const emoji = (dbRole?.emoji == null) ? insideEmoji : await this.discordService.getServerEmojiByName(dbRole.emoji.name);
 
                         return {
                             id: member.id,
@@ -322,11 +412,8 @@ export class InsideService {
     public async getTeamFromGroup(insideMembers: InsideMembers[], teamSuffix: string) {
         const teamRole = await this.roleService.findByName(this.configService.get<string>('role-names.pla-inside.team.prefix') + teamSuffix);
 
-        console.log("teamRole", teamRole);
-
+        // const teamMembers = insideMembers.filter(member => member.member.roles.cache.some(role => role.id === teamRole.discordId));
         const teamMembers = insideMembers.filter(member => member.member.roles.cache.some(role => role.id === teamRole.discordId));
-
-        console.log("teamMembers", teamMembers);
 
         return teamMembers;
     }
@@ -369,6 +456,39 @@ export class InsideService {
         }
 
         return insideMembersEmbeds;
+    }
+
+    public async getInsideTeamEmbed (teamMembers: InsideMembers[], teamName: string, teamEmoji: EmojiResolvable): Promise<EmbedBuilder> {
+
+        // Sort team members by captain
+        teamMembers.sort((a, b) => {
+            if (a.isCaptain) return -1;
+            if (b.isCaptain) return 1;
+            return 0;
+        });
+
+        const teamMembersString = teamMembers.map(member => {
+            
+            const title = member.isCaptain ? `**🎖 Kapitan drużyny**` : `**🤺 Członek drużyny**`;
+            const info = `   <@${member.id}> (${member.fullName})`;
+
+            return `${title}\n${info}`;
+
+        }).join('\n') || '📦 Brak członków';
+
+        teamEmoji = teamEmoji || await this.emojiService.getDiscordEmojiByName('plainside');
+
+        const insideTeamEmbed = new EmbedBuilder()
+            .setTitle(`Drużyna ${teamName} ${teamEmoji} `)
+            .setColor(this.configService.get('theme.color-primary'))
+            .setTimestamp()
+            .setAuthor({
+                name: 'Polskie Legendy Apex',
+                iconURL: this.configService.get('images.logo-transparent')
+            })
+            .setDescription(teamMembersString);
+
+        return insideTeamEmbed;
     }
 
 }

@@ -38,8 +38,15 @@ export class DiscordService {
     this.guild = await this.client.guilds.fetch(this.guildId);
     setClient(this.client);
 
+    const errorRedirect = (e) => {
+      this.logger.error(`${e} - ${e?.stack}`);
+      this.sendErrorToLogChannel(e);
+    }
+
     // Send message to log channel on process uncaught exception
-    process.on('uncaughtException', (e) => this.sendErrorToLogChannel(e));
+    process.on('uncaughtException', (e) => errorRedirect(e));
+    
+    process.on('unhandledRejection', (e) => errorRedirect(e as Error));
 
     this.logger.log('Discord client initialized');
   }
@@ -84,16 +91,27 @@ export class DiscordService {
       })
       .setTimestamp();
 
-    embed.addFields(
-      {
-        name: 'Stack trace',
-        value: `\`\`\`${error.stack}\`\`\``,
-      },
-      {
-        name: 'Cause',
-        value: `\`\`\`${error.cause}\`\`\``,
-      }
-    );
+    try {
+      embed.addFields(
+        {
+          name: 'Stack trace',
+          value: `\`\`\`${error?.stack}\`\`\``,
+        },
+        {
+          name: 'Cause',
+          value: `\`\`\`${error?.cause}\`\`\``,
+        }
+      );
+    } catch (e) {
+      this.logger.error(`Couldn't log error details to embed: ${e}`);
+
+      embed.addFields(
+        {
+          name: 'Nie udało się pobrać szczegółów błędu:',
+          value: `\`\`\`${e}\`\`\``,
+        },
+      );
+    }
     
     this.sendMessage(logChannelId, content, [embed]);
   }
