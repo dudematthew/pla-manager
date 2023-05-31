@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { MessageData } from '../discord.listeners';
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CacheType, ChatInputCommandInteraction, ColorResolvable, EmbedBuilder, InteractionReplyOptions, PermissionsBitField } from 'discord.js';
+import { APIInteractionGuildMember, ActionRowBuilder, ButtonBuilder, ButtonStyle, CacheType, ChatInputCommandInteraction, ColorResolvable, EmbedBuilder, GuildMember, InteractionReplyOptions, PermissionsBitField } from 'discord.js';
 import { handleConnectCommandDto, platformAliases } from '../commands/dtos/handle-connect.command.dto';
 import { ApexApiService } from 'src/apex-api/apex-api.service';
 import { Logger } from '@nestjs/common';
@@ -9,6 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { ApexAccountService } from 'src/database/entities/apex-account/apex-account.service';
 import { UserService } from 'src/database/entities/user/user.service';
 import { UserEntity } from 'src/database/entities/user/user.entity';
+import { ApexAccountEntity } from 'src/database/entities/apex-account/entities/apex-account.entity';
 
 @Injectable()
 export class ApexConnectService {
@@ -45,8 +46,7 @@ export class ApexConnectService {
             return;
         }
 
-        console.log(playerData);
-
+        // Send message with player data and ask user to confirm
         const confirmResponse = await interaction.reply(this.getPlayerDataConfirmMessage(playerData));
 
         const collectorFilter = i => i.user.id == interaction.user.id;
@@ -60,9 +60,56 @@ export class ApexConnectService {
             return;
         }
 
-        if (confirmation.customId !== 'apex-connect-confirm') {
-            this.logger.error(`Confirmation customId is not apex-connect-confirm. Received: ${confirmation.customId}`);
-            return;
+        // if (confirmation.customId !== 'apex-connect-confirm') {
+        //     this.logger.error(`Confirmation customId is not apex-connect-confirm. Received: ${confirmation.customId}`);
+        //     return;
+        // }
+
+        // Account that could be connected to user
+        const checkForAccount = await this.apexAccountService.findByUID(playerData.global.uid.toString());
+
+        // Check if account already exists
+        if (checkForAccount) {
+            const sameUser = checkForAccount.user.discordId == interaction.user.id;
+
+            const message = this.getAccountExistMessage(checkForAccount, sameUser);
+
+            interaction.editReply(message);
+            
+            if (sameUser)
+                return;
+
+            const collectorFilter = i => i.user.id == interaction.user.id;
+
+            let confirmation: any;
+
+            try {
+                confirmation = await interaction.channel.awaitMessageComponent({ filter: collectorFilter, time: 60000 });
+            }
+            catch (e) {
+                await interaction.editReply(this.getPlayerDataExpiredMessage());
+                return;
+            }
+        }
+
+        // Account that is already connected to user
+        const checkIfConnected = (await this.userService.findByDiscordId(interaction.user.id))?.apexAccount;
+
+        // Check if user is already connected and it's not the same account
+        if (checkIfConnected) {
+            interaction.editReply(this.getAlreadyConnectedMessage(checkIfConnected));
+
+            const collectorFilter = i => i.user.id == interaction.user.id;
+
+            let confirmation: any;
+
+            try {
+                confirmation = await interaction.channel.awaitMessageComponent({ filter: collectorFilter, time: 60000 });
+            }
+            catch (e) {
+                await interaction.editReply(this.getPlayerDataExpiredMessage());
+                return;
+            }
         }
 
         // Create timestamp for 60 seconds from now
@@ -95,21 +142,38 @@ export class ApexConnectService {
             }
         }
 
-        const user = await this.userService.findByDiscordId(interaction.user.id);
+        let user = await this.userService.findByDiscordId(interaction.user.id);
 
         // If user doesn't exist, create one
         if (!user) {
-            const newUser = await this.userService.create({
+            user = await this.userService.create({
                 discordId: interaction.user.id,
                 isAdmin: interaction.memberPermissions.has(PermissionsBitField.Flags.Administrator),
             });
+
+            // If user is null (something went wrong), abort
+            if (!user) {
+                await interaction.editReply(this.getErrorEmbed("Nie udało się utworzyć twojego konta."));
+                return;
+            }
         }
 
-        const account = await this.saveAccount(playerData, user);
+        // If user already has apex account, delete it
+        if (user.apexAccount) {
+            console.log("User already has apex account, deleting...", user.apexAccount);
+            await this.apexAccountService.remove(user.apexAccount.id);
+        }
 
-        // If account is null (something went wrong), abort
-        if (!account) {
-            await interaction.editReply(this.getErrorEmbed());
+        if (checkForAccount) {
+            console.log("Account already exists, deleting...", checkForAccount);
+            await this.apexAccountService.remove(checkForAccount.id);
+        }
+
+        const newUser: UserEntity = await this.saveAccount(playerData, user);
+
+        // If newUser is null (something went wrong), abort
+        if (!newUser || !newUser.apexAccount) {
+            await interaction.editReply(this.getErrorEmbed("Nie udało się powiązać twojego konta."));
             return;
         }
 
@@ -117,26 +181,39 @@ export class ApexConnectService {
         await interaction.editReply(this.getSuccessMessage(playerData));
     }
 
-    public async saveAccount(playerData: PlayerStatistics, user: UserEntity) {
-        return await this.apexAccountService.create({
+    public async saveAccount(playerData: PlayerStatistics, user: UserEntity): Promise<UserEntity> {
+        console.log("Saving account: ", playerData, user);
+        const data = {
             user,
             name: playerData.global.name,
             uid: playerData.global.uid.toString(),
-            avatarUrl: playerData.global?.avatar,
-            platform: playerData.global?.platform,
-            rankScore: playerData.global?.rank.rankScore,
-            rankName: playerData.global?.rank.rankName,
-            rankDivision: playerData.global?.rank.rankDiv.toString(),
-            rankImg: playerData.global?.rank.rankImg,
-            level: playerData.global?.level,
-            percentToNextLevel: playerData.global?.toNextLevelPercent,
-            brTotalKills: playerData.total?.kills.value,
+            avatarUrl: playerData.global?.avatar ?? '',
+            platform: playerData.global?.platform ?? '',
+            rankScore: playerData.global?.rank?.rankScore ?? 0,
+            rankName: playerData.global?.rank?.rankName ?? '',
+            rankDivision: playerData.global?.rank?.rankDiv.toString() ?? '',
+            rankImg: playerData.global?.rank?.rankImg ?? '',
+            level: playerData.global?.level ?? 0,
+            percentToNextLevel: playerData.global?.toNextLevelPercent ?? 0,
+            brTotalKills: playerData.total?.kills?.value ?? 0,
             brTotalWins: 0 /* playerData.total.wins.value */,
             brTotalGamesPlayed: 0/* playerData.total?.games */,
-            brKDR: parseInt(playerData.total?.kd.value ?? '0'),
-            brTotalDamage: playerData.total?.damage.value,
-            lastLegendPlayed: playerData.realtime?.selectedLegend,
-        });
+            brKDR: parseInt(playerData.total?.kd?.value ?? '0') ?? 0,
+            brTotalDamage: playerData.total?.damage?.value ?? 0,
+            lastLegendPlayed: playerData.realtime?.selectedLegend ?? '',
+        };
+
+        const profile = await this.apexAccountService.create(data);
+
+        if (!profile) {
+            return null;
+        }
+
+        user.apexAccount = profile;
+
+        await this.userService.update(user.id, user);
+
+        return user;
     }
 
     public async handlePrivateMessage(messageData: MessageData) {
@@ -297,7 +374,66 @@ export class ApexConnectService {
             return {
                 embeds: [embed],
                 components: [row as any],
+                ephemeral: true,
             }
+    }
+
+    private getAccountExistMessage(account: ApexAccountEntity, sameUser = false) {
+        // interaction.reply({ content: `Konto o nicku ${options.username} jest już połączone.`, ephemeral: true});
+        const embed = this.getBasicEmbed()
+            
+        // Check if it's the same user
+        if (sameUser) {
+            embed.setTitle('Jesteś już połączony z tym kontem')
+            embed.setDescription('Podane konto jest już połączone z twoim kontem Discord. Jeśli chcesz je odłączyć, możesz to zrobić używając komendy \`/odłącz\`.')
+            embed.setThumbnail(this.configService.get<string>('images.success'));
+
+            return {
+                embeds: [embed],
+                components: [],
+            }
+        }
+
+        // Account is connected to another user
+        embed.setTitle('Konto jest już połączone z innym użytkownikiem')
+        embed.setDescription(`Konto o nicku **${account.name}** jest już połączone z użytkownikiem <@${account.user.discordId}>. Jeśli chcesz możesz wciąż połączyć to konto z twoim kontem, ale poprzednie połączenie zostanie usunięte. Użytkownik otrzyma powiadomienie o tym fakcie.`)
+        embed.setThumbnail(this.configService.get<string>('images.danger'));
+
+        const confirmButton = new ButtonBuilder()
+            .setStyle(ButtonStyle.Danger)
+            .setLabel('Odbierz konto użytkownikowi')
+            .setCustomId('apex-connect-continue')
+            .setEmoji('⚠');
+
+        const row = new ActionRowBuilder()
+            .addComponents(confirmButton);
+
+        return {
+            embeds: [embed],
+            components: [row as any],
+        }
+    }
+
+    private getAlreadyConnectedMessage(account: ApexAccountEntity) {
+
+        const embed = this.getBasicEmbed()
+            .setTitle('Posiadasz już inne połączone konto')
+            .setDescription(`Twoje konto Discord jest już połączone z kontem o nazwie ${account.name}. Jeśli chcesz je odłączyć, możesz to zrobić używając komendy \`/odłącz\` lub skontaktować się z administracją. Alternatywnie możesz kontynuować proces, ale poprzednie połączenie zostanie usunięte.`)
+            .setThumbnail(this.configService.get<string>('images.danger'));
+
+        const confirmButton = new ButtonBuilder()
+            .setStyle(ButtonStyle.Danger)
+            .setLabel('Kontynuuj mimo wszystko')
+            .setCustomId('apex-connect-continue')
+            .setEmoji('⚠');
+
+        const row = new ActionRowBuilder()
+            .addComponents(confirmButton);
+
+        return {
+            embeds: [embed],
+            components: [row as any],
+        }
     }
 
     /**
@@ -380,11 +516,18 @@ export class ApexConnectService {
      * @param error error message
      * @returns message that informs user that action has expired
      */
-    private getErrorEmbed() {
+    private getErrorEmbed(errorMessage) {
         const embed = this.getBasicEmbed()
             .setTitle('Wystąpił błąd')
             .setDescription('Przepraszamy, coś poszło nie tak. Spróbuj ponownie później lub skontaktuj się z administracją.')
             .setThumbnail(this.configService.get<string>('images.danger'));
+
+        if (errorMessage) {
+            embed.addFields({
+                name: 'Treść Błędu',
+                value: errorMessage,
+            });
+        }
 
         return {
             embeds: [embed],

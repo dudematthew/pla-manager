@@ -20,7 +20,10 @@ export class UserService {
      * @returns The user
      */
     async findById(id: number): Promise<UserEntity> {
-        return await this.userRepository.findOneBy({ id });
+        return await this.userRepository.findOne({
+            where: { id },
+            relations: ['apexAccount']
+          });
     }
 
     /**
@@ -29,7 +32,10 @@ export class UserService {
      * @returns The user
      */
     async findByDiscordId(discordId: string): Promise<UserEntity> {
-        return await this.userRepository.findOneBy({ discordId });
+        return await this.userRepository.findOne({
+            where: { discordId },
+            relations: ['apexAccount']
+          });
     }
 
     /**
@@ -38,7 +44,10 @@ export class UserService {
      * @returns The user
      */
     async findByEmail(email: string): Promise<UserEntity> {
-        return await this.userRepository.findOneBy({ email });
+        return await this.userRepository.findOne({
+            where: { email },
+            relations: ['apexAccount']
+          });
     }
 
     /**

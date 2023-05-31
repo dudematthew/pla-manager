@@ -306,6 +306,23 @@
           "reference": null,
           "type": "Date",
           "validations": []
+        },
+        {
+          "defaultValue": null,
+          "enums": null,
+          "field": "user",
+          "integration": null,
+          "inverseOf": "apexAccount",
+          "isFilterable": true,
+          "isPrimaryKey": false,
+          "isReadOnly": false,
+          "isRequired": false,
+          "isSortable": true,
+          "isVirtual": false,
+          "reference": "user.id",
+          "relationship": "HasOne",
+          "type": "Number",
+          "validations": []
         }
       ],
       "icon": null,
@@ -1068,6 +1085,23 @@
         {
           "defaultValue": null,
           "enums": null,
+          "field": "apexAccount",
+          "integration": null,
+          "inverseOf": "user",
+          "isFilterable": true,
+          "isPrimaryKey": false,
+          "isReadOnly": false,
+          "isRequired": false,
+          "isSortable": true,
+          "isVirtual": false,
+          "reference": "apex_account.id",
+          "relationship": "BelongsTo",
+          "type": "Number",
+          "validations": []
+        },
+        {
+          "defaultValue": null,
+          "enums": null,
           "field": "created_at",
           "integration": null,
           "inverseOf": null,
@@ -1106,12 +1140,12 @@
           "isFilterable": true,
           "isPrimaryKey": false,
           "isReadOnly": false,
-          "isRequired": true,
+          "isRequired": false,
           "isSortable": true,
           "isVirtual": false,
           "reference": null,
           "type": "String",
-          "validations": [{"type": "is present", "message": "Field is required"}]
+          "validations": []
         },
         {
           "defaultValue": null,
@@ -1176,6 +1210,6 @@
   "metadata": {
     "liana": "forest-nodejs-agent",
     "liana_version": "1.8.13",
-    "stack": {"engine": "nodejs", "engine_version": "18.12.1"}
+    "stack": {"engine": "nodejs", "engine_version": "19.1.0"}
   }
 }

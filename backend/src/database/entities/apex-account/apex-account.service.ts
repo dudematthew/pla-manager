@@ -21,7 +21,6 @@ export class ApexAccountService {
     }
 
     const newAccount = this.apexAccountRepository.create({
-      user: account.user,
       name: account.name,
       uid: account.uid,
       avatarUrl: account.avatarUrl,
@@ -59,17 +58,48 @@ export class ApexAccountService {
     }
   }
 
+  async remove (id: number): Promise<ApexAccountEntity> {
+    const account = await this.findById(id);
+
+    if(!account) {
+      return null;
+    }
+
+    // Check if account is linked to a user
+    if(account.user) {
+      // Set user's apex account to null
+      account.user.apexAccount = null;
+      await account.user.save();
+    }
+
+    return await this.apexAccountRepository.remove(account);
+  }
+
   async findById(id: number): Promise<ApexAccountEntity> {
-    return await this.apexAccountRepository.findOneBy({ id });
+    return await this.apexAccountRepository.findOne({
+      where: { id },
+      relations: ['user']
+    });
   }
 
   async findByUID(uid: string): Promise<ApexAccountEntity> {
-    return await this.apexAccountRepository.findOneBy({ uid });
+    return await this.apexAccountRepository.findOne({
+      where: { uid },
+      relations: ['user']
+    });;
   }
 
-  async findByUsername(username: string): Promise<ApexAccountEntity> {
-    return await this.apexAccountRepository.findOneBy({ name: username });
+  async findByName(name: string): Promise<ApexAccountEntity> {
+    return await this.apexAccountRepository.findOne({
+      where: { name },
+      relations: ['user']
+    });
   }
 
+  async findAll(): Promise<ApexAccountEntity[]> {
+    return await this.apexAccountRepository.find({
+      relations: ['user']
+    });
+  }
   
 }

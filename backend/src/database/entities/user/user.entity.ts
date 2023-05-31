@@ -1,4 +1,4 @@
-import { BaseEntity, Column, CreateDateColumn, Entity, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { BaseEntity, Column, CreateDateColumn, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { ApexAccountEntity } from "../apex-account/entities/apex-account.entity";
 
 @Entity({
@@ -12,7 +12,7 @@ export class UserEntity extends BaseEntity {
     @Column({ unique: true, name: 'discord_id' })
     discordId: string;
 
-    @Column()
+    @Column({ nullable: true })
     email: string;
 
     @Column({ default: false, name: 'is_admin'})
@@ -24,6 +24,7 @@ export class UserEntity extends BaseEntity {
     @UpdateDateColumn({ name: 'updated_at' })
     updatedAt: Date;
 
-    @OneToOne(() => ApexAccountEntity, apexAccount => apexAccount.id)
+    @OneToOne(() => ApexAccountEntity, apexAccount => apexAccount.user)
+    @JoinColumn()
     apexAccount: ApexAccountEntity;
 }

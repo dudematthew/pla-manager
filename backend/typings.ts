@@ -22,8 +22,18 @@ export type Schema = {
       'created_at': string;
       'updated_at': string;
     };
-    nested: {};
-    flat: {};
+    nested: {
+      'user': Schema['user']['plain'] & Schema['user']['nested'];
+    };
+    flat: {
+      'user:id': number;
+      'user:discord_id': string;
+      'user:email': string;
+      'user:is_admin': number;
+      'user:created_at': string;
+      'user:updated_at': string;
+      'user:apexAccountId': number;
+    };
   };
   'channel': {
     plain: {
@@ -129,8 +139,31 @@ export type Schema = {
       'is_admin': number;
       'created_at': string;
       'updated_at': string;
+      'apexAccountId': number;
     };
-    nested: {};
-    flat: {};
+    nested: {
+      'apexAccount': Schema['apex_account']['plain'] & Schema['apex_account']['nested'];
+    };
+    flat: {
+      'apexAccount:id': number;
+      'apexAccount:name': string;
+      'apexAccount:uid': string;
+      'apexAccount:avatar_url': string;
+      'apexAccount:platform': string;
+      'apexAccount:rank_score': number;
+      'apexAccount:rank_name': string;
+      'apexAccount:rank_division': string;
+      'apexAccount:rank_img': string;
+      'apexAccount:level': number;
+      'apexAccount:percent_to_next_level': number;
+      'apexAccount:br_total_kills': number;
+      'apexAccount:br_total_wins': number;
+      'apexAccount:br_total_games_played': number;
+      'apexAccount:br_kdr': number;
+      'apexAccount:br_total_damage': number;
+      'apexAccount:last_legend_played': string;
+      'apexAccount:created_at': string;
+      'apexAccount:updated_at': string;
+    };
   };
 };

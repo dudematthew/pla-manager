@@ -1,7 +1,4 @@
-import { UserEntity } from "../../user/user.entity";
-
 export class CreateApexAccountDto {
-    user: UserEntity;
     name: string;
     uid: string;
     avatarUrl: string;
