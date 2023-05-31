@@ -3,12 +3,15 @@ import { ApexConnectService } from './apex-connect.service';
 import { ApexApiModule } from 'src/apex-api/apex-api.module';
 import { ApexAccountModule } from 'src/database/entities/apex-account/apex-account.module';
 import { UserModule } from 'src/database/entities/user/user.module';
+import { DiscordModule } from '../discord.module';
+import { forwardRef } from '@nestjs/common';
 
 @Module({
   imports: [
     ApexApiModule,
     ApexAccountModule,
     UserModule,
+    forwardRef(() => DiscordModule),
   ],
   providers: [
     ApexConnectService,

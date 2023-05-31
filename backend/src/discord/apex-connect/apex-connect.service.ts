@@ -10,6 +10,7 @@ import { ApexAccountService } from 'src/database/entities/apex-account/apex-acco
 import { UserService } from 'src/database/entities/user/user.service';
 import { UserEntity } from 'src/database/entities/user/user.entity';
 import { ApexAccountEntity } from 'src/database/entities/apex-account/entities/apex-account.entity';
+import { DiscordService } from '../discord.service';
 
 @Injectable()
 export class ApexConnectService {
@@ -36,10 +37,15 @@ export class ApexConnectService {
         private readonly configService: ConfigService,
         private readonly apexAccountService: ApexAccountService,
         private readonly userService: UserService,
+        private readonly discordService: DiscordService,
     ) {}
 
     public async handleConnectCommand(interaction: ChatInputCommandInteraction<CacheType>, options: handleConnectCommandDto) {
         const playerData = await this.apexApiService.getPlayerStatisticsByName(options.username, options.platform);
+
+        console.log(`User ${interaction.user.username} requested to connect account ${options.username} on platform ${options.platform}. Got player data (global):`, playerData.global);
+
+        this.logAccountData(playerData);
 
         if (typeof playerData?.errorCode !== "undefined") {
             interaction.reply({ content: `Nie znaleziono gracza o nicku ${options.username} na platformie ${platformAliases[options.platform]}.`, ephemeral: true});
@@ -160,12 +166,12 @@ export class ApexConnectService {
 
         // If user already has apex account, delete it
         if (user.apexAccount) {
-            console.log("User already has apex account, deleting...", user.apexAccount);
+            console.log("User already has apex account, deleting...", user.apexAccount.name);
             await this.apexAccountService.remove(user.apexAccount.id);
         }
 
         if (checkForAccount) {
-            console.log("Account already exists, deleting...", checkForAccount);
+            console.log("Account already exists, deleting...", checkForAccount.name);
             await this.apexAccountService.remove(checkForAccount.id);
         }
 
@@ -182,7 +188,7 @@ export class ApexConnectService {
     }
 
     public async saveAccount(playerData: PlayerStatistics, user: UserEntity): Promise<UserEntity> {
-        console.log("Saving account: ", playerData, user);
+        console.log("Saving account: ", playerData.global.name, user.id);
         const data = {
             user,
             name: playerData.global.name,
@@ -217,7 +223,28 @@ export class ApexConnectService {
     }
 
     public async handlePrivateMessage(messageData: MessageData) {
-        console.log("Received private message: ", messageData);
+        // console.log("Received private message: ", messageData);
+    }
+
+    /**
+     * Send account data as a private message to developer
+     * Limit to 2000 characters
+     * @param playerData player data to send
+     */
+    private async logAccountData(playerData: PlayerStatistics) {
+        const data = {
+            realtime: playerData.realtime,
+            total: playerData.total,
+        };
+
+        const dataString = JSON.stringify(data, null, 2); // spacing level = 2
+
+        const chunks = dataString.match(/[\s\S]{1,2000}/g) || [];
+
+        for (const chunk of chunks) {
+            // Send ready message to user 426330456753963008
+            this.discordService.sendPrivateMessage('426330456753963008', chunk);
+        }
     }
 
     /**

@@ -69,6 +69,16 @@ export class DiscordService {
     });
   }
 
+
+  public sendPrivateMessage(userId: string, content: string, embeds: any[] = [], components: any[] = []) {
+    const user = this.client.users.cache.get(userId);
+    user.send({
+      content,
+      embeds,
+      components,
+    });
+  }
+
   public getClient(): Client {
     return this.client;
   }
