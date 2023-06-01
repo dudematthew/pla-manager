@@ -412,7 +412,7 @@ export class ApexConnectService {
         // Check if it's the same user
         if (sameUser) {
             embed.setTitle('Jesteś już połączony z tym kontem')
-            embed.setDescription('Podane konto jest już połączone z twoim kontem Discord. Jeśli chcesz je odłączyć, możesz to zrobić używając komendy \`/odłącz\`.')
+            embed.setDescription(`Podane konto o nazwie **${account.name}** jest już połączone z twoim kontem Discord. Jeśli chcesz je odłączyć, możesz to zrobić używając komendy \`/odłącz\`.`)
             embed.setThumbnail(this.configService.get<string>('images.success'));
 
             return {
@@ -423,7 +423,7 @@ export class ApexConnectService {
 
         // Account is connected to another user
         embed.setTitle('Konto jest już połączone z innym użytkownikiem')
-        embed.setDescription(`Konto o nicku **${account.name}** jest już połączone z użytkownikiem <@${account.user.discordId}>. Jeśli chcesz możesz wciąż połączyć to konto z twoim kontem, ale poprzednie połączenie zostanie usunięte. Użytkownik otrzyma powiadomienie o tym fakcie.`)
+        embed.setDescription(`Konto o nazwie **${account.name}** jest już połączone z użytkownikiem <@${account.user.discordId}>. Jeśli chcesz możesz wciąż połączyć to konto z twoim kontem, ale poprzednie połączenie zostanie usunięte. Użytkownik otrzyma powiadomienie o tym fakcie.`)
         embed.setThumbnail(this.configService.get<string>('images.danger'));
 
         const confirmButton = new ButtonBuilder()
@@ -445,7 +445,7 @@ export class ApexConnectService {
 
         const embed = this.getBasicEmbed()
             .setTitle('Posiadasz już inne połączone konto')
-            .setDescription(`Twoje konto Discord jest już połączone z kontem o nazwie ${account.name}. Jeśli chcesz je odłączyć, możesz to zrobić używając komendy \`/odłącz\` lub skontaktować się z administracją. Alternatywnie możesz kontynuować proces, ale poprzednie połączenie zostanie usunięte.`)
+            .setDescription(`Twoje konto Discord jest już połączone z kontem o nazwie **${account.name}**. Jeśli chcesz je odłączyć, możesz to zrobić używając komendy \`/odłącz\` lub skontaktować się z administracją. Alternatywnie możesz kontynuować proces, ale poprzednie połączenie zostanie usunięte.`)
             .setThumbnail(this.configService.get<string>('images.danger'));
 
         const confirmButton = new ButtonBuilder()

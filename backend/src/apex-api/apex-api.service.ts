@@ -18,6 +18,8 @@ export class ApexApiService {
      */
     private logger = new Logger('ApexApiService');
 
+    private cacheTTL = 10000; // 10 seconds
+
     /**
      * Axios instance with rate limiting
      */
@@ -48,12 +50,20 @@ export class ApexApiService {
      * @returns Player statistics
      */
     public async getPlayerStatisticsByUID(playerUID: string, platform: 'PC' | 'PS4' | 'X1' | 'SWITCH', options: PlayerStatisticsParamsDto): Promise<PlayerStatistics> {
+
+        // Make sure options are set
+        options.uid = options.uid || playerUID;
+        options.platform = options.platform || platform;
+
+        const hashedOptions = hash(options);
         const cachedValue = await this.cache.get(`player-statistics-${hash(options)}`);
+        console.log(`Generated hash ${hashedOptions} for options: `, options);
+        
         if (cachedValue) {
             return cachedValue;
         }
-
-
+        
+        
         let url = `https://api.mozambiquehe.re/bridge?auth=${this.apiKey}&uuid=${playerUID}&platform=${platform}`;
 
         // Add all options to the url except already added
@@ -64,7 +74,7 @@ export class ApexApiService {
 
         try {
             const response = await this.http.get(url);
-            this.cache.set(`player-statistics-${hash(options)}`, response.data, 10000);
+            this.cache.set(`player-statistics-${hash(options)}`, response.data, this.cacheTTL);
             return response.data;
         }
         catch (e) {
@@ -74,22 +84,29 @@ export class ApexApiService {
             };
         }
     }
-
+    
     /**
      * Get player statistics by name
      * @param playerName 
      * @param platform 
      * @param options 
      * @returns Player statistics or null if not found
-     */
+    */
     public async getPlayerStatisticsByName(playerName: string, platform: 'PC' | 'PS4' | 'X1' | 'SWITCH', options: PlayerStatisticsParamsDto = {}): Promise<PlayerStatistics> {
+       
+        // Make sure options are set
+        options.player = options.player || playerName;
+        options.platform = options.platform || platform;
 
+        const hashedOptions = hash(options);
         const cachedValue = await this.cache.get(`player-statistics-${hash(options)}`);
+        console.log(`Generated hash ${hashedOptions} for options: `, options);
+
         if (cachedValue) {
             return cachedValue;
         }
-
-
+        
+        
         let url = `https://api.mozambiquehe.re/bridge?auth=${this.apiKey}&player=${playerName}&platform=${platform}`;
 
         // Add all options to the url except already added
@@ -101,7 +118,7 @@ export class ApexApiService {
         try {
             const response = await this.http.get(url);
 
-            this.cache.set(`player-statistics-${hash(options)}`, response.data, 10000);
+            this.cache.set(`player-statistics-${hash(options)}`, response.data, this.cacheTTL);
             return response.data;
         }
         catch (e) {
@@ -112,10 +129,10 @@ export class ApexApiService {
             };
         }
     }
-
+    
     public async getPlayerUUIDByName(playerName: string, platform: 'PC' | 'PS4' | 'X1' | 'SWITCH') {
         const url = `https://api.mozambiquehe.re/nametouid?auth=${this.apiKey}&platform=${platform}&player=${playerName}`;
-
+        
         try {
             const response = await this.http.get(url);
             return response.data;
