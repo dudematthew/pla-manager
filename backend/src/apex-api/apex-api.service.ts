@@ -18,7 +18,7 @@ export class ApexApiService {
      */
     private logger = new Logger('ApexApiService');
 
-    private cacheTTL = 10000; // 10 seconds
+    private cacheTTL = 5000; // 5 seconds
 
     /**
      * Axios instance with rate limiting
