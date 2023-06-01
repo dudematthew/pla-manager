@@ -5,6 +5,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ApexAccountEntity } from './entities/apex-account.entity';
 import { UserEntity } from '../user/user.entity';
+import { UserService } from '../user/user.service';
+import { PlayerStatistics } from 'src/apex-api/player-statistics.interface';
 
 @Injectable()
 export class ApexAccountService {
@@ -12,6 +14,7 @@ export class ApexAccountService {
   constructor(
     @InjectRepository(ApexAccountEntity)
     private readonly apexAccountRepository: Repository<ApexAccountEntity>,
+    private userService: UserService,
   ) {}
 
   async create(account: CreateApexAccountDto): Promise<ApexAccountEntity> {
@@ -40,6 +43,47 @@ export class ApexAccountService {
     });
 
     return await this.apexAccountRepository.save(newAccount);
+  }
+
+  public async saveAccount(playerData: PlayerStatistics, user: UserEntity): Promise<UserEntity> {
+    console.log("Saving account: ", playerData.global.name, user.id);
+
+    // Create data object
+    const data = {
+        user,
+        name: playerData.global.name,
+        uid: playerData.global.uid.toString(),
+        avatarUrl: playerData.global?.avatar ?? null,
+        platform: playerData.global?.platform ?? null,
+        rankScore: playerData.global?.rank?.rankScore ?? null,
+        rankName: playerData.global?.rank?.rankName ?? null,
+        rankDivision: playerData.global?.rank?.rankDiv.toString() ?? null,
+        rankImg: playerData.global?.rank?.rankImg ?? null,
+        level: playerData.global?.level ?? null,
+        percentToNextLevel: playerData.global?.toNextLevelPercent ?? null,
+        brTotalKills: playerData.total?.specialEvent_kills.value ?? null,
+        brTotalWins: playerData.total?.specialEvent_wins.value ?? null,
+        brTotalDamage: playerData.total?.specialEvent_damage.value ?? null,
+        brTotalGamesPlayed: null, // Doesn't exist in API
+        brKDR: parseInt(playerData.total?.kd?.value ?? null) ?? null,
+        lastLegendPlayed: playerData.realtime?.selectedLegend ?? null,
+    };
+
+    // Create new profile
+    const profile = await this.create(data);
+
+    // Check if profile was created
+    if (!profile) {
+        return null;
+    }
+
+    // Get user
+    user.apexAccount = profile;
+
+    // Update users apex account
+    await this.userService.update(user.id, user);
+
+    return user;
   }
 
   async update(id: number, properties: UpdateApexAccountDto): Promise<ApexAccountEntity> {

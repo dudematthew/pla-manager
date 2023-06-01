@@ -175,7 +175,7 @@ export class ApexConnectService {
             await this.apexAccountService.remove(checkForAccount.id);
         }
 
-        const newUser: UserEntity = await this.saveAccount(playerData, user);
+        const newUser: UserEntity = await this.apexAccountService.saveAccount(playerData, user);
 
         // If newUser is null (something went wrong), abort
         if (!newUser || !newUser.apexAccount) {
@@ -185,41 +185,6 @@ export class ApexConnectService {
 
         // User has chosen legend, connect account
         await interaction.editReply(this.getSuccessMessage(playerData));
-    }
-
-    public async saveAccount(playerData: PlayerStatistics, user: UserEntity): Promise<UserEntity> {
-        console.log("Saving account: ", playerData.global.name, user.id);
-        const data = {
-            user,
-            name: playerData.global.name,
-            uid: playerData.global.uid.toString(),
-            avatarUrl: playerData.global?.avatar ?? '',
-            platform: playerData.global?.platform ?? '',
-            rankScore: playerData.global?.rank?.rankScore ?? 0,
-            rankName: playerData.global?.rank?.rankName ?? '',
-            rankDivision: playerData.global?.rank?.rankDiv.toString() ?? '',
-            rankImg: playerData.global?.rank?.rankImg ?? '',
-            level: playerData.global?.level ?? 0,
-            percentToNextLevel: playerData.global?.toNextLevelPercent ?? 0,
-            brTotalKills: playerData.total?.kills?.value ?? 0,
-            brTotalWins: 0 /* playerData.total.wins.value */,
-            brTotalGamesPlayed: 0/* playerData.total?.games */,
-            brKDR: parseInt(playerData.total?.kd?.value ?? '0') ?? 0,
-            brTotalDamage: playerData.total?.damage?.value ?? 0,
-            lastLegendPlayed: playerData.realtime?.selectedLegend ?? '',
-        };
-
-        const profile = await this.apexAccountService.create(data);
-
-        if (!profile) {
-            return null;
-        }
-
-        user.apexAccount = profile;
-
-        await this.userService.update(user.id, user);
-
-        return user;
     }
 
     public async handlePrivateMessage(messageData: MessageData) {

@@ -12,12 +12,12 @@
           "isFilterable": true,
           "isPrimaryKey": false,
           "isReadOnly": false,
-          "isRequired": true,
+          "isRequired": false,
           "isSortable": true,
           "isVirtual": false,
           "reference": null,
           "type": "String",
-          "validations": [{"type": "is present", "message": "Field is required"}]
+          "validations": []
         },
         {
           "defaultValue": null,
@@ -28,12 +28,12 @@
           "isFilterable": true,
           "isPrimaryKey": false,
           "isReadOnly": false,
-          "isRequired": true,
+          "isRequired": false,
           "isSortable": true,
           "isVirtual": false,
           "reference": null,
           "type": "Number",
-          "validations": [{"type": "is present", "message": "Field is required"}]
+          "validations": []
         },
         {
           "defaultValue": null,
@@ -44,12 +44,12 @@
           "isFilterable": true,
           "isPrimaryKey": false,
           "isReadOnly": false,
-          "isRequired": true,
+          "isRequired": false,
           "isSortable": true,
           "isVirtual": false,
           "reference": null,
           "type": "Number",
-          "validations": [{"type": "is present", "message": "Field is required"}]
+          "validations": []
         },
         {
           "defaultValue": null,
@@ -60,12 +60,12 @@
           "isFilterable": true,
           "isPrimaryKey": false,
           "isReadOnly": false,
-          "isRequired": true,
+          "isRequired": false,
           "isSortable": true,
           "isVirtual": false,
           "reference": null,
           "type": "Number",
-          "validations": [{"type": "is present", "message": "Field is required"}]
+          "validations": []
         },
         {
           "defaultValue": null,
@@ -76,12 +76,12 @@
           "isFilterable": true,
           "isPrimaryKey": false,
           "isReadOnly": false,
-          "isRequired": true,
+          "isRequired": false,
           "isSortable": true,
           "isVirtual": false,
           "reference": null,
           "type": "Number",
-          "validations": [{"type": "is present", "message": "Field is required"}]
+          "validations": []
         },
         {
           "defaultValue": null,
@@ -92,12 +92,12 @@
           "isFilterable": true,
           "isPrimaryKey": false,
           "isReadOnly": false,
-          "isRequired": true,
+          "isRequired": false,
           "isSortable": true,
           "isVirtual": false,
           "reference": null,
           "type": "Number",
-          "validations": [{"type": "is present", "message": "Field is required"}]
+          "validations": []
         },
         {
           "defaultValue": null,
@@ -140,12 +140,12 @@
           "isFilterable": true,
           "isPrimaryKey": false,
           "isReadOnly": false,
-          "isRequired": true,
+          "isRequired": false,
           "isSortable": true,
           "isVirtual": false,
           "reference": null,
           "type": "String",
-          "validations": [{"type": "is present", "message": "Field is required"}]
+          "validations": []
         },
         {
           "defaultValue": null,
@@ -156,12 +156,12 @@
           "isFilterable": true,
           "isPrimaryKey": false,
           "isReadOnly": false,
-          "isRequired": true,
+          "isRequired": false,
           "isSortable": true,
           "isVirtual": false,
           "reference": null,
           "type": "Number",
-          "validations": [{"type": "is present", "message": "Field is required"}]
+          "validations": []
         },
         {
           "defaultValue": null,
@@ -188,12 +188,12 @@
           "isFilterable": true,
           "isPrimaryKey": false,
           "isReadOnly": false,
-          "isRequired": true,
+          "isRequired": false,
           "isSortable": true,
           "isVirtual": false,
           "reference": null,
           "type": "Number",
-          "validations": [{"type": "is present", "message": "Field is required"}]
+          "validations": []
         },
         {
           "defaultValue": null,
@@ -220,12 +220,12 @@
           "isFilterable": true,
           "isPrimaryKey": false,
           "isReadOnly": false,
-          "isRequired": true,
+          "isRequired": false,
           "isSortable": true,
           "isVirtual": false,
           "reference": null,
           "type": "String",
-          "validations": [{"type": "is present", "message": "Field is required"}]
+          "validations": []
         },
         {
           "defaultValue": null,
@@ -236,12 +236,12 @@
           "isFilterable": true,
           "isPrimaryKey": false,
           "isReadOnly": false,
-          "isRequired": true,
+          "isRequired": false,
           "isSortable": true,
           "isVirtual": false,
           "reference": null,
           "type": "String",
-          "validations": [{"type": "is present", "message": "Field is required"}]
+          "validations": []
         },
         {
           "defaultValue": null,
@@ -252,12 +252,12 @@
           "isFilterable": true,
           "isPrimaryKey": false,
           "isReadOnly": false,
-          "isRequired": true,
+          "isRequired": false,
           "isSortable": true,
           "isVirtual": false,
           "reference": null,
           "type": "String",
-          "validations": [{"type": "is present", "message": "Field is required"}]
+          "validations": []
         },
         {
           "defaultValue": null,
@@ -268,12 +268,12 @@
           "isFilterable": true,
           "isPrimaryKey": false,
           "isReadOnly": false,
-          "isRequired": true,
+          "isRequired": false,
           "isSortable": true,
           "isVirtual": false,
           "reference": null,
           "type": "Number",
-          "validations": [{"type": "is present", "message": "Field is required"}]
+          "validations": []
         },
         {
           "defaultValue": null,
