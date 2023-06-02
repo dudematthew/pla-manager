@@ -11,6 +11,7 @@ import { AdminEmojiDto } from './dtos/admin-emoji.dto';
 import { ApexConnectService } from '../apex-connect/apex-connect.service';
 import { Logger } from '@nestjs/common';
 import { handleConnectCommandDto } from './dtos/handle-connect.command.dto';
+import { ApexDisconnectService } from '../apex-connect/apex-disconnect.service';
 // import * as paginationEmbed from 'discord.js-pagination';
 
 @Injectable()
@@ -24,6 +25,7 @@ export class CommandsService {
         private readonly insideService: InsideService,
         private readonly emojiService: EmojiService,
         private readonly apexConnectService: ApexConnectService,
+        private readonly apexDisconnectService: ApexDisconnectService,
     ) {}
     
     /**
@@ -177,8 +179,7 @@ export class CommandsService {
     }
 
     /**
-     * Get all roles from the database
-     * @returns All roles
+     * Connect user account
      */
     @SlashCommand({
         name: 'połącz',
@@ -188,5 +189,18 @@ export class CommandsService {
     public async onApexAccountConnect(@Context() [Interaction]: SlashCommandContext, @Options() options: handleConnectCommandDto) {
         this.logger.log(`User ${Interaction.user.username} requested to connect their Apex account`);
         this.apexConnectService.handleConnectCommand(Interaction, options);
+    }
+
+    /**
+     * Disconnect user account
+     */
+    @SlashCommand({
+        name: 'odłącz',
+        description: 'Odłącz swoje konto Apex od konta na Discordzie PLA',
+        guilds: [process.env.MAIN_GUILD_ID]
+    })
+    public async onApexAccountDisconnect(@Context() [Interaction]: SlashCommandContext) {
+        this.logger.log(`User ${Interaction.user.username} requested to disconnect their Apex account`);
+        this.apexDisconnectService.handleDisconnectCommand(Interaction);
     }
 }

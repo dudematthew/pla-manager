@@ -5,6 +5,7 @@ import { ApexAccountModule } from 'src/database/entities/apex-account/apex-accou
 import { UserModule } from 'src/database/entities/user/user.module';
 import { DiscordModule } from '../discord.module';
 import { forwardRef } from '@nestjs/common';
+import { ApexDisconnectService } from './apex-disconnect.service';
 
 @Module({
   imports: [
@@ -15,9 +16,11 @@ import { forwardRef } from '@nestjs/common';
   ],
   providers: [
     ApexConnectService,
+    ApexDisconnectService,
   ],
   exports: [
     ApexConnectService,
+    ApexDisconnectService,
   ],
 })
 export class ApexConnectModule {}
