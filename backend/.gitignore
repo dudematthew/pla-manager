@@ -40,5 +40,5 @@ lerna-debug.log*
 .env.development
 
 # Forest Admin
-.forestadmin-schema.json
-typings.ts
+# .forestadmin-schema.json
+# typings.ts
