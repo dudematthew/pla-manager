@@ -112,18 +112,6 @@ export class CommandsService {
     }
 
     /**
-     * Get all members of PLA Inside
-     */
-    @SlashCommand({
-        name: 'pla-inside-wykaz',
-        description: 'Wykaz członków PLA Inside',
-        guilds: [process.env.MAIN_GUILD_ID]
-    })
-    public async onGetInsideMembers(@Context() [Interaction]: SlashCommandContext) {
-        this.insideService.handleGetInsideMembers(Interaction);
-    }
-
-    /**
      * Connect user account
      */
     @SlashCommand({
