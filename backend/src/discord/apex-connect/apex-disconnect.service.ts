@@ -14,11 +14,8 @@ export class ApexDisconnectService {
     private readonly logger = new Logger(ApexDisconnectService.name);
 
     constructor(
-        private readonly apexApiService: ApexApiService,
-        private readonly configService: ConfigService,
         private readonly apexAccountService: ApexAccountService,
         private readonly userService: UserService,
-        private readonly discordService: DiscordService,
         private readonly messageProviderService: MessageProviderService,
     ) {}
 
