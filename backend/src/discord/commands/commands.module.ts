@@ -4,6 +4,7 @@ import { RoleModule } from 'src/database/entities/role/role.module';
 import { ApexConnectModule } from '../apex-connect/apex-connect.module';
 import { InsideModule } from '../inside/inside.module';
 import { EmojiModule } from 'src/database/entities/emoji/emoji.module';
+import { AdminCommandsService } from './admin-commands.service';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { EmojiModule } from 'src/database/entities/emoji/emoji.module';
   ],
   providers: [
     CommandsService,
+    AdminCommandsService,
   ],
 })
 export class CommandsModule {}
