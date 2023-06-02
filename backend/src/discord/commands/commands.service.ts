@@ -183,6 +183,7 @@ export class CommandsService {
     @SlashCommand({
         name: 'połącz',
         description: 'Połącz swoje konto Apex z kontem na Discordzie PLA',
+        guilds: [process.env.MAIN_GUILD_ID]
     })
     public async onApexAccountConnect(@Context() [Interaction]: SlashCommandContext, @Options() options: handleConnectCommandDto) {
         this.logger.log(`User ${Interaction.user.username} requested to connect their Apex account`);
