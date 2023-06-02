@@ -21,6 +21,6 @@ export class ApexDisconnectService {
     ) {}
 
     public async handleDisconnectCommand(interaction: ChatInputCommandInteraction<CacheType>) {
-        interaction.deferReply({ ephemeral: true });
+        interaction.reply({ content: 'Ta funkcja nie jest jeszcze zaimplementowana.', ephemeral: true});
     }
 }
