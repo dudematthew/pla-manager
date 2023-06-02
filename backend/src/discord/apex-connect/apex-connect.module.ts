@@ -6,6 +6,7 @@ import { UserModule } from 'src/database/entities/user/user.module';
 import { DiscordModule } from '../discord.module';
 import { forwardRef } from '@nestjs/common';
 import { ApexDisconnectService } from './apex-disconnect.service';
+import { MessageProviderService } from './message-provider.service';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { ApexDisconnectService } from './apex-disconnect.service';
   providers: [
     ApexConnectService,
     ApexDisconnectService,
+    MessageProviderService,
   ],
   exports: [
     ApexConnectService,
