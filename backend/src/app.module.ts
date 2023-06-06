@@ -17,6 +17,7 @@ import { ApexApiModule } from './apex-api/apex-api.module';
 import { TourneyModule } from './database/entities/tourney/tourney.module';
 import { ConfigModule } from './config/config.module';
 import { CacheModule } from '@nestjs/cache-manager';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -26,7 +27,7 @@ import { CacheModule } from '@nestjs/cache-manager';
     }),
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '../../../frontend/dist'),
-      exclude: ['/api*', '/auth*', '/admin*'],
+      exclude: ['/api*', '/auth*', '/admin*', '/health*'],
     }),
     DatabaseModule,
     DiscordModule,
@@ -38,6 +39,7 @@ import { CacheModule } from '@nestjs/cache-manager';
     ApexApiModule,
     TourneyModule,
     ConfigModule,
+    HealthModule,
   ],
   controllers: [
     AppController,
