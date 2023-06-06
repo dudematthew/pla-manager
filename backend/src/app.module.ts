@@ -19,6 +19,7 @@ import { ConfigModule } from './config/config.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CronModule } from './cron/cron.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -28,7 +29,7 @@ import { CronModule } from './cron/cron.module';
     }), // Cache manager
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '../../../frontend/dist'),
-      exclude: ['/api*', '/auth*', '/admin*'],
+      exclude: ['/api*', '/auth*', '/admin*', '/health*'],
     }), // Serve the frontend
     ScheduleModule.forRoot(), // Module that powers the cron jobs
     DatabaseModule, // Everything related to the database
@@ -40,9 +41,15 @@ import { CronModule } from './cron/cron.module';
     CronModule, // Cron jobs
 
     // Entities and their modules --
+    DatabaseModule,
+    DiscordModule,
+    LoggerModule,
+    AuthModule,
     UserModule,
     ChannelModule,
     TourneyModule,
+    ConfigModule,
+    HealthModule,
   ],
   controllers: [
     AppController,
