@@ -68,9 +68,11 @@ export type Schema = {
       'updated_at': string;
       'priority': number;
       'emojiId': number;
+      'roleGroupId': number;
     };
     nested: {
       'emoji': Schema['emoji']['plain'] & Schema['emoji']['nested'];
+      'roleGroup': Schema['role_group']['plain'] & Schema['role_group']['nested'];
     };
     flat: {
       'emoji:id': number;
@@ -79,7 +81,21 @@ export type Schema = {
       'emoji:created_at': string;
       'emoji:updated_at': string;
       'emoji:discord_name': string;
+      'roleGroup:id': number;
+      'roleGroup:name': string;
+      'roleGroup:created_at': string;
+      'roleGroup:updated_at': string;
     };
+  };
+  'role_group': {
+    plain: {
+      'id': number;
+      'name': string;
+      'created_at': string;
+      'updated_at': string;
+    };
+    nested: {};
+    flat: {};
   };
   'sessions': {
     plain: {

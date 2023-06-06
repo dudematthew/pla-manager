@@ -37,6 +37,7 @@ import { InsideModule } from './inside/inside.module';
         ApexConnectModule,
         ChannelModule,
         InsideModule,
+        RoleGroupModule
     ],
     controllers: [],
     providers: [

@@ -17,27 +17,32 @@ import { ApexApiModule } from './apex-api/apex-api.module';
 import { TourneyModule } from './database/entities/tourney/tourney.module';
 import { ConfigModule } from './config/config.module';
 import { CacheModule } from '@nestjs/cache-manager';
+import { ScheduleModule } from '@nestjs/schedule';
+import { CronModule } from './cron/cron.module';
 
 @Module({
   imports: [
-    ConfigModule,
+    ConfigModule, // Config that uses yaml
     CacheModule.register({
       isGlobal: true,
-    }),
+    }), // Cache manager
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '../../../frontend/dist'),
       exclude: ['/api*', '/auth*', '/admin*'],
-    }),
-    DatabaseModule,
-    DiscordModule,
-    LoggerModule,
-    AuthModule,
+    }), // Serve the frontend
+    ScheduleModule.forRoot(), // Module that powers the cron jobs
+    DatabaseModule, // Everything related to the database
+    DiscordModule, // Discord bot
+    LoggerModule, // Logger
+    AuthModule, // Authentication endpoints and strategies
+    // AdminPanelModule, // Old admin panel
+    ApexApiModule, // Everything related to the Apex API
+    CronModule, // Cron jobs
+
+    // Entities and their modules --
     UserModule,
     ChannelModule,
-    // AdminPanelModule,
-    ApexApiModule,
     TourneyModule,
-    ConfigModule,
   ],
   controllers: [
     AppController,

@@ -27,6 +27,10 @@ role-names:
     team:
       prefix: 'plainsideteam'
       teams: ['o', 'c', 'y', 'p', 'b', 'g']
+  disconnected: 'disconnected'
+
+role-group-names:
+  ranking: 'rank'
 
 lfg:
   post-cooldown: 120

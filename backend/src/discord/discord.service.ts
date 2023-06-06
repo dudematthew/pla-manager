@@ -3,6 +3,8 @@ import { Client, TextChannel, ChannelType, User, GuildMember, PermissionsBitFiel
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { setClient } from 'discord.js-menu-buttons';
+import { RoleGroupService } from 'src/database/entities/role-group/role-group.service';
+import { RoleService } from 'src/database/entities/role/role.service';
 
 @Injectable()
 export class DiscordService {
@@ -25,6 +27,8 @@ export class DiscordService {
   constructor(
       private readonly client: Client,
       private readonly configService: ConfigService,
+      private readonly roleGroupService: RoleGroupService,
+      private readonly roleService: RoleService,
   ) {
     // Set main guild ID from env variable
     this.guildId = process.env.MAIN_GUILD_ID;
@@ -295,19 +299,20 @@ export class DiscordService {
    */
   async getUserRankRole(userId: string): Promise<Role> {
 
-    const rankRoles = this.configService.get<string[]>('discord.rank-roles');
-    
-    // Get member from guild
-    const member: GuildMember = await this.guild.members.fetch(userId);
+    const rankRoles: Role[] = await this.roleGroupService.getAllDiscordRolesByGroupName(this.configService.get<string>('role-group-names.rank'));
 
-    // Get roles of member
-    const roles = member.roles.cache;
+    const user = await this.guild.members.fetch(userId);
 
-    // Get rank role of member
-    const rankRole = roles.find(role => rankRoles.includes(role.name.toLowerCase()));
+    const userRoles = user.roles.cache;
 
-    return rankRole;
+    const userRankRole = userRoles.find(role => rankRoles.some(rankRole => rankRole.id === role.id));
+
+    return userRankRole;
   }
+
+  // async getUsersWithRankRole() {
+  //   const rankRoles = 
+  // }
 
   public getUserVoiceChannel(userId: string): VoiceBasedChannel {
     // Get member from guild
@@ -322,5 +327,24 @@ export class DiscordService {
     }
 
     return voiceChannel;
+  }
+
+  /**
+   * Remove disconnected role from every user
+   * that has any of the rank roles
+   */
+  public async stripDisconnectedRoles() {
+    const disconnectRole = await this.roleService.findByName(this.configService.get<string>('role-names.disconnected'));
+
+    // Get all users with disconnect role
+    const usersWithDisconnectRole = await this.getUsersWithRole(disconnectRole.discordId);
+
+    // Remove disconnect role from every user that has any of the rank roles
+    usersWithDisconnectRole.forEach(async user => {
+      const rankRole = await this.getUserRankRole(user.id);
+      if (rankRole !== null) {
+        user.roles.remove(disconnectRole.discordId);
+      }
+    });
   }
 }

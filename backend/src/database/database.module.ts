@@ -12,6 +12,8 @@ import { EmojiModule } from './entities/emoji/emoji.module';
 import { EmojiEntity } from "./entities/emoji/entities/emoji.entity";
 import { RoleModule } from './entities/role/role.module';
 import { ApexAccountModule } from './entities/apex-account/apex-account.module';
+import { RoleGroupEntity } from "./entities/role-group/entities/role-group.entity";
+import { RoleGroupModule } from "./entities/role-group/role-group.module";
 
 @Module({
     imports: [
@@ -33,7 +35,8 @@ import { ApexAccountModule } from './entities/apex-account/apex-account.module';
                     TourneyEntity,
                     TourneyTeamEntity,
                     ApexAccountEntity,
-                    EmojiEntity
+                    EmojiEntity,
+                    RoleGroupEntity,
                 ],
                 synchronize: true,
                 autoLoadEntities: true,
@@ -43,6 +46,7 @@ import { ApexAccountModule } from './entities/apex-account/apex-account.module';
         TypeOrmModule.forFeature([TypeORMSession]),
         RoleModule,
         ApexAccountModule,
+        RoleGroupModule,
     ],
     providers: [
         TypeORMSession,
