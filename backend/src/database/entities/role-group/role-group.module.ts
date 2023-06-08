@@ -10,6 +10,11 @@ import { forwardRef } from '@nestjs/common';
     TypeOrmModule.forFeature([RoleGroupEntity]),
     forwardRef(() => DiscordModule),
   ],
-  providers: [RoleGroupService]
+  providers: [
+    RoleGroupService
+  ],
+  exports: [
+    RoleGroupService
+  ],
 })
 export class RoleGroupModule {}

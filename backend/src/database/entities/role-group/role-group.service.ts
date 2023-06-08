@@ -1,10 +1,9 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Inject, Injectable, InternalServerErrorException, forwardRef } from '@nestjs/common';
 import { CreateRoleGroupDto } from './dto/create-role-group.dto';
 import { UpdateRoleGroupDto } from './dto/update-role-group.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RoleGroupEntity } from './entities/role-group.entity';
-import { ConfigService } from '@nestjs/config';
 import { DiscordService } from 'src/discord/discord.service';
 import { RoleEntity } from '../role/entities/role.entity';
 import { Role } from 'discord.js';
@@ -15,8 +14,8 @@ export class RoleGroupService {
   constructor (
     @InjectRepository(RoleGroupEntity)
     private readonly roleGroupRepository: Repository<RoleGroupEntity>,
-    private readonly configService: ConfigService,
-    private readonly DiscordService: DiscordService,
+    @Inject(forwardRef(() => DiscordService))
+    private readonly discordService: DiscordService,
   ) {}
 
   async create (roleGroup: CreateRoleGroupDto) {
@@ -60,7 +59,7 @@ export class RoleGroupService {
 
     const discordRoles = [];
     for(const role of roles) {
-      discordRoles.push(await this.DiscordService.getRoleById(role.discordId));
+      discordRoles.push(await this.discordService.getRoleById(role.discordId));
     }
 
     return discordRoles;

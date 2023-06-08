@@ -20,6 +20,12 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CronModule } from './cron/cron.module';
 import { HealthModule } from './health/health.module';
+import { CommandsModule } from './discord/commands/commands.module';
+import { RoleModule } from './database/entities/role/role.module';
+import { LfgModule } from './discord/lfg/lfg.module';
+import { ApexConnectModule } from './discord/apex-connect/apex-connect.module';
+import { InsideModule } from './discord/inside/inside.module';
+import { RoleGroupModule } from './database/entities/role-group/role-group.module';
 
 @Module({
   imports: [
@@ -39,17 +45,18 @@ import { HealthModule } from './health/health.module';
     // AdminPanelModule, // Old admin panel
     ApexApiModule, // Everything related to the Apex API
     CronModule, // Cron jobs
+    HealthModule, // Health check
+    ApexConnectModule, // Apex connect command related stuff
 
     // Entities and their modules --
-    DatabaseModule,
-    DiscordModule,
-    LoggerModule,
-    AuthModule,
-    UserModule,
+    CommandsModule,
+    RoleModule,
+    LfgModule,
     ChannelModule,
+    InsideModule,
+    RoleGroupModule,
+    UserModule,
     TourneyModule,
-    ConfigModule,
-    HealthModule,
   ],
   controllers: [
     AppController,

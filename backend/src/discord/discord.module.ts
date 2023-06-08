@@ -11,6 +11,9 @@ import { LfgService } from "./lfg/lfg.service";
 import { ChannelModule } from "src/database/entities/channel/channel.module";
 import { ApexConnectModule } from './apex-connect/apex-connect.module';
 import { InsideModule } from './inside/inside.module';
+import { RoleGroupModule } from "src/database/entities/role-group/role-group.module";
+import { UserModule } from "src/database/entities/user/user.module";
+import { TourneyModule } from "src/database/entities/tourney/tourney.module";
 
 @Module({
     imports: [
@@ -31,13 +34,16 @@ import { InsideModule } from './inside/inside.module';
                 Partials.Message,
             ]
         }),
+        
+        RoleGroupModule,
         CommandsModule,
         RoleModule,
         LfgModule,
         ApexConnectModule,
         ChannelModule,
         InsideModule,
-        RoleGroupModule
+        UserModule,
+        TourneyModule,
     ],
     controllers: [],
     providers: [
