@@ -5,6 +5,9 @@ import { ConfigService } from '@nestjs/config';
 import { setClient } from 'discord.js-menu-buttons';
 import { RoleGroupService } from 'src/database/entities/role-group/role-group.service';
 import { RoleService } from 'src/database/entities/role/role.service';
+import { RoleEntity } from 'src/database/entities/role/entities/role.entity';
+import { RoleGroupEntity } from 'src/database/entities/role-group/entities/role-group.entity';
+import { ApexAccountService } from 'src/database/entities/apex-account/apex-account.service';
 
 @Injectable()
 export class DiscordService {
@@ -29,6 +32,7 @@ export class DiscordService {
       private readonly configService: ConfigService,
       private readonly roleGroupService: RoleGroupService,
       private readonly roleService: RoleService,
+      private readonly apexAccountService: ApexAccountService,
   ) {
     // Set main guild ID from env variable
     this.guildId = process.env.MAIN_GUILD_ID;
@@ -178,12 +182,25 @@ export class DiscordService {
   }
 
   /**
+   * Get a member by their ID
+   * @param userId The ID of the user
+   * @returns The member
+   */
+  async getMemberById(userId: string): Promise<GuildMember> {
+    return await this.guild.members.fetch(userId);
+  }
+
+  /**
    * Check if a user exists
    * @param userId The ID of the user
    * @returns Whether the user exists
    */
   async userExists(userId: string): Promise<boolean> {
     return await this.getUserById(userId) !== null;
+  }
+
+  async memberExists(userId: string): Promise<boolean> {
+    return await this.getMemberById(userId) !== null;
   }
 
 
@@ -299,7 +316,7 @@ export class DiscordService {
    */
   async getUserRankRole(userId: string): Promise<Role> {
 
-    const rankRoles: Role[] = await this.roleGroupService.getAllDiscordRolesByGroupName(this.configService.get<string>('role-group-names.rank'));
+    const rankRoles: Role[] = await this.roleGroupService.findAllDiscordRolesByGroupName(this.configService.get<string>('role-group-names.rank'));
 
     const user = await this.guild.members.fetch(userId);
 
@@ -330,21 +347,85 @@ export class DiscordService {
   }
 
   /**
-   * Remove disconnected role from every user
-   * that has any of the rank roles
+   * Switch role from given group to another role from the same group
+   * and remove the old role
    */
-  public async stripDisconnectedRoles() {
+  public async switchRoleFromGroup(userId: User["id"], roleGroupName: RoleGroupEntity["name"], roleToSwitchId: Role["id"]) {
+
+    // Get all roles from given group
+    const roleGroupRoles = await this.roleGroupService.findAllRolesByGroupName(roleGroupName);
+
+    // Get role to switch
+    const roleToSwitch = roleGroupRoles.find(role => role.discordId === roleToSwitchId);
+
+    // Remove all roles from group
+    await this.removeRolesFromUser(userId, roleGroupRoles.map(role => role.discordId));
+
+    // Add new role
+    await this.addRoleToUser(userId, roleToSwitch.discordId);
+  }
+
+  public async removeRoleFromUser(userId: User["id"], roleId: Role["id"]) {
+    // Get member from guild
+    const member: GuildMember = this.guild.members.cache.get(userId);
+
+    // Get role from guild
+    const role: Role = await this.guild.roles.fetch(roleId);
+
+    // Remove role from member
+    await member.roles.remove(role);
+  }
+
+  public async removeRolesFromUser(userId: User["id"], roleIds: Role["id"][]) {
+    // Get member from guild
+    const member: GuildMember = this.guild.members.cache.get(userId);
+
+    // Get roles from guild
+    const roles: Role[] = roleIds.map(roleId => this.guild.roles.cache.get(roleId));
+
+    // Remove roles from member
+    await member.roles.remove(roles);
+  }
+
+  public async addRoleToUser(userId: User["id"], roleId: Role["id"]) {
+    // Get member from guild
+    const member: GuildMember = this.guild.members.cache.get(userId);
+
+    // Get role from guild
+    const role: Role = await this.guild.roles.fetch(roleId);
+
+    // Add role to member
+    await member.roles.add(role);
+  }
+
+  /**
+   * Remove disconnected role from every user
+   * that doesn't have connected Apex Account and
+   * give disconnected role to every user that doesn't have it
+   */
+  public async updateDisconnectedRoles() {
     const disconnectRole = await this.roleService.findByName(this.configService.get<string>('role-names.disconnected'));
 
-    // Get all users with disconnect role
-    const usersWithDisconnectRole = await this.getUsersWithRole(disconnectRole.discordId);
+    if (!disconnectRole) {
+      this.logger.error('Disconnected role not found');
+      return;
+    }
 
-    // Remove disconnect role from every user that has any of the rank roles
-    usersWithDisconnectRole.forEach(async user => {
-      const rankRole = await this.getUserRankRole(user.id);
-      if (rankRole !== null) {
-        user.roles.remove(disconnectRole.discordId);
+    // Get all users with connected Apex Account
+    const usersWithConnectedApexAccount = await this.apexAccountService.findAll();
+
+    // Get all users in the main guild
+    const users = await this.guild.members.fetch();
+
+    // Remove disconnected role from every user that has connected Apex Account
+    for (const user of users.values()) {
+      if (usersWithConnectedApexAccount.some(apexAccount => apexAccount.user.discordId === user.id)) {
+        await this.removeRoleFromUser(user.id, disconnectRole.discordId);
       }
-    });
+      // Else give user disconnected role
+      else if (!user.roles.cache.has(disconnectRole.discordId)) {
+        await this.addRoleToUser(user.id, disconnectRole.discordId);
+      }
+    }
   }
 }

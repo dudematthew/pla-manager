@@ -19,9 +19,9 @@ export class CronService {
 
     // Schedule a cron job to run every hour
     @Cron('0 0 * * * *')
-    public async stripDisconnectedRoles () {
-        this.logger.log('stripDisconnectedRoles started working...');
+    public async updateDisconnectedRoles () {
+        this.logger.log('updateDisconnectedRoles started working...');
 
-        await this.discordService.stripDisconnectedRoles();
+        await this.discordService.updateDisconnectedRoles();
     }
 }

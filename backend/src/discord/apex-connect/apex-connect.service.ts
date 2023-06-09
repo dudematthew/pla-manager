@@ -50,7 +50,12 @@ export class ApexConnectService {
         this.logAccountData(playerData);
 
         if (typeof playerData?.errorCode !== "undefined") {
-            interaction.reply({ content: `Nie znaleziono gracza o nicku ${options.username} na platformie ${platformAliases[options.platform]}.`, ephemeral: true});
+            if (playerData.errorCode == 404)
+                interaction.reply({ content: `Nie znaleziono gracza o nicku ${options.username} na platformie ${platformAliases[options.platform]}.`, ephemeral: true});
+
+            else
+                interaction.reply({ content: `Wystąpił błąd podczas próby znalezienia konta. Spróbuj ponownie później.`, ephemeral: true});
+                
             return;
         }
 
@@ -125,30 +130,36 @@ export class ApexConnectService {
 
         await interaction.editReply(this.messageProviderService.getConnectAccountMessage('', false, expireTimestamp, undefined, { current: 0, target: 3 }));
 
-        const isOnline = await this.awaitUserOnline(options.username, options.platform, this.onlineExpirationTime * 1000);
-        
-        if (!isOnline) {
-            await interaction.editReply(this.messageProviderService.getExpirationMessage());
-            return;
-        }
+        // Check if bot is in development mode
+        const isDevelopment = this.configService.get('NODE_ENV') == 'development';
 
-        const randomLegends = this.getRandomLegends(3);
-
-        // Wait 3 times for user to choose legend
-        for (let i = 0; i < 3; i++) {
-            expireTimestamp = Math.floor(Date.now() / 1000) + this.legendChangeExpirationTime;
-
-            const legendImage = playerData.legends.all[randomLegends[i]].ImgAssets.icon;
-
-            await interaction.editReply(this.messageProviderService.getConnectAccountMessage(randomLegends[i], true, expireTimestamp, legendImage, { current: i + 1, target: 3 }));
-
-            const isLegendSelected = await this.awaitLegendChoice(randomLegends[i], options.username, options.platform, this.legendChangeExpirationTime * 1000);
-
-            if (!isLegendSelected) {
+        if (!isDevelopment) {
+            const isOnline = await this.awaitUserOnline(options.username, options.platform, this.onlineExpirationTime * 1000);
+            
+            if (!isOnline) {
                 await interaction.editReply(this.messageProviderService.getExpirationMessage());
                 return;
             }
+    
+            const randomLegends = this.getRandomLegends(3);
+    
+            // Wait 3 times for user to choose legend
+            for (let i = 0; i < 3; i++) {
+                expireTimestamp = Math.floor(Date.now() / 1000) + this.legendChangeExpirationTime;
+    
+                const legendImage = playerData.legends.all[randomLegends[i]].ImgAssets.icon;
+    
+                await interaction.editReply(this.messageProviderService.getConnectAccountMessage(randomLegends[i], true, expireTimestamp, legendImage, { current: i + 1, target: 3 }));
+    
+                const isLegendSelected = await this.awaitLegendChoice(randomLegends[i], options.username, options.platform, this.legendChangeExpirationTime * 1000);
+    
+                if (!isLegendSelected) {
+                    await interaction.editReply(this.messageProviderService.getExpirationMessage());
+                    return;
+                }
+            }
         }
+
 
         let user = await this.userService.findByDiscordId(interaction.user.id);
 

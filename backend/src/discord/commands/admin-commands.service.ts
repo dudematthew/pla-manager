@@ -4,6 +4,10 @@ import { AdminGuard } from "../guards/admin.guard";
 import { ForbiddenExceptionFilter } from "../filters/forbidden-exception.filter";
 import { AdminEmojiDto } from "./dtos/admin-emoji.dto";
 import { EmojiService } from "src/database/entities/emoji/emoji.service";
+import { AdminSwitchRoleCommandDto } from "./dtos/admin-switch-role.dto";
+import { DiscordService } from "../discord.service";
+import { RoleGroupService } from "src/database/entities/role-group/role-group.service";
+import { RoleService } from "src/database/entities/role/role.service";
 
 export const AdminCommandsDecorator = createCommandGroupDecorator({
     name: 'admin',
@@ -17,6 +21,8 @@ export class AdminCommandsService {
 
     constructor(
         private readonly emojiService: EmojiService,
+        private readonly discordService: DiscordService,
+        private readonly roleService: RoleService,
     ) {}
 
     @UseGuards(AdminGuard)
@@ -71,5 +77,56 @@ export class AdminCommandsService {
 
             Interaction.reply({ content: `Emoji zaktualizowane!`, ephemeral: true});
         }
+    }
+
+    @UseGuards(AdminGuard)
+    @UseFilters(ForbiddenExceptionFilter)
+    @Subcommand({
+        name: 'zmień-rolę',
+        description: 'Zmień rolę z danej grupy ról',
+    })
+    public async onAdminSwitchRole(@Context() [Interaction]: SlashCommandContext, @Options() options: AdminSwitchRoleCommandDto) {
+        // console.log(`[CommandsService] onAdminEmoji: ${options.emoji} - ${options.emojiName}`);
+        console.log(`[CommandsService] onAdminSwitchRole: ${options.user} - ${options.role}`);
+
+        const member = await this.discordService.getMemberById(options.user.id);
+        const role = options.role;
+
+        if (!member) {
+            Interaction.reply({ content: 'Nie znaleziono użytkownika', ephemeral: true});
+            return false;
+        }
+
+        if (!role) {
+            Interaction.reply({ content: 'Nie znaleziono roli', ephemeral: true});
+            return false;
+        }
+
+        const dbRole = await this.roleService.findByDiscordId(role.id);
+
+        if (!dbRole || !dbRole?.roleGroup) {
+            Interaction.reply({ content: 'Rola nie należy do żadnej grupy', ephemeral: true});
+            return false;
+        }
+        
+        console.log('Starting to switch role: ', member.id, dbRole.roleGroup.name, role.id);
+
+        this.discordService.switchRoleFromGroup(member.id, dbRole.roleGroup.name, role.id);
+
+        Interaction.reply({ content: `Rola <@&${role.id}> z grupy **${dbRole.roleGroup.name}** została zmieniona dla użytkownika <@${member.id}>`, ephemeral: true});
+    }
+
+    @UseGuards(AdminGuard)
+    @UseFilters(ForbiddenExceptionFilter)
+    @Subcommand({
+        name: 'zaktualizuj-niepołączoną-rolę',
+        description: 'Ręcznie usuń rolę niepołączony dla połączonych użytkowników',
+    })
+    public async onAdminUpdateDisconnectedRole(@Context() [Interaction]: SlashCommandContext) {
+        console.log(`[CommandsService] onAdminUpdateDisconnectedRole`);
+
+        await this.discordService.updateDisconnectedRoles();
+
+        Interaction.reply({ content: `Role zostały zaktualizowane!`, ephemeral: true});
     }
 }

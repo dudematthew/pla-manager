@@ -14,6 +14,7 @@ import { InsideModule } from './inside/inside.module';
 import { RoleGroupModule } from "src/database/entities/role-group/role-group.module";
 import { UserModule } from "src/database/entities/user/user.module";
 import { TourneyModule } from "src/database/entities/tourney/tourney.module";
+import { ApexAccountModule } from "src/database/entities/apex-account/apex-account.module";
 
 @Module({
     imports: [
@@ -44,6 +45,7 @@ import { TourneyModule } from "src/database/entities/tourney/tourney.module";
         InsideModule,
         UserModule,
         TourneyModule,
+        ApexAccountModule
     ],
     controllers: [],
     providers: [

@@ -32,7 +32,7 @@ export class RoleGroupService {
     });
   }
 
-  async getAllRolesByGroupName (roleGroupName: string): Promise<RoleEntity[]> {
+  async findAllRolesByGroupName (roleGroupName: string): Promise<RoleEntity[]> {
     const roleGroup = await this.roleGroupRepository.findOne({
       where: {
         name: roleGroupName,
@@ -43,7 +43,7 @@ export class RoleGroupService {
     return roleGroup.roles;
   }
 
-  async getAllRolesByGroupId (roleGroupId: number): Promise<RoleEntity[]> {
+  async findAllRolesByGroupId (roleGroupId: number): Promise<RoleEntity[]> {
     const roleGroup = await this.roleGroupRepository.findOne({
       where: {
         id: roleGroupId,
@@ -54,8 +54,8 @@ export class RoleGroupService {
     return roleGroup.roles;
   }
 
-  async getAllDiscordRolesByGroupName (roleGroupName: string): Promise<Role[]> {
-    const roles: RoleEntity[] = await this.getAllRolesByGroupName(roleGroupName);
+  async findAllDiscordRolesByGroupName (roleGroupName: string): Promise<Role[]> {
+    const roles: RoleEntity[] = await this.findAllRolesByGroupName(roleGroupName);
 
     const discordRoles = [];
     for(const role of roles) {
