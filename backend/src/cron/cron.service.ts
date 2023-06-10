@@ -18,6 +18,8 @@ export class CronService {
     }
 
     // Schedule a cron job to run every hour
+    // TODO: Change this to run every 6 hours
+    // TODO: Make it update all roles regarding connected accounts
     @Cron('0 0 * * * *')
     public async updateDisconnectedRoles () {
         this.logger.log('updateDisconnectedRoles started working...');
