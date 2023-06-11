@@ -1,5 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
+import { DatabaseService } from "src/database/database.service";
+import { ApexSyncService } from "src/discord/apex-connect/apex-sync.service";
 import { DiscordService } from "src/discord/discord.service";
 
 @Injectable()
@@ -9,6 +11,8 @@ export class CronService {
 
     constructor (
         private readonly discordService: DiscordService,
+        private readonly databaseService: DatabaseService,
+        private readonly apexSyncService: ApexSyncService,
     ) {
         this.init();
     }
@@ -24,6 +28,14 @@ export class CronService {
     public async updateDisconnectedRoles () {
         this.logger.log('updateDisconnectedRoles started working...');
 
-        await this.discordService.updateDisconnectedRoles();
+        await this.apexSyncService.updateDisconnectedRoles();
+    }
+
+    // Schedule a cron job to run every 24 hours
+    @Cron('0 0 0 * * *') // At 00:00:00am every day
+    public async backupDatabase () {
+        this.logger.log('backupDatabase started working...');
+
+        this.databaseService.backupDatabase();
     }
 }

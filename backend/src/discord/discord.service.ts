@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Client, TextChannel, ChannelType, User, GuildMember, PermissionsBitField, Guild, UserResolvable, PermissionResolvable, Channel, ReactionEmoji, GuildEmoji, VoiceChannel, VoiceBasedChannel, Role, Collection, EmbedBuilder } from 'discord.js';
+import { Client, TextChannel, ChannelType, User, GuildMember, PermissionsBitField, Guild, UserResolvable, PermissionResolvable, Channel, ReactionEmoji, GuildEmoji, VoiceChannel, VoiceBasedChannel, Role, Collection, EmbedBuilder, Embed, MessageCreateOptions } from 'discord.js';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { setClient } from 'discord.js-menu-buttons';
@@ -66,24 +66,31 @@ export class DiscordService {
     
     process.on('unhandledRejection', (e) => errorRedirect(e as Error));
 
-    this.logger.log('Discord client initialized');
+    this.logger.log('Discord client initialized!');
   }
 
   public isReady(): Promise<boolean> {
+    const client = this.client;
+
     return new Promise((resolve, reject) => {
-      this.client.on('ready', () => {
+      if (client.isReady())
+        resolve(true);
+
+      client.on('ready', () => {
         resolve(true);
       });
     });
   }
 
 
-  public sendPrivateMessage(userId: string, content: string, embeds: any[] = [], components: any[] = []) {
+  public sendPrivateMessage(userId: string, content: string, embeds: MessageCreateOptions["embeds"] = [], components: MessageCreateOptions["components"] = [], files: MessageCreateOptions["files"] = []) {
     const user = this.client.users.cache.get(userId);
+    
     user.send({
       content,
       embeds,
       components,
+      files,
     });
   }
 
@@ -94,7 +101,7 @@ export class DiscordService {
   /**
    * Send error embed to log channel with error details
    */
-  private sendErrorToLogChannel(error: Error) {
+  public sendErrorToLogChannel(error: Error) {
     const logChannelId = process.env.DISCORD_LOG_CHANNEL_ID;
     const mainAdminId = process.env.DISCORD_MAIN_ADMIN_ID;
 
@@ -396,36 +403,5 @@ export class DiscordService {
 
     // Add role to member
     await member.roles.add(role);
-  }
-
-  /**
-   * Remove disconnected role from every user
-   * that doesn't have connected Apex Account and
-   * give disconnected role to every user that doesn't have it
-   */
-  public async updateDisconnectedRoles() {
-    const disconnectRole = await this.roleService.findByName(this.configService.get<string>('role-names.disconnected'));
-
-    if (!disconnectRole) {
-      this.logger.error('Disconnected role not found');
-      return;
-    }
-
-    // Get all users with connected Apex Account
-    const usersWithConnectedApexAccount = await this.apexAccountService.findAll();
-
-    // Get all users in the main guild
-    const users = await this.guild.members.fetch();
-
-    // Remove disconnected role from every user that has connected Apex Account
-    for (const user of users.values()) {
-      if (usersWithConnectedApexAccount.some(apexAccount => apexAccount.user.discordId === user.id)) {
-        await this.removeRoleFromUser(user.id, disconnectRole.discordId);
-      }
-      // Else give user disconnected role
-      else if (!user.roles.cache.has(disconnectRole.discordId)) {
-        await this.addRoleToUser(user.id, disconnectRole.discordId);
-      }
-    }
   }
 }

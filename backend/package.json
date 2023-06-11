@@ -27,6 +27,7 @@
     "@adminjs/express": "5.1.0",
     "@adminjs/nestjs": "5.1.1",
     "@adminjs/typeorm": "4.0.0",
+    "@discordjs/rest": "file:1.7.1/file-type@18.5.0",
     "@forestadmin/agent": "^1.8.13",
     "@forestadmin/datasource-sql": "^1.5.1",
     "@nestjs/axios": "^2.0.0",
@@ -116,7 +117,7 @@
   "overrides": {
     "file-type": "12.4.2",
     "@discordjs/rest": {
-      "file-type": "12.4.2"
+      "file-type": "18.5.0"
     }
   },
   "jest": {

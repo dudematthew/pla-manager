@@ -15,6 +15,7 @@ import { RoleGroupModule } from "src/database/entities/role-group/role-group.mod
 import { UserModule } from "src/database/entities/user/user.module";
 import { TourneyModule } from "src/database/entities/tourney/tourney.module";
 import { ApexAccountModule } from "src/database/entities/apex-account/apex-account.module";
+import { DatabaseModule } from "src/database/database.module";
 
 @Module({
     imports: [

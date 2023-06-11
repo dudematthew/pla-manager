@@ -8,6 +8,7 @@ import { AdminCommandsService } from './admin-commands.service';
 import { InsideCommandsService } from './inside-commands.service';
 import { DiscordModule } from '../discord.module';
 import { RoleGroupModule } from 'src/database/entities/role-group/role-group.module';
+import { DatabaseModule } from 'src/database/database.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { RoleGroupModule } from 'src/database/entities/role-group/role-group.mod
     ApexConnectModule,
     InsideModule,
     EmojiModule,
+    DatabaseModule,
     forwardRef(() => DiscordModule),
   ],
   providers: [

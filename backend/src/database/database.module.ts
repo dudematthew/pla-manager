@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { Module, forwardRef } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { UserEntity } from "src/database/entities/user/user.entity";
 import { TypeORMSession } from "./entities/session.entity";
@@ -14,6 +14,8 @@ import { RoleModule } from './entities/role/role.module';
 import { ApexAccountModule } from './entities/apex-account/apex-account.module';
 import { RoleGroupEntity } from "./entities/role-group/entities/role-group.entity";
 import { RoleGroupModule } from "./entities/role-group/role-group.module";
+import { DatabaseService } from "./database.service";
+import { DiscordModule } from "src/discord/discord.module";
 
 @Module({
     imports: [
@@ -47,12 +49,15 @@ import { RoleGroupModule } from "./entities/role-group/role-group.module";
         RoleModule,
         ApexAccountModule,
         RoleGroupModule,
+        forwardRef(() => DiscordModule),
     ],
     providers: [
         TypeORMSession,
+        DatabaseService,
     ],
     exports: [
         TypeORMSession,
+        DatabaseService,
     ],
 })
 export class DatabaseModule {}
