@@ -8,6 +8,8 @@ import { AdminSwitchRoleCommandDto } from "./dtos/admin-switch-role.dto";
 import { DiscordService } from "../discord.service";
 import { RoleGroupService } from "src/database/entities/role-group/role-group.service";
 import { RoleService } from "src/database/entities/role/role.service";
+import { DatabaseService } from "src/database/database.service";
+import { ApexSyncService } from "../apex-connect/apex-sync.service";
 
 export const AdminCommandsDecorator = createCommandGroupDecorator({
     name: 'admin',
@@ -23,6 +25,8 @@ export class AdminCommandsService {
         private readonly emojiService: EmojiService,
         private readonly discordService: DiscordService,
         private readonly roleService: RoleService,
+        private readonly databaseService: DatabaseService,
+        private readonly apexSyncService: ApexSyncService,
     ) {}
 
     @UseGuards(AdminGuard)
@@ -119,14 +123,31 @@ export class AdminCommandsService {
     @UseGuards(AdminGuard)
     @UseFilters(ForbiddenExceptionFilter)
     @Subcommand({
-        name: 'zaktualizuj-niepołączoną-rolę',
-        description: 'Ręcznie usuń rolę niepołączony dla połączonych użytkowników',
+        name: 'zaktualizuj-połączone-role',
+        description: 'Zaktualizuj role dla połączonych użytkowników',
     })
-    public async onAdminUpdateDisconnectedRole(@Context() [Interaction]: SlashCommandContext) {
-        console.log(`[CommandsService] onAdminUpdateDisconnectedRole`);
+    public async onAdminUpdateConnectedRole(@Context() [Interaction]: SlashCommandContext) {
+        console.log(`[CommandsService] onAdminUpdateConnectedRole`);
 
-        await this.discordService.updateDisconnectedRoles();
+        await this.apexSyncService.handleAdminUpdateConnectedRole(Interaction);
+    }
 
-        Interaction.reply({ content: `Role zostały zaktualizowane!`, ephemeral: true});
+    @UseGuards(AdminGuard)
+    @UseFilters(ForbiddenExceptionFilter)
+    @Subcommand({
+        name: 'backup-bazy-danych',
+        description: 'Wykonaj wewnętrzny backup bazy danych',
+    })
+    public async onAdminDatabaseBackup(@Context() [Interaction]: SlashCommandContext) {
+        console.log(`[CommandsService] onAdminDatabaseBackup`);
+
+        const response = await Interaction.reply({ content: `Rozpoczynanie tworzenia backupu bazy danych!`, ephemeral: true});
+
+        if (!await this.databaseService.backupDatabase()) {
+            response.edit({ content: `Nie udało się wykonać backupu bazy danych ❌\nSprawdź logi aplikacji.`});
+            return false;
+        }
+
+        response.edit({ content: `Backup bazy danych został wykonany ✅`});
     }
 }

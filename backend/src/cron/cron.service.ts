@@ -23,12 +23,11 @@ export class CronService {
 
     // Schedule a cron job to run every hour
     // TODO: Change this to run every 6 hours
-    // TODO: Make it update all roles regarding connected accounts
     @Cron('0 0 * * * *')
-    public async updateDisconnectedRoles () {
-        this.logger.log('updateDisconnectedRoles started working...');
+    public async updateConnectedAccounts () {
+        this.logger.log('updateConnectedRoles started working...');
 
-        await this.apexSyncService.updateDisconnectedRoles();
+        await this.apexSyncService.updateConnectedAccounts();
     }
 
     // Schedule a cron job to run every 24 hours

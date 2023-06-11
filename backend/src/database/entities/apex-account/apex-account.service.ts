@@ -7,14 +7,28 @@ import { ApexAccountEntity } from './entities/apex-account.entity';
 import { UserEntity } from '../user/user.entity';
 import { UserService } from '../user/user.service';
 import { PlayerStatistics } from 'src/apex-api/player-statistics.interface';
+import { RoleService } from '../role/role.service';
+import { RoleEntity } from '../role/entities/role.entity';
 
 @Injectable()
 export class ApexAccountService {
+
+  public rankToRoleNameDictionary = {
+    'Rookie': 'rookie',
+    'Bronze': 'bronze',
+    'Silver': 'silver',
+    'Gold': 'gold',
+    'Platinum': 'platinum',
+    'Diamond': 'diamond',
+    'Master': 'master',
+    'Apex Predator': 'predator',
+  }
 
   constructor(
     @InjectRepository(ApexAccountEntity)
     private readonly apexAccountRepository: Repository<ApexAccountEntity>,
     private userService: UserService,
+    private roleService: RoleService,
   ) {}
 
   async create(account: CreateApexAccountDto): Promise<ApexAccountEntity> {
@@ -130,7 +144,7 @@ export class ApexAccountService {
     return await this.apexAccountRepository.findOne({
       where: { uid },
       relations: ['user']
-    });;
+    });
   }
 
   async findByName(name: string): Promise<ApexAccountEntity> {
@@ -144,6 +158,42 @@ export class ApexAccountService {
     return await this.apexAccountRepository.find({
       relations: ['user']
     });
+  }
+
+  public getRoleNameByRankName(rankName: string): string {
+    const roleName = this.rankToRoleNameDictionary[rankName] ?? null;
+
+    if (!roleName) {
+      console.error(`Role name for rank ${rankName} not found`);
+    }
+
+    return roleName;
+  }
+
+  public async getRoleByRankName(rankName: string): Promise<RoleEntity> {
+    const roleName = this.getRoleNameByRankName(rankName);
+
+    if(!roleName) {
+      return null;
+    }
+
+    const role = await this.roleService.findByName(roleName);
+
+    if(!role) {
+      return null;
+    }
+
+    return role;
+  }
+
+  public async getRoleByAccountId(accountId: number): Promise<RoleEntity> {
+    const account = await this.findById(accountId);
+
+    if(!account) {
+      return null;
+    }
+
+    return await this.getRoleByRankName(account.rankName);
   }
   
 }

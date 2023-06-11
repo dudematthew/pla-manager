@@ -372,6 +372,14 @@ export class DiscordService {
     await this.addRoleToUser(userId, roleToSwitch.discordId);
   }
 
+  public async removeGroupRoles(userId: User["id"], roleGroupName: RoleGroupEntity["name"]) {
+    // Get all roles from given group
+    const roleGroupRoles = await this.roleGroupService.findAllRolesByGroupName(roleGroupName);
+
+    // Remove all roles from group
+    await this.removeRolesFromUser(userId, roleGroupRoles.map(role => role.discordId));
+  }
+
   public async removeRoleFromUser(userId: User["id"], roleId: Role["id"]) {
     // Get member from guild
     const member: GuildMember = this.guild.members.cache.get(userId);

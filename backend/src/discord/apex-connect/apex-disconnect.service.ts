@@ -7,6 +7,7 @@ import { DiscordService } from "../discord.service";
 import { UserService } from "src/database/entities/user/user.service";
 import { CacheType, ChatInputCommandInteraction } from "discord.js";
 import { MessageProviderService } from "./message-provider.service";
+import { ApexSyncService } from "./apex-sync.service";
 
 @Injectable()
 export class ApexDisconnectService {
@@ -17,6 +18,7 @@ export class ApexDisconnectService {
         private readonly apexAccountService: ApexAccountService,
         private readonly userService: UserService,
         private readonly messageProviderService: MessageProviderService,
+        private readonly apexSyncService: ApexSyncService,
     ) {}
 
     public async handleDisconnectCommand(interaction: ChatInputCommandInteraction<CacheType>) {
@@ -45,6 +47,9 @@ export class ApexDisconnectService {
 
         // Disconnect player from account
         await this.apexAccountService.remove(user.apexAccount.id);
+
+        // Remove disconnected role from user
+        await this.apexSyncService.updateAllConnectedRolesForUser(user.id);
 
         // Send confirmation message
         interaction.editReply(this.messageProviderService.getDisconnectSuccessMessage(user.apexAccount));

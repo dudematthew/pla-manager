@@ -47,6 +47,15 @@ export class MessageProviderService {
         const row = new ActionRowBuilder()
             .addComponents(linkEAButton, confirmButton);
 
+        const rankDivisionRomanSystem = {
+            1: 'I',
+            2: 'II',
+            3: 'III',
+            4: 'IV',
+        }
+
+        const rankDivision = rankDivisionRomanSystem[playerData.global.rank.rankDiv] || '';
+
         // Are you sure this is your account?
         const embed = this.getBasicEmbed()
             .setTitle('Czy na pewno to twoje konto?')
@@ -66,7 +75,12 @@ export class MessageProviderService {
                     name: 'Aktualnie wybrana legenda',
                     value: playerData.realtime.selectedLegend,
                     inline: true,
-                }
+                },
+                {
+                    name: 'Ranga',
+                    value: playerData.global?.rank?.rankName + " " + rankDivision,
+                    inline: true,
+                },
             )
             .setThumbnail(playerData.global.avatar)
 

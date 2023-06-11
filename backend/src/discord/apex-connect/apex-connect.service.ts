@@ -12,6 +12,7 @@ import { UserEntity } from 'src/database/entities/user/user.entity';
 import { ApexAccountEntity } from 'src/database/entities/apex-account/entities/apex-account.entity';
 import { DiscordService } from '../discord.service';
 import { MessageProviderService } from './message-provider.service';
+import { ApexSyncService } from './apex-sync.service';
 
 @Injectable()
 export class ApexConnectService {
@@ -40,6 +41,7 @@ export class ApexConnectService {
         private readonly userService: UserService,
         private readonly discordService: DiscordService,
         private readonly messageProviderService: MessageProviderService,
+        private readonly apexSyncService: ApexSyncService,
     ) {}
 
     public async handleConnectCommand(interaction: ChatInputCommandInteraction<CacheType>, options: handleConnectCommandDto) {
@@ -195,6 +197,9 @@ export class ApexConnectService {
             await interaction.editReply(this.messageProviderService.getErrorMessage("Nie udało się powiązać twojego konta."));
             return;
         }
+
+        // Update connected roles
+        await this.apexSyncService.updateAllConnectedRolesForUser(newUser.id);
 
         // User has chosen legend, connect account
         await interaction.editReply(this.messageProviderService.getSuccessMessage(playerData));
