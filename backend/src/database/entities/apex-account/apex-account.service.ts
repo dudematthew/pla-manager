@@ -83,10 +83,19 @@ export class ApexAccountService {
         lastLegendPlayed: playerData.realtime?.selectedLegend ?? null,
     };
 
-    // Create new profile
-    const profile = await this.create(data);
+    let profile = null;
 
-    // Check if profile was created
+    // Check if user already has an apex account
+    if(user.apexAccount) {
+        // Update existing profile
+        profile = await this.update(user.apexAccount.id, data);
+    } else {
+        // Create new profile
+        profile = await this.create(data);
+    }
+
+
+    // Check if profile was created or updated
     if (!profile) {
         return null;
     }
@@ -165,6 +174,7 @@ export class ApexAccountService {
 
     if (!roleName) {
       console.error(`Role name for rank ${rankName} not found`);
+      return roleName;
     }
 
     return roleName;

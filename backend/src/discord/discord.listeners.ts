@@ -127,8 +127,6 @@ export default class DiscordListeners {
 
         // Check if message matches any of the listeners
         for(const listener of this.messageCreateListeners) {
-            console.log('Checking listener: ' + listener);
-
             // Check if channel type matches pattern ------------------------------
             if (listener.channelType.length != 0 && message.channel.type in listener.channelType) {
                 console.log('Channel type ' + messageData.channel.type + ' does not match pattern: ' + listener.channelType);

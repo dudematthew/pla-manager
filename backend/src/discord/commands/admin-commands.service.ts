@@ -126,10 +126,22 @@ export class AdminCommandsService {
         name: 'zaktualizuj-połączone-role',
         description: 'Zaktualizuj role dla połączonych użytkowników',
     })
-    public async onAdminUpdateConnectedRole(@Context() [Interaction]: SlashCommandContext) {
+    public async onAdminUpdateConnectedRoles(@Context() [Interaction]: SlashCommandContext) {
         console.log(`[CommandsService] onAdminUpdateConnectedRole`);
 
         await this.apexSyncService.handleAdminUpdateConnectedRole(Interaction);
+    }
+
+    @UseGuards(AdminGuard)
+    @UseFilters(ForbiddenExceptionFilter)
+    @Subcommand({
+        name: 'zaktualizuj-połączone-konta',
+        description: 'Zaktualizuj konta połączonych użytkowników obecnych na serwerze',
+    })
+    public async onAdminUpdateConnectedAccounts(@Context() [Interaction]: SlashCommandContext) {
+        console.log(`[CommandsService] onAdminUpdateConnectedRole`);
+
+        await this.apexSyncService.handleAdminUpdateConnectedAccounts(Interaction);
     }
 
     @UseGuards(AdminGuard)

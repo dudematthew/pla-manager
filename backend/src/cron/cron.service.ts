@@ -23,11 +23,11 @@ export class CronService {
 
     // Schedule a cron job to run every hour
     // TODO: Change this to run every 6 hours
-    @Cron('0 0 * * * *')
-    public async updateConnectedAccounts () {
+    @Cron('0 0 * * * *') // At 00:00:00am every day
+    public async updateConnectedRoles () {
         this.logger.log('updateConnectedRoles started working...');
 
-        await this.apexSyncService.updateConnectedAccounts();
+        await this.apexSyncService.updateConnectedRoles();
     }
 
     // Schedule a cron job to run every 24 hours
@@ -36,5 +36,13 @@ export class CronService {
         this.logger.log('backupDatabase started working...');
 
         this.databaseService.backupDatabase();
+    }
+
+    // Schedule a cron job to run every 12 hours
+    @Cron('0 0 */12 * * *') // At 00:00:00am every day
+    public async updateConnectedAccounts () {
+        this.logger.log('updateConnectedAccounts started working...');
+
+        await this.apexSyncService.updateConnectedAccounts();
     }
 }

@@ -2,13 +2,15 @@ import { CacheTTL, Inject, Injectable, UseInterceptors } from '@nestjs/common';
 import { InjectBrowser } from 'nest-puppeteer';
 import { ApexApiScraperService } from './apex-api-scraper.service';
 import { Logger } from '@nestjs/common';
-import { RateLimitedAxiosInstance } from 'axios-rate-limit';
+// import { RateLimitedAxiosInstance } from 'axios-rate-limit';
 import { HttpService } from '@nestjs/axios';
 import { PlayerStatisticsParamsDto } from './dtos/player-statistics-params.dto';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import * as hash from 'object-hash';
 import { PlayerStatistics } from './player-statistics.interface';
+import Bottleneck from 'bottleneck';
+import { Axios, AxiosInstance } from 'axios';
 
 @Injectable()
 export class ApexApiService {
@@ -21,9 +23,9 @@ export class ApexApiService {
     private cacheTTL = 5000; // 5 seconds
 
     /**
-     * Axios instance with rate limiting
+     * Axios get method with rate limiting
      */
-    private http: RateLimitedAxiosInstance;
+    private axiosGet: any;
 
     private apiKey = process.env.APEX_API_KEY;
 
@@ -33,13 +35,23 @@ export class ApexApiService {
         @Inject(CACHE_MANAGER)
         private readonly cache: Cache,
     ) {
-       const rateLimit = require('axios-rate-limit');
+        this.logger.log(`Setting up ApexApiService with rate limit: ${process.env.APEX_API_RATE_LIMIT} requests per ${process.env.APEX_API_RATE_MILISECONDS_TRESHOLD} miliseconds`);
 
-        // Rate limit the http service 
-        this.http = rateLimit(this.httpService.axiosRef, {
-            maxRequests: parseInt(process.env.APEX_API_RATE_LIMIT || '1'),
-            perMilliseconds: parseInt(process.env.APEX_API_RATE_MILISECONDS_TRESHOLD || '2000'),
-        });
+        const limiterConfig = {
+            reservoir: parseInt(process.env.APEX_API_RATE_LIMIT || '1'),
+            reservoirRefreshAmount: parseInt(process.env.APEX_API_RATE_LIMIT || '1'),
+            reservoirRefreshInterval: parseInt(process.env.APEX_API_RATE_MILISECONDS_TRESHOLD || '2000'),
+
+            minTime: parseInt(process.env.APEX_API_WAIT_MILISECONDS || '1200'),
+            maxConcurrent: 2,
+        }
+
+        console.log('Limiter config: ', limiterConfig);
+
+        const limiter = new Bottleneck(limiterConfig);
+
+        this.axiosGet = limiter.wrap(this.httpService.axiosRef.get);
+
     }
 
     /**
@@ -73,7 +85,7 @@ export class ApexApiService {
         }
 
         try {
-            const response = await this.http.get(url);
+            const response = await this.axiosGet(url);
             this.cache.set(`player-statistics-${hash(options)}`, response.data, this.cacheTTL);
             return response.data;
         }
@@ -116,7 +128,7 @@ export class ApexApiService {
         }
 
         try {
-            const response = await this.http.get(url);
+            const response = await this.axiosGet(url);
 
             this.cache.set(`player-statistics-${hash(options)}`, response.data, this.cacheTTL);
             return response.data;
@@ -134,7 +146,7 @@ export class ApexApiService {
         const url = `https://api.mozambiquehe.re/nametouid?auth=${this.apiKey}&platform=${platform}&player=${playerName}`;
         
         try {
-            const response = await this.http.get(url);
+            const response = await this.axiosGet(url);
             return response.data;
         }
         catch (e) {

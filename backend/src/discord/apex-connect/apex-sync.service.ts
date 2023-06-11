@@ -9,12 +9,13 @@ import { CacheType, ChatInputCommandInteraction, User } from "discord.js";
 import { RoleGroupService } from "src/database/entities/role-group/role-group.service";
 import { UserService } from "src/database/entities/user/user.service";
 import { UserEntity } from "src/database/entities/user/user.entity";
+import { sleepAwait } from 'sleep-await';
 
 @Injectable()
 export class ApexSyncService {
 
     private logger = new Logger(ApexSyncService.name);
-    
+
     constructor (
         private readonly discordService: DiscordService,
         private readonly apexApiService: ApexApiService,
@@ -88,15 +89,16 @@ export class ApexSyncService {
         const users = await this.discordService.guild.members.fetch();
 
         // Create a fusion of discord users and users with connected Apex Account
-        const usersWithConnectedApexAccountAndDiscord = await Promise.all(usersWithConnectedApexAccount.map(async apexAccount => {
-            return {
-                ...apexAccount,
-                discordUser: users.get(apexAccount.user.discordId),
-                roleToGive: await this.apexAccountService.getRoleByAccountId(apexAccount.id),
+        const usersWithConnectedApexAccountAndDiscord = await Promise.all(usersWithConnectedApexAccount
+            .filter(apexAccount => users.has(apexAccount.user.discordId))
+            .map(async apexAccount => {
+                return {
+                    ...apexAccount,
+                    discordUser: users.get(apexAccount.user.discordId),
+                    roleToGive: await this.apexAccountService.getRoleByAccountId(apexAccount.id),
+                }
             }
-        }));
-
-        console.log(usersWithConnectedApexAccountAndDiscord);
+        ));
 
         // Check if RoleGroup with name 'rank' exists
         const rankRoleGroup = await this.roleGroupService.findByName('rank');
@@ -179,7 +181,91 @@ export class ApexSyncService {
     /**
      * Update Apex Account of every connected user
      */
-    public async updateConnectedAccounts() {
-        
+    public async updateConnectedAccounts(): Promise<boolean> {
+        // Get all users with connected Apex Account
+        const usersWithConnectedApexAccount = await this.apexAccountService.findAll();
+
+        // Get all users in the main guild
+        const discordUsers = await this.discordService.guild.members.fetch();
+
+        // Create a fusion of discord users and users with connected Apex Account
+        const connectedUsersInTheGuild = usersWithConnectedApexAccount
+            .filter(apexAccount => discordUsers.has(apexAccount.user.discordId))
+            .map(apexAccount => {
+                return {
+                    ...apexAccount,
+                    discordUser: discordUsers.get(apexAccount.user.discordId),
+                }
+            });
+
+        console.log(`Connected users in the guild: ${connectedUsersInTheGuild.length}. Starting update...`);
+
+        const benchmarkStart = Date.now();
+
+        // Update Apex Account for every user
+        for (const key in connectedUsersInTheGuild) {
+            const user = connectedUsersInTheGuild[key];
+            
+            if (!user.discordUser) {
+                continue;
+            }
+
+            const benchmarkStart = Date.now();
+
+            let apexAccount;
+
+            // Try 3 times to update Apex Account for user
+            // If it fails, log error and stop whole process
+            let i = 0;
+            do {
+                console.log(`Updating Apex Account for ${user.discordUser.displayName} [${parseInt(key) + 1}/${connectedUsersInTheGuild.length}]`);
+    
+                // Get user Apex Account
+                apexAccount = await this.apexApiService.getPlayerStatisticsByUID(user.uid, user.platform as any, {});
+    
+                // Check if Apex Account has no errors
+                if (apexAccount.error) {
+                    this.logger.error(`Error while trying to get Apex Account for ${user.discordUser.displayName}: ${apexAccount.error}`);
+                    if (i < 3) {
+                        await sleepAwait(2000);
+                        this.logger.verbose(`Trying again [${i + 1}/3]`);
+                        i++;
+                        continue;
+                    } else {
+                        this.logger.error(`Tried 3 times. Stopping...`);
+                        return false;
+                    }
+                }
+            } while (apexAccount?.error)
+            
+
+            const done = this.apexAccountService.saveAccount(apexAccount, user.user);
+
+            if (!done) {
+                this.logger.error(`Error while updating Apex Account for ${user.discordUser.displayName}`);
+                return false;
+            }
+
+            console.log(`Updated Apex Account for ${user.discordUser.displayName}. Took ${Date.now() - benchmarkStart}ms`);
+        }
+
+        this.logger.verbose(`Updated Apex Account for ${connectedUsersInTheGuild.length} users. Took ${Date.now() - benchmarkStart}ms`);
+
+        // Update Roles for every user
+        return await this.updateConnectedRoles();
+    }
+
+    public async handleAdminUpdateConnectedAccounts(Interaction: ChatInputCommandInteraction<CacheType>) {
+        Interaction.reply({ content: 'Rozpoczynam aktualizację kont...', ephemeral: true });
+
+        const isDone = await this.updateConnectedAccounts();
+
+        if (!isDone) {
+            Interaction.editReply({ content: 'Wystąpił błąd podczas aktualizacji kont!'});
+            return false;
+        }
+
+        Interaction.editReply({ content: 'Zakończono aktualizację kont!'});
+        return true;
     }
 }
