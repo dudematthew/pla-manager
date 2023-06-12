@@ -1,8 +1,10 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ColorResolvable, EmbedBuilder, InteractionReplyOptions } from "discord.js";
+import { MessageOptions } from "child_process";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ColorResolvable, EmbedBuilder, InteractionReplyOptions, Message } from "discord.js";
 import { PlayerStatistics } from "src/apex-api/player-statistics.interface";
 import { ApexAccountEntity } from "src/database/entities/apex-account/entities/apex-account.entity";
+import { SynchronizationStatusOptions } from "./apex-sync.service";
 
 @Injectable()
 export class MessageProviderService {
@@ -310,5 +312,39 @@ export class MessageProviderService {
             embeds: [embed],
             components: [],
         }
+    }
+
+    public getSynchronizationStatusEmbed(options: SynchronizationStatusOptions): EmbedBuilder {
+
+        const embed = this.getBasicEmbed()
+            .setTitle('Status synchronizacji')
+            .setDescription('Poniżej znajduje się aktualny status synchronizacji twoich statystyk.')
+            .setThumbnail(this.configService.get<string>('images.loading'));
+
+        if (options.status === 'synchronizing')
+            embed.addFields({
+                name: 'Status',
+                value: 'Synchronizacja w toku',
+            })
+
+        if (options.status === 'error')
+            embed.addFields({
+                name: 'Status',
+                value: 'Wystąpił błąd',
+            })
+
+        if (options.status === 'idle')
+            embed.addFields({
+                name: 'Status',
+                value: 'Oczekuje na synchronizację',
+            })
+        
+
+        embed.addFields({
+            name: 'Ostatnia aktualizacja',
+            value: `<t:${options.lastSynchronizationTimestamp}:R>`,
+        });
+
+        return embed;
     }
 }

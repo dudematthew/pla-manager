@@ -10,15 +10,19 @@ import { MessageProviderService } from './message-provider.service';
 import { ApexSyncService } from './apex-sync.service';
 import { RoleModule } from 'src/database/entities/role/role.module';
 import { RoleGroupModule } from 'src/database/entities/role-group/role-group.module';
+import { ChannelModule } from 'src/database/entities/channel/channel.module';
+import { CronModule } from 'src/cron/cron.module';
 
 @Module({
   imports: [
+    forwardRef(() => DiscordModule),
     ApexApiModule,
     ApexAccountModule,
     UserModule,
     RoleModule,
     RoleGroupModule,
-    forwardRef(() => DiscordModule),
+    ChannelModule,
+    forwardRef(() => CronModule),
   ],
   providers: [
     ApexConnectService,

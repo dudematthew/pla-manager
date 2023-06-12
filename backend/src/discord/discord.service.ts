@@ -8,6 +8,7 @@ import { RoleService } from 'src/database/entities/role/role.service';
 import { RoleEntity } from 'src/database/entities/role/entities/role.entity';
 import { RoleGroupEntity } from 'src/database/entities/role-group/entities/role-group.entity';
 import { ApexAccountService } from 'src/database/entities/apex-account/apex-account.service';
+import { MessageOptions } from 'child_process';
 
 @Injectable()
 export class DiscordService {
@@ -165,15 +166,20 @@ export class DiscordService {
     }
   }
   
-  async sendMessage(channelId: string, content: string, embeds: any[] = [], components: any[] = []): Promise<void> {
+  async sendMessage(channelId: Channel["id"], content: string, embeds: any[] = [], components: any[] = []): Promise<void> {
     const channel = await this.client.channels.fetch(channelId);
+
+    const options: MessageCreateOptions = {};
+
+    if (content)
+      options.content = content;
+
+    options.embeds = embeds;
+    options.components = components;
+
     if (channel.type !== ChannelType.GuildVoice) {
       const textChannel = channel as TextChannel;
-      await textChannel.send({
-        content,
-        embeds,
-        components,
-      });
+      await textChannel.send(options);
     } else {
       throw new Error('Channel is not a text channel');
     }

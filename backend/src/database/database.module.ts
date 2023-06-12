@@ -46,9 +46,6 @@ import { DiscordModule } from "src/discord/discord.module";
             inject: [ConfigService]
         }),
         TypeOrmModule.forFeature([TypeORMSession]),
-        RoleModule,
-        ApexAccountModule,
-        RoleGroupModule,
         forwardRef(() => DiscordModule),
     ],
     providers: [
