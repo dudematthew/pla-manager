@@ -33,19 +33,38 @@ export class EmojiService {
   }
 
   findAll() {
-    return this.emojiRepository.find();
+    return this.emojiRepository.find({
+      relations: [
+        'role'
+      ]
+    });
   }
 
   findById(id: number) {
-    return this.emojiRepository.findOneBy({ id });
+    return this.emojiRepository.findOne({ 
+      where: { id },
+      relations: [
+        'role',
+      ]
+     });
   }
 
   findByName(name: string) {
-    return this.emojiRepository.findOneBy({ name });
+    return this.emojiRepository.findOne({ 
+      where: { name },
+      relations: [
+        'role',
+      ]
+     });
   }
 
   findByDiscordId(discordId: string) {
-    return this.emojiRepository.findOneBy({ discordId });
+    return this.emojiRepository.findOne({ 
+      where: { discordId },
+      relations: [
+        'role',
+      ]
+     });
   }
 
   async update(id: number, properties: UpdateEmojiDto) {
@@ -93,8 +112,11 @@ export class EmojiService {
 
     return await this.emojiRepository.find({
       where: {
-          name: In(teamEmojiNames)
-        }
+        name: In(teamEmojiNames)
+      },
+      relations: [
+        'role'
+      ]
     });
   }
 

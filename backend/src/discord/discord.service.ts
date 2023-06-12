@@ -295,7 +295,7 @@ export class DiscordService {
    */
   async getUserRankRole(userId: string): Promise<Role> {
 
-    const rankRoles = this.configService.get<string[]>('discord.rank-roles');
+    const rankRoles = this.configService.get<string[]>('discord.ranking-roles');
     
     // Get member from guild
     const member: GuildMember = await this.guild.members.fetch(userId);
