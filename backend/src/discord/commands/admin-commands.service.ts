@@ -10,6 +10,7 @@ import { RoleGroupService } from "src/database/entities/role-group/role-group.se
 import { RoleService } from "src/database/entities/role/role.service";
 import { DatabaseService } from "src/database/database.service";
 import { ApexSyncService } from "../apex-connect/apex-sync.service";
+import { handleAdminCreateMessageDto } from "./dtos/admin-create-message.dto";
 
 export const AdminCommandsDecorator = createCommandGroupDecorator({
     name: 'admin',
@@ -118,6 +119,20 @@ export class AdminCommandsService {
         this.discordService.switchRoleFromGroup(member.id, dbRole.roleGroup.name, role.id);
 
         Interaction.reply({ content: `Rola <@&${role.id}> z grupy **${dbRole.roleGroup.name}** została zmieniona dla użytkownika <@${member.id}>`, ephemeral: true});
+    }
+
+    @UseGuards(AdminGuard)
+    @UseFilters(ForbiddenExceptionFilter)
+    @Subcommand({
+        name: 'stwórz-wiadomość',
+        description: 'Stwórz jedną z wiadomości zarządzanych przez bota',
+    })
+    public async onAdminCreateMessage(@Context() [Interaction]: SlashCommandContext, @Options() options: handleAdminCreateMessageDto) {
+        switch (options.messageType) {
+            case 'synchronization':
+                await this.apexSyncService.handleAdminCreateSynchronizationMessage(Interaction);
+                break;
+        }
     }
 
     @UseGuards(AdminGuard)

@@ -1,15 +1,34 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Inject, Injectable, Logger, forwardRef } from "@nestjs/common";
 import { ApexApiService } from "src/apex-api/apex-api.service";
 import { DiscordService } from "src/discord/discord.service";
 import { ApexAccountService } from "src/database/entities/apex-account/apex-account.service";
 import { RoleService } from "src/database/entities/role/role.service";
 import { ConfigService } from "@nestjs/config";
 import { SlashCommandContext } from "necord";
-import { CacheType, ChatInputCommandInteraction, User } from "discord.js";
+import { CacheType, Channel, ChannelType, ChatInputCommandInteraction, Message, MessageManager, User } from "discord.js";
 import { RoleGroupService } from "src/database/entities/role-group/role-group.service";
 import { UserService } from "src/database/entities/user/user.service";
 import { UserEntity } from "src/database/entities/user/user.entity";
 import { sleepAwait } from 'sleep-await';
+import { Timestamp } from "typeorm";
+import { ChannelService } from "src/database/entities/channel/channel.service";
+import { MessageProviderService } from "./message-provider.service";
+import { CronService } from "src/cron/cron.service";
+import { last } from "rxjs";
+import { MessageService } from "src/database/entities/message/message.service";
+
+export interface SynchronizationStatusOptions {
+    status: 'idle' | 'synchronizing' | 'error' | 'role-updating';
+    lastSynchronizationTimestamp: number;
+    nextSynchronizationTimestamp: number;
+    currentAccount: {
+        name: string;
+        discordId: string;
+    };
+    progress: number;
+    total: number;
+    attempt: number;
+}
 
 @Injectable()
 export class ApexSyncService {
@@ -24,7 +43,23 @@ export class ApexSyncService {
         private readonly configService: ConfigService,
         private readonly roleGroupService: RoleGroupService,
         private readonly userService: UserService,
-    ) {}
+        private readonly channelService: ChannelService,
+        private readonly messageService: MessageService,
+        private readonly messageProviderService: MessageProviderService,
+        @Inject(forwardRef(() => CronService))
+        private readonly cronService: CronService,
+    ) {
+        this.init();
+    }
+
+    private async init() {
+        await this.discordService.isReady();
+
+        // Check if bot is in production mode
+        if (process.env.NODE_ENV === 'production') {
+            this.updateConnectedAccounts();
+        }
+    }
 
     /**
    * Remove disconnected role from every user
@@ -173,19 +208,16 @@ export class ApexSyncService {
         if (!discordUser.roles.cache.has(roleToGive.discordId)) {
             await this.discordService.switchRoleFromGroup(discordUser.id, 'rank', roleToGive.discordId);
         }
-
+        
         // If user has disconnected role, remove it
         if (discordUser.roles.cache.has(disconnectRole.discordId)) {
             await this.discordService.removeRoleFromUser(discordUser.id, disconnectRole.discordId);
         }
-
+        
         return true;
     }
 
-    /**
-     * Update Apex Account of every connected user
-     */
-    public async updateConnectedAccounts(): Promise<boolean> {
+    private async getConnectedUsersInTheGuild() {
         // Get all users with connected Apex Account
         const usersWithConnectedApexAccount = await this.apexAccountService.findAll();
 
@@ -193,16 +225,45 @@ export class ApexSyncService {
         const discordUsers = await this.discordService.guild.members.fetch();
 
         // Create a fusion of discord users and users with connected Apex Account
-        const connectedUsersInTheGuild = usersWithConnectedApexAccount
-            .filter(apexAccount => discordUsers.has(apexAccount.user.discordId))
+        return usersWithConnectedApexAccount
+        .filter(apexAccount => discordUsers.has(apexAccount.user.discordId))
             .map(apexAccount => {
                 return {
                     ...apexAccount,
                     discordUser: discordUsers.get(apexAccount.user.discordId),
                 }
             });
+    }
+    
+    /**
+     * Update Apex Account of every connected user
+    */
+   public async updateConnectedAccounts(): Promise<boolean> {
+       const cronJob = this.cronService.getCronJob('updateConnectedAccounts');
+       
+       let lastSynchronization = cronJob.lastDate() ?? null;
+       let nextSynchronization = cronJob.nextDate() ?? null;
+
+        const defaultSynchronizationStatusOptions: SynchronizationStatusOptions = {
+            status: 'idle',
+            lastSynchronizationTimestamp: !!lastSynchronization ? Math.floor(lastSynchronization.getTime() / 1000) : null,
+            nextSynchronizationTimestamp: !!nextSynchronization ? nextSynchronization.toUnixInteger() : null,
+            currentAccount: null,
+            progress: null,
+            total: null,
+            attempt: null,
+        }
+
+        const connectedUsersInTheGuild = await this.getConnectedUsersInTheGuild();
 
         console.log(`Connected users in the guild: ${connectedUsersInTheGuild.length}. Starting update...`);
+
+        // Update synchronization status
+        await this.updateSynchronizationStatus({
+            ...defaultSynchronizationStatusOptions,
+            status: 'synchronizing',
+            total: connectedUsersInTheGuild.length,
+        })
 
         const benchmarkStart = Date.now();
 
@@ -223,6 +284,19 @@ export class ApexSyncService {
             let i = 0;
             do {
                 console.log(`Updating Apex Account for ${user.discordUser.displayName} [${parseInt(key) + 1}/${connectedUsersInTheGuild.length}]`);
+
+                // Update synchronization status
+                await this.updateSynchronizationStatus({
+                    ...defaultSynchronizationStatusOptions,
+                    status: 'synchronizing',
+                    currentAccount: {
+                        name: user.name,
+                        discordId: user.discordUser.id,
+                    },
+                    progress: parseInt(key) + 1,
+                    total: connectedUsersInTheGuild.length,
+                    attempt: i + 1,
+                });
     
                 // Get user Apex Account
                 apexAccount = await this.apexApiService.getPlayerStatisticsByUID(user.uid, user.platform as any, {});
@@ -237,6 +311,13 @@ export class ApexSyncService {
                         continue;
                     } else {
                         this.logger.error(`Tried 3 times. Stopping...`);
+
+                        // Update synchronization status
+                        await this.updateSynchronizationStatus({
+                            ...defaultSynchronizationStatusOptions,
+                            status: 'error',
+                        });
+
                         return false;
                     }
                 }
@@ -247,6 +328,13 @@ export class ApexSyncService {
 
             if (!done) {
                 this.logger.error(`Error while updating Apex Account for ${user.discordUser.displayName}`);
+
+                // Update synchronization status
+                await this.updateSynchronizationStatus({
+                    ...defaultSynchronizationStatusOptions,
+                    status: 'error',
+                });
+
                 return false;
             }
 
@@ -255,8 +343,29 @@ export class ApexSyncService {
 
         this.logger.verbose(`Updated Apex Account for ${connectedUsersInTheGuild.length} users. Took ${Date.now() - benchmarkStart}ms`);
 
+        // Update synchronization status
+        await this.updateSynchronizationStatus({
+            ...defaultSynchronizationStatusOptions,
+            status: 'role-updating',
+        });
+
         // Update Roles for every user
-        return await this.updateConnectedRoles();
+        await this.updateConnectedRoles();
+
+
+        lastSynchronization = new Date();
+        nextSynchronization = cronJob.nextDate() ?? null;
+
+        // Update synchronization status
+        const result = await this.updateSynchronizationStatus({
+            ...defaultSynchronizationStatusOptions,
+            status: 'idle',
+            lastSynchronizationTimestamp: !!lastSynchronization ? Math.floor(lastSynchronization.getTime() / 1000) : null,
+            nextSynchronizationTimestamp: !!nextSynchronization ? nextSynchronization.toUnixInteger() : null,
+            total: connectedUsersInTheGuild.length,
+        });
+
+        return result;
     }
 
     public async handleAdminUpdateConnectedAccounts(Interaction: ChatInputCommandInteraction<CacheType>) {
@@ -271,5 +380,92 @@ export class ApexSyncService {
 
         Interaction.editReply({ content: 'Zakończono aktualizację kont!'});
         return true;
+    }
+
+    public async updateSynchronizationStatus(options: SynchronizationStatusOptions) {
+        
+        const synchronizationMessage: Message<true> = await this.getSynchronizationStatusMessage();
+
+        if (!synchronizationMessage) {
+            return false;
+        }
+
+        await synchronizationMessage.edit({ embeds: [this.messageProviderService.getSynchronizationStatusEmbed(options)] });
+
+        return !!synchronizationMessage;
+    }
+
+    public async getSynchronizationStatusMessage (): Promise<Message<true>> {
+
+        const synchronizationMessage = await this.messageService.getDiscordMessageByName('synchronization');
+
+        if (!synchronizationMessage) {
+            this.logger.error('Synchronization status message not found');
+            return null;
+        }
+
+        return synchronizationMessage;
+    }
+
+    public async handleAdminCreateSynchronizationMessage(interaction: ChatInputCommandInteraction<CacheType>) {
+
+        // Send message with player data and ask user to confirm
+        const replyMessage = await interaction.reply(this.messageProviderService.getMessageSendConfirmation());
+
+        const collectorFilter = i => i.user.id == interaction.user.id;
+
+        let confirmation: any;
+
+        try {
+            confirmation = await replyMessage.awaitMessageComponent({ filter: collectorFilter, time: 60000 });
+        } catch (e) {
+            await interaction.editReply(this.messageProviderService.getPlayerDataExpiredMessage());
+            return;
+        }
+
+        const dbChannel = await this.channelService.findByName('synchronization');
+
+        if (!dbChannel) {
+            await interaction.editReply(this.messageProviderService.getChannelNotFoundMessage());
+            return;
+        }
+
+        const embed = this.messageProviderService.getSynchronizationStatusEmbed({
+            status: 'idle',
+            lastSynchronizationTimestamp: null,
+            nextSynchronizationTimestamp: null,
+            currentAccount: null,
+            progress: null,
+            total: null,
+            attempt: null,
+        });
+
+        const message = await this.discordService.sendMessage(dbChannel.discordId, null, [embed]);
+
+        console.log(`Creating synchronization message ${message.id} in channel ${dbChannel.id}`)
+
+        // Check if message already exists in database
+        const dbMessage = await this.messageService.findByName('synchronization');
+
+        // Update message in database if it exists
+        if (dbMessage) {
+            await this.messageService.update(dbMessage.id, {
+                discordId: message.id,
+                channelId: dbChannel.id,
+            });
+
+            replyMessage.edit({ content: `Wiadomość ${message.id} została utworzona i zastąpiła poprzednią!`});
+        }
+        else {
+            await this.messageService.create({
+                name: 'synchronization',
+                discordId: message.id,
+                channelId: dbChannel.id,
+            });
+
+            replyMessage.edit({ content: `Wiadomość ${message.id} została utworzona!`});
+        }
+
+
     }
 }

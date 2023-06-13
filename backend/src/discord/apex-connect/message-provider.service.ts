@@ -1,8 +1,10 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ColorResolvable, EmbedBuilder, InteractionReplyOptions } from "discord.js";
+import { MessageOptions } from "child_process";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ColorResolvable, EmbedBuilder, InteractionReplyOptions, Message } from "discord.js";
 import { PlayerStatistics } from "src/apex-api/player-statistics.interface";
 import { ApexAccountEntity } from "src/database/entities/apex-account/entities/apex-account.entity";
+import { SynchronizationStatusOptions } from "./apex-sync.service";
 
 @Injectable()
 export class MessageProviderService {
@@ -309,6 +311,146 @@ export class MessageProviderService {
         return {
             embeds: [embed],
             components: [],
+        }
+    }
+
+    public getSynchronizationStatusEmbed(options: SynchronizationStatusOptions): EmbedBuilder {
+
+        console.log(options?.lastSynchronizationTimestamp, options?.nextSynchronizationTimestamp)
+
+        const embed = this.getBasicEmbed()
+            .setTitle('Synchronizacja statystyk Apex Legends')
+        
+        if (options.status == 'idle') {
+            embed.setDescription('**Status:** *Oczekiwanie...*');
+
+            if (options.lastSynchronizationTimestamp)
+                embed.addFields({
+                    name: 'Ostatnia aktualizacja',
+                    value: `<t:${options.lastSynchronizationTimestamp}:T>`,
+                    inline: true,
+                });
+
+            if (options.nextSynchronizationTimestamp)
+                embed.addFields({
+                    name: 'Następna aktualizacja',
+                    value: `<t:${options.nextSynchronizationTimestamp}:R>`,
+                    inline: true,
+                });
+
+            if (options.total)
+                embed.addFields({
+                    name: 'Ostatnio zaktualizowano',
+                    value: `${options.total} kont`,
+                });
+
+            embed.setThumbnail(this.configService.get<string>('images.success'));
+        }
+
+        if (options.status == 'synchronizing') {
+            embed.setDescription('**Status:** *Synchronizowanie...*');
+            embed.setThumbnail(this.configService.get<string>('images.loading'));
+
+            if (options.progress)
+                embed.addFields({
+                    name: 'Ogólny progres synchronizacji',
+                    value: `${options.progress} / ${options.total}`,
+                });
+
+            else
+                embed.addFields({
+                    name: 'Rozpoczynam aktualizację...',
+                    value: `Ilość połączonych kont: ${options.total}`,
+                });
+
+
+            if (options.currentAccount)
+                embed.addFields({
+                    name: 'Aktualizowany gracz',
+                    value: options.currentAccount.name + ' ' + `[<@${options.currentAccount.discordId}>]`,
+                });
+
+            if (options.attempt) {
+                let progressText = '';
+    
+                if (options.attempt <= 1)
+                    progressText = 'Pobieranie danych z API';
+    
+                if (options.attempt > 1)
+                    progressText = `Próba nieudana! Ponawianie [${options.attempt}/${3}]`;
+    
+                embed.addFields({
+                    name: 'Postęp aktualizacji',
+                    value: progressText,
+                });
+            }
+
+        }
+
+        if (options.status == 'error') {
+            embed.setDescription('**Status:** *Wystąpił błąd podczas aktualizowania kont Apex Legends...*');
+            embed.setThumbnail(this.configService.get<string>('images.danger'));
+
+            if (options.lastSynchronizationTimestamp)
+                embed.addFields({
+                    name: 'Ostatnia próba aktualizacji',
+                    value: `<t:${options.lastSynchronizationTimestamp}:R>`,
+                });
+
+            if (options.nextSynchronizationTimestamp)
+                embed.addFields({
+                    name: 'Następna aktualizacja',
+                    value: `<t:${options.nextSynchronizationTimestamp}:R>`,
+                });
+        }
+
+        if (options.status == 'role-updating') {
+            embed.setDescription('**Status:** *Aktualizowanie ról...*');
+            embed.setThumbnail(this.configService.get<string>('images.loading'));
+        }
+
+
+
+        // embed.addFields({
+        //     name: 'Ostatnia aktualizacja',
+        //     value: `<t:${options.lastSynchronizationTimestamp}:R>`,
+        // });
+
+        return embed;
+    }
+
+    public getMessageSendConfirmation (): InteractionReplyOptions {
+        const embed = this.getBasicEmbed()
+            .setTitle('Czy na pewno chcesz stworzyć wiadomość?')
+            .setDescription(`Ten typ wiadomości, będzie przekierowany na domyślny kanał, niezależnie od wyboru, czy kontynuować?`)
+            .setThumbnail(this.configService.get<string>('images.danger'));
+
+        const confirmButton = new ButtonBuilder()
+            .setStyle(ButtonStyle.Success)
+            .setLabel(`Tak, stwórz wiadomość`)
+            .setCustomId('apex-create-message-confirm')
+            .setEmoji('✅');
+
+        const row = new ActionRowBuilder()
+            .addComponents(confirmButton);
+
+        return {
+            embeds: [embed],
+            components: [row as any],
+            ephemeral: true,
+        }
+    }
+
+    public getChannelNotFoundMessage (): InteractionReplyOptions {
+        const embed = this.getBasicEmbed()
+            .setTitle('Nie znaleziono kanału')
+            .setDescription(`Nie znaleziono kanału który mógłby zostać przypisany do wiadomości. Sprawdź czy kanał jest ustawiony i spróbuj ponownie.`)
+            .setThumbnail(this.configService.get<string>('images.danger'));
+
+        return {
+            embeds: [embed],
+            components: [],
+            ephemeral: true,
         }
     }
 }

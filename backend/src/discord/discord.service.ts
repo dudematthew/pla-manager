@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Client, TextChannel, ChannelType, User, GuildMember, PermissionsBitField, Guild, UserResolvable, PermissionResolvable, Channel, ReactionEmoji, GuildEmoji, VoiceChannel, VoiceBasedChannel, Role, Collection, EmbedBuilder, Embed, MessageCreateOptions } from 'discord.js';
+import { Client, TextChannel, ChannelType, User, GuildMember, PermissionsBitField, Guild, UserResolvable, PermissionResolvable, Channel, ReactionEmoji, GuildEmoji, VoiceChannel, VoiceBasedChannel, Role, Collection, EmbedBuilder, Embed, MessageCreateOptions, ComponentBuilder, APIActionRowComponent, Message } from 'discord.js';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { setClient } from 'discord.js-menu-buttons';
@@ -8,6 +8,7 @@ import { RoleService } from 'src/database/entities/role/role.service';
 import { RoleEntity } from 'src/database/entities/role/entities/role.entity';
 import { RoleGroupEntity } from 'src/database/entities/role-group/entities/role-group.entity';
 import { ApexAccountService } from 'src/database/entities/apex-account/apex-account.service';
+import { MessageOptions } from 'child_process';
 
 @Injectable()
 export class DiscordService {
@@ -165,15 +166,43 @@ export class DiscordService {
     }
   }
   
-  async sendMessage(channelId: string, content: string, embeds: any[] = [], components: any[] = []): Promise<void> {
+  async sendMessage(channelId: Channel["id"], content: string, embeds: EmbedBuilder[] = [], components: any[] = []): Promise<Message> {
     const channel = await this.client.channels.fetch(channelId);
+
+    const options: MessageCreateOptions = {};
+
+    if (content)
+      options.content = content;
+
+    options.embeds = embeds;
+    options.components = components;
+
+    let message: Message;
+
     if (channel.type !== ChannelType.GuildVoice) {
       const textChannel = channel as TextChannel;
-      await textChannel.send({
-        content,
-        embeds,
-        components,
-      });
+      message = await textChannel.send(options);
+    } else {
+      throw new Error('Channel is not a text channel');
+    }
+
+    return message;
+  }
+
+  async messageExists(channelId: Channel["id"], messageId: Message["id"]): Promise<boolean> {
+    return this.getMessage(channelId, messageId) !== null;
+  }
+
+  async getMessage(channelId: Channel["id"], messageId: Message["id"]): Promise<Message> {
+    const channel = await this.getChannelById(channelId);
+
+    if (!channel)
+      return null;
+
+    if (channel.type !== ChannelType.GuildVoice) {
+      const textChannel = channel as TextChannel;
+      const message = await textChannel.messages.fetch(messageId);
+      return message;
     } else {
       throw new Error('Channel is not a text channel');
     }
@@ -267,6 +296,7 @@ export class DiscordService {
    */
   async getChannelById(channelId: string): Promise<Channel> {
     // Get channel but not from cache
+    console.log(`getting channel by id ${channelId}...`);
     return await this.client.channels.fetch(channelId);
   }
 

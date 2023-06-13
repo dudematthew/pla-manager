@@ -1,6 +1,7 @@
-import { BaseEntity, Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import { BaseEntity, Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from "typeorm";
 import { DiscordService } from "src/discord/discord.service";
 import { Channel } from "discord.js";
+import { MessageEntity } from "../message/entities/message.entity";
 
 export enum ChannelTypeFormat {
     TEXT = 'text',
@@ -33,4 +34,7 @@ export class ChannelEntity extends BaseEntity {
 
     @UpdateDateColumn({ name: 'updated_at' })
     updatedAt: Date;
+
+    @OneToMany(() => MessageEntity, message => message.channel)
+    messages: MessageEntity[];
 }

@@ -16,6 +16,8 @@ import { RoleGroupEntity } from "./entities/role-group/entities/role-group.entit
 import { RoleGroupModule } from "./entities/role-group/role-group.module";
 import { DatabaseService } from "./database.service";
 import { DiscordModule } from "src/discord/discord.module";
+import { MessageModule } from './entities/message/message.module';
+import { MessageEntity } from "./entities/message/entities/message.entity";
 
 @Module({
     imports: [
@@ -39,6 +41,7 @@ import { DiscordModule } from "src/discord/discord.module";
                     TourneyTeamEntity,
                     ApexAccountEntity,
                     EmojiEntity,
+                    MessageEntity,
                 ],
                 synchronize: true,
                 autoLoadEntities: true,
@@ -46,9 +49,6 @@ import { DiscordModule } from "src/discord/discord.module";
             inject: [ConfigService]
         }),
         TypeOrmModule.forFeature([TypeORMSession]),
-        RoleModule,
-        ApexAccountModule,
-        RoleGroupModule,
         forwardRef(() => DiscordModule),
     ],
     providers: [

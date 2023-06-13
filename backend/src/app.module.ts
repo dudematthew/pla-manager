@@ -26,6 +26,7 @@ import { LfgModule } from './discord/lfg/lfg.module';
 import { ApexConnectModule } from './discord/apex-connect/apex-connect.module';
 import { InsideModule } from './discord/inside/inside.module';
 import { RoleGroupModule } from './database/entities/role-group/role-group.module';
+import { MessageEntity } from './database/entities/message/entities/message.entity';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { RoleGroupModule } from './database/entities/role-group/role-group.modul
     RoleGroupModule,
     UserModule,
     TourneyModule,
+    MessageEntity,
   ],
   controllers: [
     AppController,

@@ -18,6 +18,7 @@ embeds:
 channel-names:
   lfg: 'lfg'
   lfg-output: 'lfgoutput'
+  synchronization: 'synchronization'
 
 role-names:
   pla-inside: 
