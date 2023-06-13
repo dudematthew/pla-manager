@@ -316,34 +316,105 @@ export class MessageProviderService {
 
     public getSynchronizationStatusEmbed(options: SynchronizationStatusOptions): EmbedBuilder {
 
+        console.log(options?.lastSynchronizationTimestamp, options?.nextSynchronizationTimestamp)
+
         const embed = this.getBasicEmbed()
-            .setTitle('Status synchronizacji')
-            .setDescription('Poniżej znajduje się aktualny status synchronizacji twoich statystyk.')
-            .setThumbnail(this.configService.get<string>('images.loading'));
-
-        if (options.status === 'synchronizing')
-            embed.addFields({
-                name: 'Status',
-                value: 'Synchronizacja w toku',
-            })
-
-        if (options.status === 'error')
-            embed.addFields({
-                name: 'Status',
-                value: 'Wystąpił błąd',
-            })
-
-        if (options.status === 'idle')
-            embed.addFields({
-                name: 'Status',
-                value: 'Oczekuje na synchronizację',
-            })
+            .setTitle('Synchronizacja statystyk Apex Legends')
         
+        if (options.status == 'idle') {
+            embed.setDescription('**Status:** *Oczekiwanie...*');
 
-        embed.addFields({
-            name: 'Ostatnia aktualizacja',
-            value: `<t:${options.lastSynchronizationTimestamp}:R>`,
-        });
+            if (options.lastSynchronizationTimestamp)
+                embed.addFields({
+                    name: 'Ostatnia aktualizacja',
+                    value: `<t:${options.lastSynchronizationTimestamp}:T>`,
+                    inline: true,
+                });
+
+            if (options.nextSynchronizationTimestamp)
+                embed.addFields({
+                    name: 'Następna aktualizacja',
+                    value: `<t:${options.nextSynchronizationTimestamp}:R>`,
+                    inline: true,
+                });
+
+            if (options.total)
+                embed.addFields({
+                    name: 'Ostatnio zaktualizowano',
+                    value: `${options.total} kont`,
+                });
+
+            embed.setThumbnail(this.configService.get<string>('images.success'));
+        }
+
+        if (options.status == 'synchronizing') {
+            embed.setDescription('**Status:** *Synchronizowanie...*');
+            embed.setThumbnail(this.configService.get<string>('images.loading'));
+
+            if (options.progress)
+                embed.addFields({
+                    name: 'Ogólny progres synchronizacji',
+                    value: `${options.progress} / ${options.total}`,
+                });
+
+            else
+                embed.addFields({
+                    name: 'Rozpoczynam aktualizację...',
+                    value: `Ilość połączonych kont: ${options.total}`,
+                });
+
+
+            if (options.currentAccount)
+                embed.addFields({
+                    name: 'Aktualizowany gracz',
+                    value: options.currentAccount.name + ' ' + `[<@${options.currentAccount.discordId}>]`,
+                });
+
+            if (options.attempt) {
+                let progressText = '';
+    
+                if (options.attempt <= 1)
+                    progressText = 'Pobieranie danych z API';
+    
+                if (options.attempt > 1)
+                    progressText = `Próba nieudana! Ponawianie [${options.attempt}/${3}]`;
+    
+                embed.addFields({
+                    name: 'Postęp aktualizacji',
+                    value: progressText,
+                });
+            }
+
+        }
+
+        if (options.status == 'error') {
+            embed.setDescription('**Status:** *Wystąpił błąd podczas aktualizowania kont Apex Legends...*');
+            embed.setThumbnail(this.configService.get<string>('images.danger'));
+
+            if (options.lastSynchronizationTimestamp)
+                embed.addFields({
+                    name: 'Ostatnia próba aktualizacji',
+                    value: `<t:${options.lastSynchronizationTimestamp}:R>`,
+                });
+
+            if (options.nextSynchronizationTimestamp)
+                embed.addFields({
+                    name: 'Następna aktualizacja',
+                    value: `<t:${options.nextSynchronizationTimestamp}:R>`,
+                });
+        }
+
+        if (options.status == 'role-updating') {
+            embed.setDescription('**Status:** *Aktualizowanie ról...*');
+            embed.setThumbnail(this.configService.get<string>('images.loading'));
+        }
+
+
+
+        // embed.addFields({
+        //     name: 'Ostatnia aktualizacja',
+        //     value: `<t:${options.lastSynchronizationTimestamp}:R>`,
+        // });
 
         return embed;
     }

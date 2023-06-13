@@ -14,6 +14,7 @@ import { Timestamp } from "typeorm";
 import { ChannelService } from "src/database/entities/channel/channel.service";
 import { MessageProviderService } from "./message-provider.service";
 import { CronService } from "src/cron/cron.service";
+import { last } from "rxjs";
 
 export interface SynchronizationStatusOptions {
     status: 'idle' | 'synchronizing' | 'error' | 'role-updating';
@@ -201,27 +202,28 @@ export class ApexSyncService {
         if (!discordUser.roles.cache.has(roleToGive.discordId)) {
             await this.discordService.switchRoleFromGroup(discordUser.id, 'rank', roleToGive.discordId);
         }
-
+        
         // If user has disconnected role, remove it
         if (discordUser.roles.cache.has(disconnectRole.discordId)) {
             await this.discordService.removeRoleFromUser(discordUser.id, disconnectRole.discordId);
         }
-
+        
         return true;
     }
-
+    
     /**
      * Update Apex Account of every connected user
-     */
-    public async updateConnectedAccounts(): Promise<boolean> {
-
-        const lastSynchronization = this.cronService.getCronJob('updateConnectedAccounts').lastDate() ?? null;
-        const nextSynchronization = this.cronService.getCronJob('updateConnectedAccounts').nextDates(1)[0] ?? null;
+    */
+   public async updateConnectedAccounts(): Promise<boolean> {
+       const cronJob = this.cronService.getCronJob('updateConnectedAccounts');
+       
+       let lastSynchronization = cronJob.lastDate() ?? null;
+       let nextSynchronization = cronJob.nextDate() ?? null;
 
         const defaultSynchronizationStatusOptions: SynchronizationStatusOptions = {
             status: 'idle',
-            lastSynchronizationTimestamp: lastSynchronization?.valueOf(),
-            nextSynchronizationTimestamp: nextSynchronization?.valueOf(),
+            lastSynchronizationTimestamp: !!lastSynchronization ? Math.floor(lastSynchronization.getTime() / 1000) : null,
+            nextSynchronizationTimestamp: !!nextSynchronization ? nextSynchronization.toUnixInteger() : null,
             currentAccount: null,
             progress: null,
             total: null,
@@ -236,7 +238,7 @@ export class ApexSyncService {
 
         // Create a fusion of discord users and users with connected Apex Account
         const connectedUsersInTheGuild = usersWithConnectedApexAccount
-            .filter(apexAccount => discordUsers.has(apexAccount.user.discordId))
+        .filter(apexAccount => discordUsers.has(apexAccount.user.discordId))
             .map(apexAccount => {
                 return {
                     ...apexAccount,
@@ -340,12 +342,17 @@ export class ApexSyncService {
         // Update Roles for every user
         await this.updateConnectedRoles();
 
+
+        lastSynchronization = new Date();
+        nextSynchronization = cronJob.nextDate() ?? null;
+
         // Update synchronization status
         const result = await this.updateSynchronizationStatus({
             ...defaultSynchronizationStatusOptions,
             status: 'idle',
-            nextSynchronizationTimestamp: this.cronService.getCronJob('updateConnectedAccounts').nextDates(1)[0].valueOf(),
-            lastSynchronizationTimestamp: Date.now().valueOf(),
+            lastSynchronizationTimestamp: !!lastSynchronization ? Math.floor(lastSynchronization.getTime() / 1000) : null,
+            nextSynchronizationTimestamp: !!nextSynchronization ? nextSynchronization.toUnixInteger() : null,
+            total: connectedUsersInTheGuild.length,
         });
 
         return result;
