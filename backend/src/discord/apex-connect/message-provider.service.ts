@@ -418,4 +418,39 @@ export class MessageProviderService {
 
         return embed;
     }
+
+    public getMessageSendConfirmation (): InteractionReplyOptions {
+        const embed = this.getBasicEmbed()
+            .setTitle('Czy na pewno chcesz stworzyć wiadomość?')
+            .setDescription(`Ten typ wiadomości, będzie przekierowany na domyślny kanał, niezależnie od wyboru, czy kontynuować?`)
+            .setThumbnail(this.configService.get<string>('images.danger'));
+
+        const confirmButton = new ButtonBuilder()
+            .setStyle(ButtonStyle.Success)
+            .setLabel(`Tak, stwórz wiadomość`)
+            .setCustomId('apex-create-message-confirm')
+            .setEmoji('✅');
+
+        const row = new ActionRowBuilder()
+            .addComponents(confirmButton);
+
+        return {
+            embeds: [embed],
+            components: [row as any],
+            ephemeral: true,
+        }
+    }
+
+    public getChannelNotFoundMessage (): InteractionReplyOptions {
+        const embed = this.getBasicEmbed()
+            .setTitle('Nie znaleziono kanału')
+            .setDescription(`Nie znaleziono kanału który mógłby zostać przypisany do wiadomości. Sprawdź czy kanał jest ustawiony i spróbuj ponownie.`)
+            .setThumbnail(this.configService.get<string>('images.danger'));
+
+        return {
+            embeds: [embed],
+            components: [],
+            ephemeral: true,
+        }
+    }
 }

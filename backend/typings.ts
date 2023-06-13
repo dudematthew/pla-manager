@@ -59,6 +59,27 @@ export type Schema = {
     nested: {};
     flat: {};
   };
+  'message': {
+    plain: {
+      'id': number;
+      'discord_id': string;
+      'name': string;
+      'created_at': string;
+      'updated_at': string;
+      'channelId': number;
+    };
+    nested: {
+      'channel': Schema['channel']['plain'] & Schema['channel']['nested'];
+    };
+    flat: {
+      'channel:id': number;
+      'channel:discord_id': string;
+      'channel:name': string;
+      'channel:type': 'text' | 'voice';
+      'channel:created_at': string;
+      'channel:updated_at': string;
+    };
+  };
   'role': {
     plain: {
       'id': number;

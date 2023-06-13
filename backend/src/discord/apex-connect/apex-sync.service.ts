@@ -15,6 +15,7 @@ import { ChannelService } from "src/database/entities/channel/channel.service";
 import { MessageProviderService } from "./message-provider.service";
 import { CronService } from "src/cron/cron.service";
 import { last } from "rxjs";
+import { MessageService } from "src/database/entities/message/message.service";
 
 export interface SynchronizationStatusOptions {
     status: 'idle' | 'synchronizing' | 'error' | 'role-updating';
@@ -43,6 +44,7 @@ export class ApexSyncService {
         private readonly roleGroupService: RoleGroupService,
         private readonly userService: UserService,
         private readonly channelService: ChannelService,
+        private readonly messageService: MessageService,
         private readonly messageProviderService: MessageProviderService,
         @Inject(forwardRef(() => CronService))
         private readonly cronService: CronService,
@@ -377,32 +379,89 @@ export class ApexSyncService {
     }
 
     public async updateSynchronizationStatus(options: SynchronizationStatusOptions) {
-        const statusDbChannel = await this.channelService.findByName(this.configService.get<string>('channel-names.synchronization'));
-
-        const statusChannel: Channel = await this.discordService.getClient().channels.fetch(statusDbChannel.discordId);
-
-        if (!statusChannel) {
-            this.logger.error('Status channel not found');
-            return false;
-        }
-
-        let synchronizationMessage: Message<true>
-
-        if (statusChannel.type == ChannelType.GuildText) {
-            synchronizationMessage = await statusChannel.messages.fetch('1117938312045408267');
-        }
-        else {
-            this.logger.error('Status channel is not a text channel');
-            return false;
-        }
+        
+        const synchronizationMessage: Message<true> = await this.getSynchronizationStatusMessage();
 
         if (!synchronizationMessage) {
-            this.logger.error('Status message not found');
             return false;
         }
 
         await synchronizationMessage.edit({ embeds: [this.messageProviderService.getSynchronizationStatusEmbed(options)] });
 
         return !!synchronizationMessage;
+    }
+
+    public async getSynchronizationStatusMessage (): Promise<Message<true>> {
+
+        const synchronizationMessage = await this.messageService.getDiscordMessageByName('synchronization');
+
+        if (!synchronizationMessage) {
+            this.logger.error('Synchronization status message not found');
+            return null;
+        }
+
+        return synchronizationMessage;
+    }
+
+    public async handleAdminCreateSynchronizationMessage(interaction: ChatInputCommandInteraction<CacheType>) {
+
+        // Send message with player data and ask user to confirm
+        const replyMessage = await interaction.reply(this.messageProviderService.getMessageSendConfirmation());
+
+        const collectorFilter = i => i.user.id == interaction.user.id;
+
+        let confirmation: any;
+
+        try {
+            confirmation = await replyMessage.awaitMessageComponent({ filter: collectorFilter, time: 60000 });
+        } catch (e) {
+            await interaction.editReply(this.messageProviderService.getPlayerDataExpiredMessage());
+            return;
+        }
+
+        const dbChannel = await this.channelService.findByName('synchronization');
+
+        if (!dbChannel) {
+            await interaction.editReply(this.messageProviderService.getChannelNotFoundMessage());
+            return;
+        }
+
+        const embed = this.messageProviderService.getSynchronizationStatusEmbed({
+            status: 'idle',
+            lastSynchronizationTimestamp: null,
+            nextSynchronizationTimestamp: null,
+            currentAccount: null,
+            progress: null,
+            total: null,
+            attempt: null,
+        });
+
+        const message = await this.discordService.sendMessage(dbChannel.discordId, null, [embed]);
+
+        console.log(`Creating synchronization message ${message.id} in channel ${dbChannel.id}`)
+
+        // Check if message already exists in database
+        const dbMessage = await this.messageService.findByName('synchronization');
+
+        // Update message in database if it exists
+        if (dbMessage) {
+            await this.messageService.update(dbMessage.id, {
+                discordId: message.id,
+                channelId: dbChannel.id,
+            });
+
+            replyMessage.edit({ content: `Wiadomość ${message.id} została utworzona i zastąpiła poprzednią!`});
+        }
+        else {
+            await this.messageService.create({
+                name: 'synchronization',
+                discordId: message.id,
+                channelId: dbChannel.id,
+            });
+
+            replyMessage.edit({ content: `Wiadomość ${message.id} została utworzona!`});
+        }
+
+
     }
 }

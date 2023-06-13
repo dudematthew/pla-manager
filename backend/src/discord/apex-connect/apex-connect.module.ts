@@ -12,6 +12,7 @@ import { RoleModule } from 'src/database/entities/role/role.module';
 import { RoleGroupModule } from 'src/database/entities/role-group/role-group.module';
 import { ChannelModule } from 'src/database/entities/channel/channel.module';
 import { CronModule } from 'src/cron/cron.module';
+import { MessageModule } from 'src/database/entities/message/message.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { CronModule } from 'src/cron/cron.module';
     RoleModule,
     RoleGroupModule,
     ChannelModule,
+    MessageModule,
     forwardRef(() => CronModule),
   ],
   providers: [
