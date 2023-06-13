@@ -356,7 +356,6 @@ export class MessageProviderService {
                 embed.addFields({
                     name: 'Ostatnio zaktualizowano',
                     value: `${options.total} kont`,
-                    inline: true,
                 });
 
 
