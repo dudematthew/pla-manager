@@ -47,16 +47,16 @@ export class ApexSyncService {
         @Inject(forwardRef(() => CronService))
         private readonly cronService: CronService,
     ) {
-        // this.discordService.getClient().on('ready', () => {
-        //     this.updateSynchronizationStatus({
-        //         status: 'idle',
-        //         lastSynchronizationTimestamp: null,
-        //         nextSynchronizationTimestamp: null,
-        //         currentAccount: null,
-        //         progress: null,
-        //         total: null,
-        //     })
-        // });
+        this.init();
+    }
+
+    private async init() {
+        await this.discordService.isReady();
+
+        // Check if bot is in production mode
+        if (process.env.NODE_ENV === 'production') {
+            this.updateConnectedAccounts();
+        }
     }
 
     /**
@@ -210,6 +210,24 @@ export class ApexSyncService {
         
         return true;
     }
+
+    private async getConnectedUsersInTheGuild() {
+        // Get all users with connected Apex Account
+        const usersWithConnectedApexAccount = await this.apexAccountService.findAll();
+
+        // Get all users in the main guild
+        const discordUsers = await this.discordService.guild.members.fetch();
+
+        // Create a fusion of discord users and users with connected Apex Account
+        return usersWithConnectedApexAccount
+        .filter(apexAccount => discordUsers.has(apexAccount.user.discordId))
+            .map(apexAccount => {
+                return {
+                    ...apexAccount,
+                    discordUser: discordUsers.get(apexAccount.user.discordId),
+                }
+            });
+    }
     
     /**
      * Update Apex Account of every connected user
@@ -230,21 +248,7 @@ export class ApexSyncService {
             attempt: null,
         }
 
-        // Get all users with connected Apex Account
-        const usersWithConnectedApexAccount = await this.apexAccountService.findAll();
-
-        // Get all users in the main guild
-        const discordUsers = await this.discordService.guild.members.fetch();
-
-        // Create a fusion of discord users and users with connected Apex Account
-        const connectedUsersInTheGuild = usersWithConnectedApexAccount
-        .filter(apexAccount => discordUsers.has(apexAccount.user.discordId))
-            .map(apexAccount => {
-                return {
-                    ...apexAccount,
-                    discordUser: discordUsers.get(apexAccount.user.discordId),
-                }
-            });
+        const connectedUsersInTheGuild = await this.getConnectedUsersInTheGuild();
 
         console.log(`Connected users in the guild: ${connectedUsersInTheGuild.length}. Starting update...`);
 
