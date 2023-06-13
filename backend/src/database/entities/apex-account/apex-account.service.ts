@@ -75,9 +75,9 @@ export class ApexAccountService {
         rankImg: playerData.global?.rank?.rankImg ?? null,
         level: playerData.global?.level ?? null,
         percentToNextLevel: playerData.global?.toNextLevelPercent ?? null,
-        brTotalKills: playerData.total?.specialEvent_kills.value ?? null,
-        brTotalWins: playerData.total?.specialEvent_wins.value ?? null,
-        brTotalDamage: playerData.total?.specialEvent_damage.value ?? null,
+        brTotalKills: playerData.total?.specialEvent_kills?.value ?? null,
+        brTotalWins: playerData.total?.specialEvent_wins?.value ?? null,
+        brTotalDamage: playerData.total?.specialEvent_damage?.value ?? null,
         brTotalGamesPlayed: null, // Doesn't exist in API
         brKDR: parseInt(playerData.total?.kd?.value ?? null) ?? null,
         lastLegendPlayed: playerData.realtime?.selectedLegend ?? null,
