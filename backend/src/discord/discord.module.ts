@@ -30,6 +30,9 @@ import { DatabaseModule } from "src/database/database.module";
                 IntentsBitField.Flags.MessageContent,
                 IntentsBitField.Flags.DirectMessages,
                 IntentsBitField.Flags.DirectMessageReactions,
+                IntentsBitField.Flags.GuildIntegrations,
+                IntentsBitField.Flags.GuildMessageTyping,
+                IntentsBitField.Flags.GuildModeration,
             ],
             partials: [
                 Partials.Channel,

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Client, TextChannel, ChannelType, User, GuildMember, PermissionsBitField, Guild, UserResolvable, PermissionResolvable, Channel, ReactionEmoji, GuildEmoji, VoiceChannel, VoiceBasedChannel, Role, Collection, EmbedBuilder, Embed, MessageCreateOptions, ComponentBuilder, APIActionRowComponent, Message } from 'discord.js';
+import { Client, TextChannel, ChannelType, User, GuildMember, PermissionsBitField, Guild, UserResolvable, PermissionResolvable, Channel, ReactionEmoji, GuildEmoji, VoiceChannel, VoiceBasedChannel, Role, Collection, EmbedBuilder, Embed, MessageCreateOptions, ComponentBuilder, APIActionRowComponent, Message, ApplicationCommandManager, GuildApplicationCommandManager } from 'discord.js';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { setClient } from 'discord.js-menu-buttons';
@@ -9,6 +9,7 @@ import { RoleEntity } from 'src/database/entities/role/entities/role.entity';
 import { RoleGroupEntity } from 'src/database/entities/role-group/entities/role-group.entity';
 import { ApexAccountService } from 'src/database/entities/apex-account/apex-account.service';
 import { MessageOptions } from 'child_process';
+import { BaseCommandMeta, CommandDiscovery, CommandsService } from 'necord';
 
 @Injectable()
 export class DiscordService {
@@ -34,18 +35,22 @@ export class DiscordService {
       private readonly roleGroupService: RoleGroupService,
       private readonly roleService: RoleService,
       private readonly apexAccountService: ApexAccountService,
+      private readonly commandsService: CommandsService,
   ) {
     // Set main guild ID from env variable
     this.guildId = process.env.MAIN_GUILD_ID;
 
+    
     this.init();
   }
-
+  
   public async init() {
     await this.isReady();
-
+    
     this.guild = await this.client.guilds.fetch(this.guildId);
-    setClient(this.client);
+    
+    console.log(await this.getApplicationCommand('połącz'));
+
 
     const errorRedirect = (e) => {
       // List of errors to ignore
@@ -81,6 +86,23 @@ export class DiscordService {
         resolve(true);
       });
     });
+  }
+
+  public async getApplicationCommands() {
+    return await this.client.application.commands.fetch();
+  }
+
+  public async getApplicationCommand(name: string, subName?: string) {
+    const commands = await this.getApplicationCommands();
+
+    const command = commands.find(command => command.name === name);
+
+    if (!subName)
+      return command ?? null;
+
+    else
+      return command?.options?.find(option => option.name === subName);
+      
   }
 
 

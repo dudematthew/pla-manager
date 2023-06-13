@@ -1,17 +1,29 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { MessageOptions } from "child_process";
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ColorResolvable, EmbedBuilder, InteractionReplyOptions, Message } from "discord.js";
+import { ActionRowBuilder, ApplicationCommand, ButtonBuilder, ButtonStyle, ColorResolvable, EmbedBuilder, GuildResolvable, InteractionReplyOptions, Message } from "discord.js";
 import { PlayerStatistics } from "src/apex-api/player-statistics.interface";
 import { ApexAccountEntity } from "src/database/entities/apex-account/entities/apex-account.entity";
 import { SynchronizationStatusOptions } from "./apex-sync.service";
+import { DiscordService } from "../discord.service";
 
 @Injectable()
 export class MessageProviderService {
 
+    private commands: ApplicationCommand[] = [];
+
     constructor(
         private readonly configService: ConfigService,
-    ) {}
+        private readonly discordService: DiscordService,
+    ) {
+        this.init();
+    }
+
+    private async init() {
+        await this.discordService.isReady();
+        
+        this.commands.push(await this.discordService.getApplicationCommand('połącz') as ApplicationCommand);
+    }
 
     /**
      * Get basic embed with logo and color
@@ -320,6 +332,8 @@ export class MessageProviderService {
 
         const embed = this.getBasicEmbed()
             .setTitle('Synchronizacja statystyk Apex Legends')
+
+        const connectCommand = this.commands.find(command => command.name == 'połącz') ?? null;
         
         if (options.status == 'idle') {
             embed.setDescription('**Status:** *Oczekiwanie...*');
@@ -342,7 +356,18 @@ export class MessageProviderService {
                 embed.addFields({
                     name: 'Ostatnio zaktualizowano',
                     value: `${options.total} kont`,
+                    inline: true,
                 });
+
+
+            console.log(connectCommand);
+
+            if (!!connectCommand)
+                embed.addFields({
+                    name: 'Jak się połączyć?',
+                    value: `Aby połączyć konto użyj komendy </${connectCommand.name}:${connectCommand.id}>`,
+                    inline: true,
+                })
 
             embed.setThumbnail(this.configService.get<string>('images.success'));
         }
