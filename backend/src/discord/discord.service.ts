@@ -51,6 +51,7 @@ export class DiscordService {
     
     console.log(await this.getApplicationCommand('połącz'));
 
+    setClient(this.client);
 
     const errorRedirect = (e) => {
       // List of errors to ignore
