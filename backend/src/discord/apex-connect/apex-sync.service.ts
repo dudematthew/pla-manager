@@ -326,19 +326,20 @@ export class ApexSyncService {
 
             const done = this.apexAccountService.saveAccount(apexAccount, user.user);
 
+            
             if (!done) {
                 this.logger.error(`Error while updating Apex Account for ${user.discordUser.displayName}`);
-
+                
                 // Update synchronization status
                 await this.updateSynchronizationStatus({
                     ...defaultSynchronizationStatusOptions,
                     status: 'error',
                 });
-
+                
                 return false;
             }
-
-            console.log(`Updated Apex Account for ${user.discordUser.displayName}. Took ${Date.now() - benchmarkStart}ms`);
+            
+            console.log(`Updated Apex Account for ${user.discordUser.displayName}. Took ${Date.now() - benchmarkStart}ms: `);
         }
 
         this.logger.verbose(`Updated Apex Account for ${connectedUsersInTheGuild.length} users. Took ${Date.now() - benchmarkStart}ms`);

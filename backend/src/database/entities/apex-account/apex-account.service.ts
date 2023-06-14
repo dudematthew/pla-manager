@@ -62,6 +62,9 @@ export class ApexAccountService {
   public async saveAccount(playerData: PlayerStatistics, user: UserEntity): Promise<UserEntity> {
     console.log("Saving account: ", playerData.global.name, user.id);
 
+    // Reasure that user is up to date
+    user = await this.userService.findById(user.id);
+
     // Create data object
     const data = {
         user,
@@ -88,9 +91,11 @@ export class ApexAccountService {
     // Check if user already has an apex account
     if(user.apexAccount) {
         // Update existing profile
+        console.log("Updating existing profile");
         profile = await this.update(user.apexAccount.id, data);
     } else {
         // Create new profile
+        console.log("Creating new profile");
         profile = await this.create(data);
     }
 
@@ -205,5 +210,5 @@ export class ApexAccountService {
 
     return await this.getRoleByRankName(account.rankName);
   }
-  
+
 }
