@@ -688,6 +688,23 @@
           "reference": null,
           "type": "Date",
           "validations": []
+        },
+        {
+          "defaultValue": null,
+          "enums": null,
+          "field": "user",
+          "integration": null,
+          "inverseOf": "messages",
+          "isFilterable": true,
+          "isPrimaryKey": false,
+          "isReadOnly": false,
+          "isRequired": false,
+          "isSortable": true,
+          "isVirtual": false,
+          "reference": "user.id",
+          "relationship": "BelongsTo",
+          "type": "Number",
+          "validations": []
         }
       ],
       "icon": null,
@@ -1418,6 +1435,23 @@
           "reference": null,
           "type": "Number",
           "validations": [{"type": "is present", "message": "Field is required"}]
+        },
+        {
+          "defaultValue": null,
+          "enums": null,
+          "field": "messages",
+          "integration": null,
+          "inverseOf": "user",
+          "isFilterable": false,
+          "isPrimaryKey": false,
+          "isReadOnly": false,
+          "isRequired": false,
+          "isSortable": true,
+          "isVirtual": false,
+          "reference": "message.id",
+          "relationship": "HasMany",
+          "type": ["Number"],
+          "validations": []
         },
         {
           "defaultValue": null,
