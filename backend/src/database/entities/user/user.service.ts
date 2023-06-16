@@ -23,7 +23,10 @@ export class UserService {
     async findById(id: number): Promise<UserEntity> {
         return await this.userRepository.findOne({
             where: { id },
-            relations: ['apexAccount']
+            relations: [
+                'apexAccount',
+                'messages'
+            ]
           });
     }
 
@@ -35,7 +38,10 @@ export class UserService {
     async findByDiscordId(discordId: string): Promise<UserEntity> {
         return await this.userRepository.findOne({
             where: { discordId },
-            relations: ['apexAccount']
+            relations: [
+                'apexAccount',
+                'messages'
+            ]
           });
     }
 
@@ -47,7 +53,10 @@ export class UserService {
     async findByEmail(email: string): Promise<UserEntity> {
         return await this.userRepository.findOne({
             where: { email },
-            relations: ['apexAccount']
+            relations: [
+                'apexAccount',
+                'messages'
+            ]
           });
     }
 

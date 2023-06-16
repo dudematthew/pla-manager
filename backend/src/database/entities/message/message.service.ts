@@ -8,6 +8,8 @@ import { Channel } from 'diagnostics_channel';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
 import { ChannelService } from '../channel/channel.service';
+import { UserEntity } from '../user/user.entity';
+import { UserService } from '../user/user.service';
 
 /**
  * Note: await entityManager.insert(Child, { parent: { id: 1 } as Parent });
@@ -22,6 +24,7 @@ export class MessageService {
         private readonly messageRepository: Repository<MessageEntity>,
         private readonly discordService: DiscordService,
         private readonly channelService: ChannelService,
+        private readonly userService: UserService,
     ) {}
 
     /**
@@ -32,7 +35,10 @@ export class MessageService {
     async findById(id: number): Promise<MessageEntity> {
         return await this.messageRepository.findOne({
             where: { id },
-            relations: ['channel'],
+            relations: [
+                'channel',
+                'user'
+            ],
         })
     }
 
@@ -44,18 +50,24 @@ export class MessageService {
     async findByDiscordId(discordId: string): Promise<MessageEntity> {
         return await this.messageRepository.findOne({
           where: { discordId },
-          relations: ['channel'],
+          relations: [
+            'channel',
+            'user'
+        ],
       });
     }
 
     async findByName(name: string): Promise<MessageEntity> {
         return await this.messageRepository.findOne({
           where: { name },
-          relations: ['channel'],
+          relations: [
+            'channel',
+            'user'
+        ],
       });
     }
 
-    async create(message: CreateMessageDto): Promise<MessageEntity> {
+    async create(message: CreateMessageDto, userId: UserEntity["id"] = null): Promise<MessageEntity> {
 
         // If channel doesn't exist in database, abort
         const channel = await this.channelService.findById(message.channelId);
@@ -84,10 +96,19 @@ export class MessageService {
             return null;
         }
 
+        const user = (!!userId) ? await this.userService.findById(userId) : null;
+
+        // If user doesn't exist in database, abort
+        if (!!userId && !user) {
+            console.log(`User ${userId} does not exist in database`);
+            return null;
+        }
+
         const newMessage = await this.messageRepository.create({
             name: message.name,
             discordId: message.discordId,
             channel: channel,
+            user: user,
         });
 
         return await this.messageRepository.save(newMessage);

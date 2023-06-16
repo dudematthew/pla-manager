@@ -1,5 +1,6 @@
-import { BaseEntity, Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne } from "typeorm";
+import { BaseEntity, Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, ManyToMany, JoinTable } from "typeorm";
 import { ChannelEntity } from "../../channel/channel.entity";
+import { UserEntity } from "../../user/user.entity";
 
 @Entity({
     name: 'message',
@@ -28,4 +29,7 @@ export class MessageEntity extends BaseEntity {
         nullable: false,
     })
     channel: ChannelEntity;
+
+    @ManyToOne(() => UserEntity, user => user.messages)
+    user: UserEntity;
 }
