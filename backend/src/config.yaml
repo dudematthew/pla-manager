@@ -19,6 +19,7 @@ channel-names:
   lfg: 'lfg'
   lfg-output: 'lfgoutput'
   synchronization: 'synchronization'
+  introduce: 'introduce'
 
 role-names:
   pla-inside: 

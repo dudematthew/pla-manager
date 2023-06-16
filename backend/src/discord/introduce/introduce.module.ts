@@ -1,4 +1,13 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
+import { IntroduceService } from './introduce.service';
+import { DiscordService } from '../discord.service';
+import { DiscordModule } from '../discord.module';
 
-@Module({})
+@Module({
+  imports: [
+    forwardRef(() => DiscordModule),
+  ],
+  providers: [IntroduceService],
+  exports: [IntroduceService]
+})
 export class IntroduceModule {}
