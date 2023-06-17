@@ -144,7 +144,7 @@ export class AdminCommandsService {
         description: 'Zaktualizuj role dla połączonych użytkowników',
     })
     public async onAdminUpdateConnectedRoles(@Context() [Interaction]: SlashCommandContext) {
-        console.log(`[CommandsService] onAdminUpdateConnectedRole`);
+        console.log(`[CommandsService] onAdminUpdateConnectedRoles`);
 
         await this.apexSyncService.handleAdminUpdateConnectedRole(Interaction);
     }
@@ -156,7 +156,7 @@ export class AdminCommandsService {
         description: 'Zaktualizuj konta połączonych użytkowników obecnych na serwerze',
     })
     public async onAdminUpdateConnectedAccounts(@Context() [Interaction]: SlashCommandContext) {
-        console.log(`[CommandsService] onAdminUpdateConnectedRole`);
+        console.log(`[CommandsService] onAdminUpdateConnectedAccounts`);
 
         await this.apexSyncService.handleAdminUpdateConnectedAccounts(Interaction);
     }

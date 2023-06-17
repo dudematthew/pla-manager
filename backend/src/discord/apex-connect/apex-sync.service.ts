@@ -82,16 +82,19 @@ export class ApexSyncService {
 
     // Remove disconnected role from every user that has connected Apex Account
     for (const user of users.values()) {
+
         // If user is bot skip him
         if (user.user.bot)
             continue;
 
+        // If user has connected Apex Account, remove disconnected role
         if (usersWithConnectedApexAccount.some(apexAccount => apexAccount.user.discordId === user.id)) {
             await this.discordService.removeRoleFromUser(user.id, disconnectRole.discordId);
         }
         // Else give user disconnected role
-        else if (!user.roles.cache.has(disconnectRole.discordId)) {
+        else {
             await this.discordService.addRoleToUser(user.id, disconnectRole.discordId);
+            await this.discordService.removeGroupRoles(user.id, 'rank');
         }
     }
 
