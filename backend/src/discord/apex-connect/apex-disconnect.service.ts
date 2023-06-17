@@ -23,16 +23,18 @@ export class ApexDisconnectService {
 
     public async handleDisconnectCommand(interaction: ChatInputCommandInteraction<CacheType>) {
 
+        await interaction.deferReply({ ephemeral: true });
+
         // Check if player is connected to any account
         const discordId = interaction.user.id;
         const user = await this.userService.findByDiscordId(discordId);
 
         if (!user?.apexAccount) {
-            interaction.reply({ content: 'Nie posiadasz powiązanego konta na naszym serwerze. Użyj komendy `/połącz` aby połączyć swoje konto Apex Legends z kontem Discord.', ephemeral: true});
+            interaction.editReply({ content: 'Nie posiadasz powiązanego konta na naszym serwerze. Użyj komendy `/połącz` aby połączyć swoje konto Apex Legends z kontem Discord.'});
             return;
         }
 
-        const confirmResponse = await interaction.reply(this.messageProviderService.getDisconnectConfirmMessage(user.apexAccount));
+        const confirmResponse = await interaction.editReply(this.messageProviderService.getDisconnectConfirmMessage(user.apexAccount));
 
         const collectorFilter = i => i.user.id == interaction.user.id;
 

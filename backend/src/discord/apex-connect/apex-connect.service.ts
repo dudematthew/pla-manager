@@ -47,22 +47,24 @@ export class ApexConnectService {
     public async handleConnectCommand(interaction: ChatInputCommandInteraction<CacheType>, options: handleConnectCommandDto) {
         const playerData = await this.apexApiService.getPlayerStatisticsByName(options.username, options.platform);
 
+        await interaction.deferReply({ ephemeral: true });
+
         console.log(`User ${interaction.user.username} requested to connect account ${options.username} on platform ${options.platform}. Got player data (global):`, playerData.global);
 
         this.logAccountData(playerData);
 
         if (typeof playerData?.errorCode !== "undefined") {
             if (playerData.errorCode == 404)
-                interaction.reply({ content: `Nie znaleziono gracza o nicku ${options.username} na platformie ${platformAliases[options.platform]}.`, ephemeral: true});
+                interaction.editReply({ content: `Nie znaleziono gracza o nicku ${options.username} na platformie ${platformAliases[options.platform]}.`});
 
             else
-                interaction.reply({ content: `Wystąpił błąd podczas próby znalezienia konta. Spróbuj ponownie później.`, ephemeral: true});
+                interaction.editReply({ content: `Wystąpił błąd podczas próby znalezienia konta. Spróbuj ponownie później.`});
                 
             return;
         }
 
         // Send message with player data and ask user to confirm
-        const confirmResponse = await interaction.reply(this.messageProviderService.getPlayerDataConfirmMessage(playerData));
+        const confirmResponse = await interaction.editReply(this.messageProviderService.getPlayerDataConfirmMessage(playerData));
 
         const collectorFilter = i => i.user.id == interaction.user.id;
 
