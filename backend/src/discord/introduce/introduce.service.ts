@@ -83,7 +83,10 @@ export class IntroduceService {
     }
 
     public async handleIntroduceTyping(typing: TypingData) {
-        const typingHash = hash(typing);
+        const typingHash = hash({
+            userId: typing.user.id,
+            channelId: typing.channel.id,
+        });
 
         const nextMonthTTL = 60 * 60 * 24 * 30;
 
