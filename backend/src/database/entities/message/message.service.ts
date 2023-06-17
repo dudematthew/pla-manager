@@ -67,6 +67,35 @@ export class MessageService {
       });
     }
 
+    async findByUserId(userId: number): Promise<MessageEntity[]> {
+        return await this.messageRepository.find({
+            where: {
+                user: {
+                    id: userId
+                }
+            },
+            relations: [
+                'channel',
+                'user'
+            ],
+        });
+    }
+
+    async findByUserIdAndName(userId: number, name: string): Promise<MessageEntity> {
+        return await this.messageRepository.findOne({
+            where: {
+                user: {
+                    id: userId
+                },
+                name
+            },
+            relations: [
+                'channel',
+                'user'
+            ],
+        });
+    }
+
     async create(message: CreateMessageDto, userId: UserEntity["id"] = null): Promise<MessageEntity> {
 
         // If channel doesn't exist in database, abort
@@ -125,6 +154,19 @@ export class MessageService {
             const updatedMessage = this.messageRepository.merge(dbMessage, message);
     
             return await this.messageRepository.save(updatedMessage);       
+    }
+
+    async delete(messageId: number): Promise<boolean> {
+        const dbMessage = await this.findById(messageId);
+
+        if (!dbMessage)
+            return false;
+
+        console.log(`Deleting message ${dbMessage.name} (${dbMessage.discordId})`);
+
+        await this.messageRepository.delete(dbMessage.id);
+
+        return true;
     }
 
     async getDiscordMessageByName(name: string): Promise<Message<true>> {

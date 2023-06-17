@@ -4,6 +4,7 @@ import { Repository } from "typeorm";
 import { UserInterface } from "./user.interface";
 import { DiscordService } from "src/discord/discord.service";
 import { InjectRepository } from "@nestjs/typeorm";
+import { PermissionsBitField, User } from "discord.js";
 
 @Injectable()
 export class UserService {
@@ -104,6 +105,26 @@ export class UserService {
         } catch (error) {
             throw new InternalServerErrorException(error);
         }
+    }
+
+    async getOrCreateByDiscordUser(user: User) {
+        const dbUser = await this.findByDiscordId(user.id);
+        const guildUser = await this.discordService.guild.members.fetch(user.id);
+
+        if (!!dbUser) {
+            return dbUser;
+        }
+
+        if (!guildUser) {
+            return null;
+        }
+
+        const newUser = await this.create({
+            discordId: user.id,
+            isAdmin: guildUser.permissions.has(PermissionsBitField.Flags.Administrator),
+        });
+
+        return newUser;
     }
 
 }

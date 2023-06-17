@@ -223,8 +223,12 @@ export class DiscordService {
 
     if (channel.type !== ChannelType.GuildVoice) {
       const textChannel = channel as TextChannel;
-      const message = await textChannel.messages.fetch(messageId);
-      return message;
+      try {
+        const message = await textChannel.messages.fetch(messageId);
+        return message;
+      } catch (e) {
+        return null;
+      }
     } else {
       throw new Error('Channel is not a text channel');
     }
