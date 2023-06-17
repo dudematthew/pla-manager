@@ -28,7 +28,7 @@ export class MessageService {
     ) {}
 
     /**
-     * Find a channel by its ID
+     * Find a message by its ID
      * @param id The ID of the channel
      * @returns The channel
      */
@@ -43,7 +43,7 @@ export class MessageService {
     }
 
     /**
-     * Find a channel by its Discord ID
+     * Find a message by its Discord ID
      * @param discordId The Discord ID of the channel
      * @returns The channel
      */
@@ -113,7 +113,7 @@ export class MessageService {
         }
 
         // If message already exists in database, abort
-        if (await this.findByName(message.name)) {
+        if (await this.findByDiscordId(message.discordId)) {
             console.log(`Message ${message.name} already exists in database`);
             return null;
         }

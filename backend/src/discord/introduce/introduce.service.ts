@@ -43,7 +43,7 @@ export class IntroduceService {
         // Check if dbMessage still exists on Discord
         const discordMessage = (!!dbMessage) ? await this.discordService.getMessage(dbMessage.channel.discordId, dbMessage.discordId) : null;
 
-        // If message exists in database but not on Discord,
+        // If message exists in database but not on Discord
         // delete from database
         if (!!dbMessage && !discordMessage) {
             // console.log(`Message ${dbMessage.id} not found on Discord!`)
@@ -52,7 +52,7 @@ export class IntroduceService {
             await this.messageService.delete(dbMessage.id);
         }
 
-        // If message is not already in database
+        // If message is not already in database and on Discord
         // greet and save to database
         if (!dbMessage || !discordMessage) {
             message.message.react('👋');
@@ -70,7 +70,7 @@ export class IntroduceService {
                 channelId: dbChannel.id,
             }, dbUser.id);
 
-            console.log(`Created message ${newDbMessage.id} for user ${dbUser.id} in channel ${message.channel.id}`)
+            console.log(`Created message: `, newDbMessage, `for user: `, dbUser);
 
             return;
         }
@@ -79,7 +79,7 @@ export class IntroduceService {
 
         message.message.delete();
 
-        this.discordService.sendPrivateMessage(message.user.id, this.getIntroduceDuplicateMessage(message.user as User));
+        this.discordService.sendPrivateMessage(message.user.id, this.getIntroduceDuplicateMessage(message.user as User, message.message.content));
     }
 
     public async handleIntroduceTyping(typing: TypingData) {
@@ -116,10 +116,13 @@ export class IntroduceService {
         return messageParts.join('\n');
     }
 
-    private getIntroduceDuplicateMessage (user: User): string {
+    private getIntroduceDuplicateMessage (user: User, oldMessageContent: string): string {
         const messageParts = [
             `Hej, <@${user.id}>, możesz napisać tylko jedną wiadomość powitalną!`,
             `Jeśli chcesz ją zmienić, po prostu edytuj swoją wiadomość!`,
+            '',
+            `Tekst usuniętej wiadomości:`,
+            `\`\`\`${oldMessageContent}\`\`\``,
         ];
 
         return messageParts.join('\n');
