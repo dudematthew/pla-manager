@@ -48,9 +48,10 @@ export class AdminCommandsService {
             emojis = options.emoji.match(emoteRegex);
         } else if (animatedEmoteRegex.test(options.emoji)) {
             Interaction.reply({ content: 'Animowane emoji nie są jeszcze wspierane!', ephemeral: true});
-        return false;
+            return false;
         } else {
             Interaction.reply({ content: 'Niepoprawne emoji!', ephemeral: true});
+            return false;
         }
 
         const dbEmoji = await this.emojiService.findByName(options.emojiName);
@@ -69,6 +70,7 @@ export class AdminCommandsService {
 
             if (!newEmoji) {
                 Interaction.reply({ content: 'Nie udało się dodać emoji', ephemeral: true});
+                return;
             }
 
             Interaction.reply({ content: `Dodano emoji!`, ephemeral: true});

@@ -370,6 +370,8 @@ export class ApexSyncService {
     }
 
     public async handleAdminUpdateConnectedAccounts(Interaction: ChatInputCommandInteraction<CacheType>) {
+
+        
         Interaction.reply({ content: 'Rozpoczynam aktualizację kont...', ephemeral: true });
 
         const isDone = await this.updateConnectedAccounts();
