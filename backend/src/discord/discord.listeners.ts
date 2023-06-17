@@ -157,7 +157,6 @@ export default class DiscordListeners {
      */
     private escapeSpecialCharacters(value: string): string {
         const result = value.replace(/[.+?^${}()|[\]\\]/g, "\\$&");
-        console.log('Escaped value: ' + result);
         return result;
     }
 
