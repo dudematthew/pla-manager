@@ -46,7 +46,7 @@ export class IntroduceService {
         // If message exists in database but not on Discord,
         // delete from database
         if (!!dbMessage && !discordMessage) {
-            console.log(`Message ${dbMessage.id} not found on Discord!`)
+            // console.log(`Message ${dbMessage.id} not found on Discord!`)
     
             // Delete message from database
             await this.messageService.delete(dbMessage.id);

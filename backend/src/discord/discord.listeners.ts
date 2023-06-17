@@ -173,13 +173,11 @@ export default class DiscordListeners {
         for(const listener of this.typingStartListeners) {
             // Check if channel type matches pattern ------------------------------
             if (listener.channelType.length != 0 && typing.channel.type in listener.channelType) {
-                console.log('Channel type ' + typingData.channel.type + ' does not match pattern: ' + listener.channelType);
                 continue;
             }
 
             // Check if user matches pattern ------------------------------
             if (!this.matchPattern(typingData.user.id, this.escapeSpecialCharacters(listener.userPattern))) {
-                console.log('User does not match pattern: ' + listener.userPattern);
                 continue;
             }
             
@@ -194,11 +192,9 @@ export default class DiscordListeners {
             } 
             // If channel id matches pattern
             else if (!this.matchPattern(typingData.channel.id, this.escapeSpecialCharacters(listener.channelPattern))) {
-                console.log('Channel id does not match pattern: ' + listener.channelPattern);
                 continue;
             }
 
-            console.log('Matched listener: ' + listener);
 
             // If all patterns match, add callback to callbacks
             callbacks.push(listener.callback);
@@ -232,19 +228,19 @@ export default class DiscordListeners {
         for(const listener of this.messageCreateListeners) {
             // Check if channel type matches pattern ------------------------------
             if (listener.channelType.length != 0 && message.channel.type in listener.channelType) {
-                console.log('Channel type ' + messageData.channel.type + ' does not match pattern: ' + listener.channelType);
+                // console.log('Channel type ' + messageData.channel.type + ' does not match pattern: ' + listener.channelType);
                 continue;
             }
 
             // Check if user matches pattern ------------------------------
             if (!this.matchPattern(messageData.user.id, this.escapeSpecialCharacters(listener.userPattern))) {
-                console.log('User does not match pattern: ' + listener.userPattern);
+                // console.log('User does not match pattern: ' + listener.userPattern);
                 continue;
             }
 
             // Check if message matches pattern ------------------------------
             if (!this.matchPattern(messageData.message.content, this.escapeSpecialCharacters(listener.messagePattern))) {
-                console.log('Message does not match pattern: ' + listener.messagePattern);
+                // console.log('Message does not match pattern: ' + listener.messagePattern);
                 continue;
             }
             
@@ -259,7 +255,7 @@ export default class DiscordListeners {
             } 
             // If channel id matches pattern
             else if (!this.matchPattern(messageData.channel.id, this.escapeSpecialCharacters(listener.channelPattern))) {
-                console.log('Channel id does not match pattern: ' + listener.channelPattern);
+                // console.log('Channel id does not match pattern: ' + listener.channelPattern);
                 continue;
             }
 
