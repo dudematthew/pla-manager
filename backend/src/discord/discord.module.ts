@@ -17,6 +17,7 @@ import { TourneyModule } from "src/database/entities/tourney/tourney.module";
 import { ApexAccountModule } from "src/database/entities/apex-account/apex-account.module";
 import { DatabaseModule } from "src/database/database.module";
 import { IntroduceModule } from './introduce/introduce.module';
+import { HelpModule } from './help/help.module';
 
 @Module({
     imports: [
@@ -52,6 +53,7 @@ import { IntroduceModule } from './introduce/introduce.module';
         TourneyModule,
         ApexAccountModule,
         IntroduceModule,
+        HelpModule,
     ],
     controllers: [],
     providers: [

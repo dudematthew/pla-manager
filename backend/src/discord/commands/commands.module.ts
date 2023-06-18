@@ -9,6 +9,7 @@ import { InsideCommandsService } from './inside-commands.service';
 import { DiscordModule } from '../discord.module';
 import { RoleGroupModule } from 'src/database/entities/role-group/role-group.module';
 import { DatabaseModule } from 'src/database/database.module';
+import { HelpModule } from '../help/help.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { DatabaseModule } from 'src/database/database.module';
     EmojiModule,
     DatabaseModule,
     forwardRef(() => DiscordModule),
+    HelpModule,
   ],
   providers: [
     CommandsService,

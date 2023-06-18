@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Client, TextChannel, ChannelType, User, GuildMember, PermissionsBitField, Guild, UserResolvable, PermissionResolvable, Channel, ReactionEmoji, GuildEmoji, VoiceChannel, VoiceBasedChannel, Role, Collection, EmbedBuilder, Embed, MessageCreateOptions, ComponentBuilder, APIActionRowComponent, Message, ApplicationCommandManager, GuildApplicationCommandManager } from 'discord.js';
+import { Client, TextChannel, ChannelType, User, GuildMember, PermissionsBitField, Guild, UserResolvable, PermissionResolvable, Channel, ReactionEmoji, GuildEmoji, VoiceChannel, VoiceBasedChannel, Role, Collection, EmbedBuilder, Embed, MessageCreateOptions, ComponentBuilder, APIActionRowComponent, Message, ApplicationCommandManager, GuildApplicationCommandManager, ApplicationCommand, GuildResolvable } from 'discord.js';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { setClient } from 'discord.js-menu-buttons';
@@ -49,8 +49,6 @@ export class DiscordService {
     
     this.guild = await this.client.guilds.fetch(this.guildId);
     
-    console.log(await this.getApplicationCommand('połącz'));
-
     setClient(this.client);
 
     const errorRedirect = (e) => {
@@ -89,7 +87,8 @@ export class DiscordService {
     });
   }
 
-  public async getApplicationCommands() {
+  public async getApplicationCommands(): Promise<Collection<string, ApplicationCommand<{ guild: GuildResolvable }>>> {
+    await this.isReady();
     return await this.client.application.commands.fetch();
   }
 

@@ -12,6 +12,7 @@ import { ApexConnectService } from '../apex-connect/apex-connect.service';
 import { Logger } from '@nestjs/common';
 import { handleConnectCommandDto } from './dtos/handle-connect.command.dto';
 import { ApexDisconnectService } from '../apex-connect/apex-disconnect.service';
+import { HelpService } from '../help/help.service';
 // import * as paginationEmbed from 'discord.js-pagination';
 
 @Injectable()
@@ -26,6 +27,7 @@ export class CommandsService {
         private readonly emojiService: EmojiService,
         private readonly apexConnectService: ApexConnectService,
         private readonly apexDisconnectService: ApexDisconnectService,
+        private readonly helpService: HelpService,
     ) {}
     
     /**
@@ -39,6 +41,15 @@ export class CommandsService {
     })
     public async onPing(@Context() [Interaction]: SlashCommandContext) {
         return Interaction.reply({ content: 'Pong!', ephemeral: true});
+    }
+
+    @SlashCommand({
+        name: 'pomoc',
+        description: 'Lista moich wszystkich dostępnych komend',
+        guilds: [process.env.MAIN_GUILD_ID]
+    })
+    public async onHelp(@Context() [Interaction]: SlashCommandContext) {
+        this.helpService.handleHelpCommand(Interaction);
     }
 
     /**
