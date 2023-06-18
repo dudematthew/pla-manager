@@ -1,17 +1,42 @@
 images:
   logo: 'https://i.imgur.com/u4DEkaz.png'
+  logo-transparent: 'https://i.imgur.com/sBw1nps.png'
+  pla-inside-logo: 'https://i.imgur.com/VERHZ25.png'
+  danger: https://i.imgur.com/AXMzkaO.png
+  loading: https://i.imgur.com/ZOjdpq7.gif
+  success: https://i.imgur.com/gpEThdv.png
 
 theme:
   color-primary: '#FF4343'
   color-secondary: '#C02D2D'
 
+embeds:
+  color-primary: 16728899
+  color-secondary: 12594477
+
+# DO NOT TOUCH
 channel-names:
   lfg: 'lfg'
   lfg-output: 'lfgoutput'
+  synchronization: 'synchronization'
+  introduce: 'introduce'
+
+role-names:
+  pla-inside: 
+    main: 'plainside'
+    reserve: 'plainsidereserve'
+    captain: 'plainsidecaptain'
+    team:
+      prefix: 'plainsideteam'
+      teams: ['o', 'c', 'y', 'p', 'b', 'g']
+  disconnected: 'disconnected'
+
+role-group-names:
+  ranking: 'rank'
 
 lfg:
-  post-cooldown: 60
-  rank-cooldown: 600
+  post-cooldown: 120
+  rank-cooldown: 1200
   
 discord:
   rank-roles: ['rookie', 'bronze', 'silver', 'gold', 'platinum', 'diamond', 'master', 'predator']

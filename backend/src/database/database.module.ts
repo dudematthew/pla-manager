@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { Module, forwardRef } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { UserEntity } from "src/database/entities/user/user.entity";
 import { TypeORMSession } from "./entities/session.entity";
@@ -6,11 +6,18 @@ import { ConfigModule, ConfigService} from "@nestjs/config";
 import { ChannelEntity } from "src/database/entities/channel/channel.entity";
 import { TourneyEntity } from "./entities/tourney/entities/tourney.entity";
 import { TourneyTeamEntity } from "./entities/tourney/entities/team/entities/tourney-team.entity";
-import { UserModule } from "./entities/user/user.module";
-import { ChannelModule } from "./entities/channel/channel.module";
-import { TourneyModule } from "./entities/tourney/tourney.module";
-import { RoleModule } from './entities/role/role.module';
 import { RoleEntity } from "./entities/role/entities/role.entity";
+import { ApexAccountEntity } from "./entities/apex-account/entities/apex-account.entity";
+import { EmojiModule } from './entities/emoji/emoji.module';
+import { EmojiEntity } from "./entities/emoji/entities/emoji.entity";
+import { RoleModule } from './entities/role/role.module';
+import { ApexAccountModule } from './entities/apex-account/apex-account.module';
+import { RoleGroupEntity } from "./entities/role-group/entities/role-group.entity";
+import { RoleGroupModule } from "./entities/role-group/role-group.module";
+import { DatabaseService } from "./database.service";
+import { DiscordModule } from "src/discord/discord.module";
+import { MessageModule } from './entities/message/message.module';
+import { MessageEntity } from "./entities/message/entities/message.entity";
 
 @Module({
     imports: [
@@ -27,23 +34,30 @@ import { RoleEntity } from "./entities/role/entities/role.entity";
                 entities: [
                     UserEntity,
                     ChannelEntity,
+                    RoleGroupEntity,
                     RoleEntity,
                     TypeORMSession,
                     TourneyEntity,
                     TourneyTeamEntity,
+                    ApexAccountEntity,
+                    EmojiEntity,
+                    MessageEntity,
                 ],
                 synchronize: true,
+                autoLoadEntities: true,
             }),
             inject: [ConfigService]
         }),
         TypeOrmModule.forFeature([TypeORMSession]),
-        RoleModule,
+        forwardRef(() => DiscordModule),
     ],
     providers: [
         TypeORMSession,
+        DatabaseService,
     ],
     exports: [
         TypeORMSession,
+        DatabaseService,
     ],
 })
 export class DatabaseModule {}

@@ -19,7 +19,12 @@ export class ChannelService {
      * @returns The channel
      */
     async findById(id: number): Promise<ChannelEntity> {
-        return await this.channelRepository.findOneBy({ id });
+        return await this.channelRepository.findOne({
+            where: { id },
+            relations: [
+                'messages'
+            ]
+        });
     }
 
     /**
@@ -28,11 +33,21 @@ export class ChannelService {
      * @returns The channel
      */
     async findByDiscordId(discordId: string): Promise<ChannelEntity> {
-        return await this.channelRepository.findOneBy({ discordId });
+        return await this.channelRepository.findOne({
+            where: { discordId },
+            relations: [
+                'messages'
+            ]
+        });
     }
 
     async findByName(name: string): Promise<ChannelEntity> {
-        return await this.channelRepository.findOneBy({ name });
+        return await this.channelRepository.findOne({
+            where: { name },
+            relations: [
+                'messages'
+            ]
+        });
     }
 
     async update(id: number, properties: any): Promise<ChannelEntity> {

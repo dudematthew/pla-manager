@@ -1,6 +1,6 @@
-import { User } from "discord.js";
-import { DiscordService } from "src/discord/discord.service";
-import { BaseEntity, Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { BaseEntity, Column, CreateDateColumn, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { ApexAccountEntity } from "../apex-account/entities/apex-account.entity";
+import { MessageEntity } from "../message/entities/message.entity";
 
 @Entity({
     name: 'user',
@@ -13,7 +13,7 @@ export class UserEntity extends BaseEntity {
     @Column({ unique: true, name: 'discord_id' })
     discordId: string;
 
-    @Column()
+    @Column({ nullable: true })
     email: string;
 
     @Column({ default: false, name: 'is_admin'})
@@ -24,4 +24,11 @@ export class UserEntity extends BaseEntity {
 
     @UpdateDateColumn({ name: 'updated_at' })
     updatedAt: Date;
+
+    @OneToMany(() => MessageEntity, message => message.user)
+    messages: MessageEntity[];
+
+    @OneToOne(() => ApexAccountEntity, apexAccount => apexAccount.user)
+    @JoinColumn()
+    apexAccount: ApexAccountEntity;
 }

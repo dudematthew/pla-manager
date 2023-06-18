@@ -1,9 +1,10 @@
-import { BadRequestException, Injectable, InternalServerErrorException } from "@nestjs/common";
+import { BadRequestException, Inject, Injectable, InternalServerErrorException, forwardRef } from "@nestjs/common";
 import { UserEntity } from "./user.entity";
 import { Repository } from "typeorm";
 import { UserInterface } from "./user.interface";
 import { DiscordService } from "src/discord/discord.service";
 import { InjectRepository } from "@nestjs/typeorm";
+import { PermissionsBitField, User } from "discord.js";
 
 @Injectable()
 export class UserService {
@@ -11,6 +12,7 @@ export class UserService {
     constructor(
         @InjectRepository(UserEntity)
         private readonly userRepository: Repository<UserEntity>,
+        @Inject(forwardRef(() => DiscordService))
         private readonly discordService: DiscordService,
     ) {}
 
@@ -20,7 +22,13 @@ export class UserService {
      * @returns The user
      */
     async findById(id: number): Promise<UserEntity> {
-        return await this.userRepository.findOneBy({ id });
+        return await this.userRepository.findOne({
+            where: { id },
+            relations: [
+                'apexAccount',
+                'messages'
+            ]
+          });
     }
 
     /**
@@ -29,7 +37,13 @@ export class UserService {
      * @returns The user
      */
     async findByDiscordId(discordId: string): Promise<UserEntity> {
-        return await this.userRepository.findOneBy({ discordId });
+        return await this.userRepository.findOne({
+            where: { discordId },
+            relations: [
+                'apexAccount',
+                'messages'
+            ]
+          });
     }
 
     /**
@@ -38,7 +52,13 @@ export class UserService {
      * @returns The user
      */
     async findByEmail(email: string): Promise<UserEntity> {
-        return await this.userRepository.findOneBy({ email });
+        return await this.userRepository.findOne({
+            where: { email },
+            relations: [
+                'apexAccount',
+                'messages'
+            ]
+          });
     }
 
     /**
@@ -85,6 +105,26 @@ export class UserService {
         } catch (error) {
             throw new InternalServerErrorException(error);
         }
+    }
+
+    async getOrCreateByDiscordUser(user: User) {
+        const dbUser = await this.findByDiscordId(user.id);
+        const guildUser = await this.discordService.guild.members.fetch(user.id);
+
+        if (!!dbUser) {
+            return dbUser;
+        }
+
+        if (!guildUser) {
+            return null;
+        }
+
+        const newUser = await this.create({
+            discordId: user.id,
+            isAdmin: guildUser.permissions.has(PermissionsBitField.Flags.Administrator),
+        });
+
+        return newUser;
     }
 
 }

@@ -4,11 +4,12 @@ import { UserService } from "./user.service";
 import { DiscordModule } from "src/discord/discord.module";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { forwardRef } from "@nestjs/common";
+import { ApexAccountEntity } from "../apex-account/entities/apex-account.entity";
 
 @Module({
     imports: [
+        TypeOrmModule.forFeature([UserEntity, ApexAccountEntity]),
         forwardRef(() => DiscordModule),
-        TypeOrmModule.forFeature([UserEntity]),
     ],
     providers: [
         UserService,

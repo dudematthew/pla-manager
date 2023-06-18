@@ -1,16 +1,31 @@
-import { Injectable } from '@nestjs/common';
-import { Context, SlashCommand, SlashCommandContext } from 'necord';
+import { Injectable, UseFilters, UseGuards } from '@nestjs/common';
+import { Context, Options, SlashCommand, SlashCommandContext } from 'necord';
 import { RoleService } from 'src/database/entities/role/role.service';
 import { EmbedBuilder } from 'discord.js';
 import { ConfigService } from '@nestjs/config';
+import { InsideService } from '../inside/inside.service';
+import { AdminGuard } from '../guards/admin.guard';
+import { EmojiService } from 'src/database/entities/emoji/emoji.service';
+import { ForbiddenExceptionFilter } from '../filters/forbidden-exception.filter';
+import { AdminEmojiDto } from './dtos/admin-emoji.dto';
+import { ApexConnectService } from '../apex-connect/apex-connect.service';
+import { Logger } from '@nestjs/common';
+import { handleConnectCommandDto } from './dtos/handle-connect.command.dto';
+import { ApexDisconnectService } from '../apex-connect/apex-disconnect.service';
 // import * as paginationEmbed from 'discord.js-pagination';
 
 @Injectable()
 export class CommandsService {
 
+    private readonly logger = new Logger(CommandsService.name);
+
     constructor(
         private readonly roleService: RoleService,
         private readonly configService: ConfigService,
+        private readonly insideService: InsideService,
+        private readonly emojiService: EmojiService,
+        private readonly apexConnectService: ApexConnectService,
+        private readonly apexDisconnectService: ApexDisconnectService,
     ) {}
     
     /**
@@ -20,6 +35,7 @@ export class CommandsService {
     @SlashCommand({
         name: 'ping',
         description: 'Ping!',
+        guilds: [process.env.MAIN_GUILD_ID]
     })
     public async onPing(@Context() [Interaction]: SlashCommandContext) {
         return Interaction.reply({ content: 'Pong!', ephemeral: true});
@@ -32,6 +48,7 @@ export class CommandsService {
     @SlashCommand({
         name: 'getroles',
         description: 'Lista wszystkich ról',
+        guilds: [process.env.MAIN_GUILD_ID]
     })
     public async onGetRoles(@Context() [Interaction]: SlashCommandContext) {
         const roles = await this.roleService.findAll();
@@ -92,5 +109,31 @@ export class CommandsService {
         // const embed = paginationEmbed(Interaction, pages, ['⏪', '⏩'], 30000);
         
         // return Interaction.reply({ embeds: [roleEmbed], ephemeral: true});
+    }
+
+    /**
+     * Connect user account
+     */
+    @SlashCommand({
+        name: 'połącz',
+        description: 'Połącz swoje konto Apex z kontem na Discordzie PLA',
+        guilds: [process.env.MAIN_GUILD_ID]
+    })
+    public async onApexAccountConnect(@Context() [Interaction]: SlashCommandContext, @Options() options: handleConnectCommandDto) {
+        this.logger.log(`User ${Interaction.user.username} requested to connect their Apex account`);
+        this.apexConnectService.handleConnectCommand(Interaction, options);
+    }
+
+    /**
+     * Disconnect user account
+     */
+    @SlashCommand({
+        name: 'odłącz',
+        description: 'Odłącz swoje konto Apex od konta na Discordzie PLA',
+        guilds: [process.env.MAIN_GUILD_ID]
+    })
+    public async onApexAccountDisconnect(@Context() [Interaction]: SlashCommandContext) {
+        this.logger.log(`User ${Interaction.user.username} requested to disconnect their Apex account`);
+        this.apexDisconnectService.handleDisconnectCommand(Interaction);
     }
 }
