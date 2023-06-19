@@ -1,7 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Query } from '@nestjs/common';
 import { DiscordService } from '../discord.service';
 import { ApplicationCommand, ApplicationCommandOptionData, ApplicationCommandOptionType, ApplicationCommandType, CacheType, ChatInputCommandInteraction } from 'discord.js';
-import { MenuOption, Row, RowTypes } from 'discord.js-menu-buttons';
+import { Menu, MenuOption, Row, RowTypes } from 'discord.js-menu-buttons';
 
 interface ICommandGroup {
     name: string;
@@ -33,9 +33,7 @@ export class HelpService {
 
     constructor(
         private readonly discordService: DiscordService,
-    ) {
-        this.getBotCommands();
-    }
+    ) {}
 
     public async handleHelpCommand(interaction: ChatInputCommandInteraction<CacheType>) {
         interaction.reply({
@@ -43,68 +41,159 @@ export class HelpService {
             ephemeral: true,
         });
 
+        const iCommandsGroups = await this.getICommandsGroups();
+
+        console.log(iCommandsGroups);
+
+        // Create global page numbers
+        const pageNumbers: { [id: string]: number } = {
+            default: 0,
+        }
+
+        // Add page numbers for each group
+        Object.values(iCommandsGroups).map((iCommandsGroup) => {
+            pageNumbers[iCommandsGroup.id] = 0;
+        });
+
+        // Create menu options (buttons)
         const menuPageButton = (currentMenu) => {
-            return new Row([
-                new MenuOption(
+            const menuOptions = [];
+
+            for (const iCommandsGroup of Object.values(iCommandsGroups)) {
+                const menuOption = new MenuOption(
                     {
-                        label: "Członkowie w drużynach",
-                        description: "Członkowie którzy należą do dowolnej drużyny PLA Inside",
-                        value: "teamMembers",
-                        default: currentMenu == 'insideTeamMembers',
-                        emoji: "👥",
+                        label:  iCommandsGroup.name,
+                        description: iCommandsGroup.description,
+                        value: iCommandsGroup.id,
+                        default: currentMenu == iCommandsGroup.id,
+                        emoji: {
+                            name: '📜',
+                        },
                     },
-                    'insideTeamMembers'
-                ),
-                new MenuOption(
-                    {
-                        label: "Drużyny PLA Inside",
-                        description: "Członkowie konkretnych drużyn PLA Inside",
-                        value: "teams",
-                        default: currentMenu == 'insideTeams',
-                        // emoji: plaInsideEmoji,
-                        emoji: '🤺'
-                    },
-                    'insideTeams'
-                ),
-                new MenuOption(
-                    {
-                        label: "Członkowie w rezerwie",
-                        description: "Członkowie którzy należą do rezerwy PLA Inside",
-                        value: "reserves",
-                        default: currentMenu == 'insideReserveMembers',
-                        emoji: "👤",
-                    },
-                    'insideReserveMembers'
-                ),
-                new MenuOption(
-                    {
-                        label: "Członkowie bez drużyny i poza rezerwą",
-                        description: "Członkowie którzy nie należą do żadnej drużyny i nie są w rezerwie",
-                        value: "others",
-                        default: currentMenu == 'insideWithoutMembers',
-                        emoji: "👽",
-                    },
-                    'insideWithoutMembers'
-                ),
-            ], RowTypes.SelectMenu)
+                    currentMenu
+                );
+
+                menuOptions.push(menuOption);
+            }
+
+            return new Row(menuOptions, RowTypes.SelectMenu)
         };
+
+        const createPageButtons = (currentMenu, embed) => {
+            const buttons = [];
+
+            if (pageNumbers[currentMenu] > 0) {
+                buttons.push({
+                    name: 'previous',
+                    emoji: {
+                        name: '◀️',
+                    },
+                    style: 'SECONDARY',
+                    customId: 'previous',
+                });
+            }
+
+            if (pageNumbers[currentMenu] < Math.ceil(iCommandsGroups[currentMenu].commands.length / 5) - 1) {
+                buttons.push({
+                    name: 'next',
+                    emoji: {
+                        name: '▶️',
+                    },
+                    style: 'SECONDARY',
+                    customId: 'next',
+                });
+            }
+
+            return buttons;
+        }
+
+        const menu = new Menu(interaction.channel, interaction.user.id, (() => {
+            const menuPages = [];
+
+            for (const iCommandsGroup of Object.values(iCommandsGroups)) {
+                const menuPage = {
+                    name: iCommandsGroup.name,
+                    content: () => {
+                        return this.getCommandsGroupEmbed(iCommandsGroup, pageNumbers[iCommandsGroup.id]);
+                    },
+                    rows: (() => { 
+                        const rows = [
+                            menuPageButton(iCommandsGroup.id),
+                        ];
+    
+                        // Add page buttons if there is more than one page
+                        // if (iCommandsGroups['default'].commands.length > 5)
+                        //     rows.push(
+                        //         new Row(
+                        //             createPageButtons('default', iCommandsGroups['default'].commands), 
+                        //             RowTypes.ButtonMenu
+                        //         )
+                        //     );
+                        return rows;
+                    })()
+                }
+
+                menuPages.push(menuPage);
+            }
+
+            return menuPages;
+        })());
+
+        await menu.start();
         
     }
 
-    private async getBotCommands() {
-        const discordCommands = await this.discordService.getApplicationCommands();
-        const commands = [];
+    private getCommandsGroupEmbed(iCommandsGroup: ICommandGroup, page: number) {
+        const embed = {
+            title: `Komendy: ${iCommandsGroup.name}`,
+            description: iCommandsGroup.description,
+            fields: [],
+        };
 
-        const iCommands = await this.createICommandsGroups(discordCommands);
+        console.log(iCommandsGroup, page);
+        
+        // const commands = iCommandsGroup.commands;
 
-        console.log(iCommands);
+        // const commandsPerPage = 5;
+        // const pages = Math.ceil(commands.length / commandsPerPage);
 
-        return iCommands;
+        // const start = page * commandsPerPage;
+        // const end = start + commandsPerPage;
+
+        // for (const command of commands.slice(start, end)) {
+        //     let commandString = `**/${command.name}**`;
+
+        //     if (typeof command.options !== 'undefined') {
+        //         commandString += ' ';
+
+        //         for (const option of command.options) {
+        //             commandString += `**${option.name}** `;
+        //         }
+        //     }
+
+        //     embed.fields.push({
+        //         name: commandString,
+        //         value: command.description,
+        //     });
+        // }
+
+        console.log(embed);
+
+        return embed;
     }
 
-    private async createICommandsGroups(commands) : Promise<{ [key: string]: ICommand[] }> {
+    private async getICommandsGroups(): Promise<{ [id: string]: ICommandGroup }> {
+        const commands = await this.discordService.getApplicationCommands();
+
+        const defaultCommandsGroup: ICommandGroup = {
+            name: 'Podstawowe',
+            id: 'default',
+            description: 'Podstawowe komendy bota',
+            commands: [],
+        }
+
         const iCommandsGroups = {
-            default: [],
+            default: defaultCommandsGroup,
         }
 
         for (const command of commands.values()) {
@@ -116,15 +205,15 @@ export class HelpService {
                     if (command.options[0].type === ApplicationCommandOptionType.Subcommand ||
                         command.options[0].type === ApplicationCommandOptionType.SubcommandGroup
                     ) {
-                        iCommandsGroups[command.name] = await this.createICommandsGroup(command.options);
+                        iCommandsGroups[command.name] = await this.createICommandsGroup(command.options, command.name, command.id, command.description);
     
                         continue;
                     }
                     else {
-                        iCommandsGroups['default'].push(await this.createICommand(command));
+                        iCommandsGroups['default'].commands.push(await this.createICommand(command));
                     }
             } else
-                iCommandsGroups['default'].push(await this.createICommand(command));
+                iCommandsGroups['default'].commands.push(await this.createICommand(command));
         }
         
 
@@ -137,11 +226,16 @@ export class HelpService {
      * @param commands 
      * @param commandsGroupName 
      */
-    private async createICommandsGroup(commands): Promise<ICommand[]> {
-        const iCommandGroup = [];
+    private async createICommandsGroup(commands, name: string, id: string, description: string): Promise<ICommandGroup> {
+        const iCommandGroup: ICommandGroup = {
+            name: name,
+            description: description,
+            id: id,
+            commands: [],
+        };
 
         for (const command of commands.values()) {
-            iCommandGroup.push(await this.createICommand(command));
+            iCommandGroup.commands.push(await this.createICommand(command));
         }
 
         return iCommandGroup;
