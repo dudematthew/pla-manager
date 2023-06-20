@@ -226,6 +226,21 @@ export class LfgService {
             return;
         }
 
+        // Send message with player data and ask user to confirm
+        const confirmResponse = await message.message.reply(this.getConfirmationMessage());
+
+        const collectorFilter = i => i.user.id == message.user.id;
+
+        let confirmation: any;
+
+        try {
+            confirmation = await confirmResponse.awaitMessageComponent({ filter: collectorFilter, time: 5000 });
+            await confirmResponse.delete();
+            return;
+        } catch (e) {
+            await confirmResponse.delete();
+        }
+
         // Cache the user lfg cooldown
         userCacheData = await this.setCachedUserLfg(message.message.author.id);
 
@@ -315,6 +330,35 @@ export class LfgService {
         // Send the embed to the channel
         this.discordService.sendMessage(outputChannelId, roleMentions, [embed], components);
 
+    }
+
+    public getConfirmationMessage() {
+
+        const embed = new EmbedBuilder()
+        .setAuthor({
+            name: 'Polskie Legendy Apex',
+            iconURL: this.configService.get<string>('images.logo-transparent')
+        })
+        .setColor(this.configService.get<ColorResolvable>('embeds.color-primary'))
+        .setTimestamp();
+        
+        embed.setTitle('Tworzenie posta LFG')
+        embed.setDescription(`Twoja wiadomość zawiera znaki kluczowe. Aby anulować proces kliknij przycisk poniżej.`)
+        embed.setThumbnail(this.configService.get<string>('images.loading'));
+
+        const confirmButton = new ButtonBuilder()
+            .setStyle(ButtonStyle.Danger)
+            .setLabel('Anuluj')
+            .setCustomId('lfg-cancel')
+            .setEmoji('🛑');
+
+        const row = new ActionRowBuilder()
+            .addComponents(confirmButton);
+
+        return {
+            embeds: [embed],
+            components: [row as any],
+        }
     }
 
     private async getLfgOutputChannelId(): Promise<string> {

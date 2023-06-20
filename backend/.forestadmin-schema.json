@@ -1484,6 +1484,6 @@
   "metadata": {
     "liana": "forest-nodejs-agent",
     "liana_version": "1.8.13",
-    "stack": {"engine": "nodejs", "engine_version": "19.1.0"}
+    "stack": {"engine": "nodejs", "engine_version": "18.12.1"}
   }
 }

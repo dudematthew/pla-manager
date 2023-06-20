@@ -376,7 +376,7 @@ export class DiscordService {
    */
   async getUserRankRole(userId: string): Promise<Role> {
 
-    const rankRoles: Role[] = await this.roleGroupService.findAllDiscordRolesByGroupName(this.configService.get<string>('role-group-names.rank'));
+    const rankRoles: Role[] = await this.roleGroupService.findAllDiscordRolesByGroupName(this.configService.get<string>('role-group-names.ranking'));
 
     const user = await this.guild.members.fetch(userId);
 
