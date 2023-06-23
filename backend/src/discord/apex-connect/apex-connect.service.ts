@@ -51,14 +51,18 @@ export class ApexConnectService {
 
         console.log(`User ${interaction.user.username} requested to connect account ${options.username} on platform ${options.platform}. Got player data (global):`, playerData.global);
 
-        this.logAccountData(playerData);
+        this.logAccountData(playerData, interaction, options);
 
         if (typeof playerData?.errorCode !== "undefined") {
-            if (playerData.errorCode == 404)
+            if (playerData.errorCode == 404) {
                 interaction.editReply({ content: `Nie znaleziono gracza o nicku ${options.username} na platformie ${platformAliases[options.platform]}.`});
-
-            else
+                this.sendConnectionStatusToLogChannel(interaction, options, "unresolved");
+            }
+            
+            else {
                 interaction.editReply({ content: `Wystąpił błąd podczas próby znalezienia konta. Spróbuj ponownie później.`});
+                this.sendConnectionStatusToLogChannel(interaction, options, "error");
+            }
                 
             return;
         }
@@ -177,6 +181,7 @@ export class ApexConnectService {
             // If user is null (something went wrong), abort
             if (!user) {
                 await interaction.editReply(this.messageProviderService.getErrorMessage("Nie udało się utworzyć twojego konta."));
+                this.sendConnectionStatusToLogChannel(interaction, options, "error");
                 return;
             }
         }
@@ -197,6 +202,7 @@ export class ApexConnectService {
         // If newUser is null (something went wrong), abort
         if (!newUser || !newUser.apexAccount) {
             await interaction.editReply(this.messageProviderService.getErrorMessage("Nie udało się powiązać twojego konta."));
+            this.sendConnectionStatusToLogChannel(interaction, options, "error");
             return;
         }
 
@@ -205,6 +211,7 @@ export class ApexConnectService {
 
         // User has chosen legend, connect account
         await interaction.editReply(this.messageProviderService.getSuccessMessage(playerData));
+        this.sendConnectionStatusToLogChannel(interaction, options, "success");
     }
 
     public async handlePrivateMessage(messageData: MessageData) {
@@ -216,11 +223,20 @@ export class ApexConnectService {
      * Limit to 2000 characters
      * @param playerData player data to send
      */
-    private async logAccountData(playerData: PlayerStatistics) {
+    private async logAccountData(playerData: PlayerStatistics, interaction?: ChatInputCommandInteraction<CacheType>, options?: handleConnectCommandDto) {
         const data = {
+            username: playerData.global.name,
             realtime: playerData.realtime,
             total: playerData.total,
         };
+
+        // Get admin id from env
+        const adminId = process.env.DISCORD_MAIN_ADMIN_ID;
+
+        // Check if object is empty
+        if (Object.keys(data).length === 0 && data.constructor === Object) {
+            this.discordService.sendPrivateMessage(adminId, `User ${interaction.user.username} requested to connect account ${options.username} on platform ${options.platform}. Got empty player data.`, );
+        }
 
         const dataString = JSON.stringify(data, null, 2); // spacing level = 2
 
@@ -228,8 +244,53 @@ export class ApexConnectService {
 
         for (const chunk of chunks) {
             // Send ready message to user 426330456753963008
-            this.discordService.sendPrivateMessage('426330456753963008', chunk);
+            this.discordService.sendPrivateMessage(adminId, chunk);
         }
+    }
+
+    private async sendConnectionStatusToLogChannel(interaction: ChatInputCommandInteraction<CacheType>,apexAccount: handleConnectCommandDto,  status: string) {
+        const logChannelId = process.env.DISCORD_LOG_CHANNEL_ID;
+        const user = interaction.user;
+        const accountName = apexAccount.username;
+        const accountPlatform = apexAccount.platform;
+
+        if (!logChannelId)
+        return;
+
+        console.log(`Sending connection status to channel: ${logChannelId}`);
+
+        const embed = this.messageProviderService.getBasicEmbed();
+
+        const color = status == "success" ? "#00ff00" : "#ff0000";
+        let statusText = status;
+        
+        switch(status) {
+            case "success":
+                embed.setThumbnail(this.configService.get<string>('images.success')); 
+                statusText = "Połączono";  
+                break;
+            case "unresolved":
+                embed.setThumbnail(this.configService.get<string>('images.unresolved'));
+                statusText = "Nie znaleziono konta";
+                break;
+            case "error":
+                embed.setThumbnail(this.configService.get<string>('images.danger'));
+                statusText = "Wystąpił błąd";
+                break;
+            default:
+                embed.setThumbnail(this.configService.get<string>('images.logo-transparent'));
+        }
+            
+        embed.setColor(color);
+        embed.setTitle("Status połączenia konta");
+        embed.setDescription(`Użytkownik <@${user.id}> próbował połączyć konto **${accountName}** na platformie **${platformAliases[accountPlatform]}**.`);
+
+        embed.addFields({
+            name: "Wynik operacji",
+            value: `${statusText} (*${status}*)`,
+        });
+
+        this.discordService.sendMessage(logChannelId, null, [embed]);
     }
 
     /**

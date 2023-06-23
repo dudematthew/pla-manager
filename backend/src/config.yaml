@@ -5,6 +5,7 @@ images:
   danger: https://i.imgur.com/AXMzkaO.png
   loading: https://i.imgur.com/ZOjdpq7.gif
   success: https://i.imgur.com/gpEThdv.png
+  unresolved: https://i.imgur.com/CIXXYvO.png
 
 theme:
   color-primary: '#FF4343'

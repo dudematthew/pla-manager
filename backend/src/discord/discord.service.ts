@@ -48,9 +48,8 @@ export class DiscordService {
     await this.isReady();
     
     this.guild = await this.client.guilds.fetch(this.guildId);
-    
     setClient(this.client);
-
+    
     const errorRedirect = (e) => {
       // List of errors to ignore
       const blacklistedErrors = [
@@ -108,7 +107,7 @@ export class DiscordService {
 
   public sendPrivateMessage(userId: string, content: string, embeds: MessageCreateOptions["embeds"] = [], components: MessageCreateOptions["components"] = [], files: MessageCreateOptions["files"] = []) {
     const user = this.client.users.cache.get(userId);
-    
+
     user.send({
       content,
       embeds,
@@ -308,9 +307,9 @@ export class DiscordService {
    */
   async getUsersWithRole(roleId: string): Promise<Collection<string, GuildMember>> {
 
-    console.log('getting users role by id...');
+    // console.log('getting users role by id...');
     const role = await this.getRoleById(roleId);
-    console.log('got users role by id');
+    // console.log('got users role by id');
 
     return (await this.guild.members.fetch()).filter(member => member.roles.cache.has(role.id));
   }
@@ -321,8 +320,7 @@ export class DiscordService {
    * @param channelId The ID of the channel
    */
   async getChannelById(channelId: string): Promise<Channel> {
-    // Get channel but not from cache
-    console.log(`getting channel by id ${channelId}...`);
+    // console.log(`getting channel by id ${channelId}...`);
     return await this.client.channels.fetch(channelId);
   }
 
@@ -368,7 +366,7 @@ export class DiscordService {
    */
   public getEmojiCode(emoji: GuildEmoji): string {
     const emojiCode = emoji.animated ? `<a:${emoji.name}:${emoji.id}>` : `<:${emoji.name}:${emoji.id}>`;
-    console.log("Emoji code: ", emojiCode);
+    // console.log("Emoji code: ", emojiCode);
     return emojiCode;
   }
 
@@ -379,7 +377,7 @@ export class DiscordService {
    */
   async getUserRankRole(userId: string): Promise<Role> {
 
-    const rankRoles: Role[] = await this.roleGroupService.findAllDiscordRolesByGroupName(this.configService.get<string>('role-group-names.rank'));
+    const rankRoles: Role[] = await this.roleGroupService.findAllDiscordRolesByGroupName(this.configService.get<string>('role-group-names.ranking'));
 
     const user = await this.guild.members.fetch(userId);
 
@@ -438,7 +436,7 @@ export class DiscordService {
 
   public async removeRoleFromUser(userId: User["id"], roleId: Role["id"]) {
     // Get member from guild
-    const member: GuildMember = this.guild.members.cache.get(userId);
+    const member: GuildMember = await this.guild.members.fetch(userId);
 
     // Get role from guild
     const role: Role = await this.guild.roles.fetch(roleId);
@@ -449,7 +447,7 @@ export class DiscordService {
 
   public async removeRolesFromUser(userId: User["id"], roleIds: Role["id"][]) {
     // Get member from guild
-    const member: GuildMember = this.guild.members.cache.get(userId);
+    const member: GuildMember = await this.guild.members.fetch(userId);
 
     // Get roles from guild
     const roles: Role[] = roleIds.map(roleId => this.guild.roles.cache.get(roleId));
@@ -460,7 +458,7 @@ export class DiscordService {
 
   public async addRoleToUser(userId: User["id"], roleId: Role["id"]) {
     // Get member from guild
-    const member: GuildMember = this.guild.members.cache.get(userId);
+    const member: GuildMember = await this.guild.members.fetch(userId);
 
     // Get role from guild
     const role: Role = await this.guild.roles.fetch(roleId);
