@@ -5,6 +5,7 @@ images:
   danger: https://i.imgur.com/AXMzkaO.png
   loading: https://i.imgur.com/ZOjdpq7.gif
   success: https://i.imgur.com/gpEThdv.png
+  unresolved: https://i.imgur.com/CIXXYvO.png
 
 theme:
   color-primary: '#FF4343'
@@ -18,6 +19,8 @@ embeds:
 channel-names:
   lfg: 'lfg'
   lfg-output: 'lfgoutput'
+  synchronization: 'synchronization'
+  introduce: 'introduce'
 
 role-names:
   pla-inside: 
@@ -27,6 +30,10 @@ role-names:
     team:
       prefix: 'plainsideteam'
       teams: ['o', 'c', 'y', 'p', 'b', 'g']
+  disconnected: 'disconnected'
+
+role-group-names:
+  ranking: 'rank'
 
 lfg:
   post-cooldown: 120

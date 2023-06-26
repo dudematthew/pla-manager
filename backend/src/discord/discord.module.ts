@@ -11,6 +11,12 @@ import { LfgService } from "./lfg/lfg.service";
 import { ChannelModule } from "src/database/entities/channel/channel.module";
 import { ApexConnectModule } from './apex-connect/apex-connect.module';
 import { InsideModule } from './inside/inside.module';
+import { RoleGroupModule } from "src/database/entities/role-group/role-group.module";
+import { UserModule } from "src/database/entities/user/user.module";
+import { TourneyModule } from "src/database/entities/tourney/tourney.module";
+import { ApexAccountModule } from "src/database/entities/apex-account/apex-account.module";
+import { DatabaseModule } from "src/database/database.module";
+import { IntroduceModule } from './introduce/introduce.module';
 
 @Module({
     imports: [
@@ -25,18 +31,27 @@ import { InsideModule } from './inside/inside.module';
                 IntentsBitField.Flags.MessageContent,
                 IntentsBitField.Flags.DirectMessages,
                 IntentsBitField.Flags.DirectMessageReactions,
+                IntentsBitField.Flags.GuildIntegrations,
+                IntentsBitField.Flags.GuildMessageTyping,
+                IntentsBitField.Flags.GuildModeration,
             ],
             partials: [
                 Partials.Channel,
                 Partials.Message,
             ]
         }),
+        
+        RoleGroupModule,
         CommandsModule,
         RoleModule,
         LfgModule,
         ApexConnectModule,
         ChannelModule,
         InsideModule,
+        UserModule,
+        TourneyModule,
+        ApexAccountModule,
+        IntroduceModule,
     ],
     controllers: [],
     providers: [

@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { Module, forwardRef } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { UserEntity } from "src/database/entities/user/user.entity";
 import { TypeORMSession } from "./entities/session.entity";
@@ -12,6 +12,12 @@ import { EmojiModule } from './entities/emoji/emoji.module';
 import { EmojiEntity } from "./entities/emoji/entities/emoji.entity";
 import { RoleModule } from './entities/role/role.module';
 import { ApexAccountModule } from './entities/apex-account/apex-account.module';
+import { RoleGroupEntity } from "./entities/role-group/entities/role-group.entity";
+import { RoleGroupModule } from "./entities/role-group/role-group.module";
+import { DatabaseService } from "./database.service";
+import { DiscordModule } from "src/discord/discord.module";
+import { MessageModule } from './entities/message/message.module';
+import { MessageEntity } from "./entities/message/entities/message.entity";
 
 @Module({
     imports: [
@@ -28,12 +34,14 @@ import { ApexAccountModule } from './entities/apex-account/apex-account.module';
                 entities: [
                     UserEntity,
                     ChannelEntity,
+                    RoleGroupEntity,
                     RoleEntity,
                     TypeORMSession,
                     TourneyEntity,
                     TourneyTeamEntity,
                     ApexAccountEntity,
-                    EmojiEntity
+                    EmojiEntity,
+                    MessageEntity,
                 ],
                 synchronize: true,
                 autoLoadEntities: true,
@@ -41,14 +49,15 @@ import { ApexAccountModule } from './entities/apex-account/apex-account.module';
             inject: [ConfigService]
         }),
         TypeOrmModule.forFeature([TypeORMSession]),
-        RoleModule,
-        ApexAccountModule,
+        forwardRef(() => DiscordModule),
     ],
     providers: [
         TypeORMSession,
+        DatabaseService,
     ],
     exports: [
         TypeORMSession,
+        DatabaseService,
     ],
 })
 export class DatabaseModule {}

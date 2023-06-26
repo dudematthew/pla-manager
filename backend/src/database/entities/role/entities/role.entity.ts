@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, BaseEntity, OneToOne, ManyToOne } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, BaseEntity, OneToOne, ManyToOne, OneToMany } from "typeorm";
 import { EmojiEntity } from "../../emoji/entities/emoji.entity";
+import { RoleGroupEntity } from "../../role-group/entities/role-group.entity";
 
 @Entity({
     name: 'role',
@@ -26,4 +27,7 @@ export class RoleEntity extends BaseEntity {
     
     @ManyToOne(() => EmojiEntity, emoji => emoji.roles)
     emoji: EmojiEntity;
+
+    @ManyToOne(() => RoleGroupEntity, roleGroup => roleGroup.roles)
+    roleGroup: RoleGroupEntity;
 }

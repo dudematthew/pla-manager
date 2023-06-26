@@ -59,6 +59,55 @@ export type Schema = {
     nested: {};
     flat: {};
   };
+  'message': {
+    plain: {
+      'id': number;
+      'discord_id': string;
+      'name': string;
+      'created_at': string;
+      'updated_at': string;
+      'channelId': number;
+      'userId': number;
+    };
+    nested: {
+      'channel': Schema['channel']['plain'] & Schema['channel']['nested'];
+      'user': Schema['user']['plain'] & Schema['user']['nested'];
+    };
+    flat: {
+      'channel:id': number;
+      'channel:discord_id': string;
+      'channel:name': string;
+      'channel:type': 'text' | 'voice';
+      'channel:created_at': string;
+      'channel:updated_at': string;
+      'user:id': number;
+      'user:discord_id': string;
+      'user:email': string;
+      'user:is_admin': number;
+      'user:created_at': string;
+      'user:updated_at': string;
+      'user:apexAccountId': number;
+      'user:apexAccount:id': number;
+      'user:apexAccount:name': string;
+      'user:apexAccount:uid': string;
+      'user:apexAccount:avatar_url': string;
+      'user:apexAccount:platform': string;
+      'user:apexAccount:rank_score': number;
+      'user:apexAccount:rank_name': string;
+      'user:apexAccount:rank_division': string;
+      'user:apexAccount:rank_img': string;
+      'user:apexAccount:level': number;
+      'user:apexAccount:percent_to_next_level': number;
+      'user:apexAccount:br_total_kills': number;
+      'user:apexAccount:br_total_wins': number;
+      'user:apexAccount:br_total_games_played': number;
+      'user:apexAccount:br_kdr': number;
+      'user:apexAccount:br_total_damage': number;
+      'user:apexAccount:last_legend_played': string;
+      'user:apexAccount:created_at': string;
+      'user:apexAccount:updated_at': string;
+    };
+  };
   'role': {
     plain: {
       'id': number;
@@ -68,9 +117,11 @@ export type Schema = {
       'updated_at': string;
       'priority': number;
       'emojiId': number;
+      'roleGroupId': number;
     };
     nested: {
       'emoji': Schema['emoji']['plain'] & Schema['emoji']['nested'];
+      'roleGroup': Schema['role_group']['plain'] & Schema['role_group']['nested'];
     };
     flat: {
       'emoji:id': number;
@@ -79,7 +130,21 @@ export type Schema = {
       'emoji:created_at': string;
       'emoji:updated_at': string;
       'emoji:discord_name': string;
+      'roleGroup:id': number;
+      'roleGroup:name': string;
+      'roleGroup:created_at': string;
+      'roleGroup:updated_at': string;
     };
+  };
+  'role_group': {
+    plain: {
+      'id': number;
+      'name': string;
+      'created_at': string;
+      'updated_at': string;
+    };
+    nested: {};
+    flat: {};
   };
   'sessions': {
     plain: {

@@ -8,8 +8,8 @@ import { ApexAccountEntity } from "../apex-account/entities/apex-account.entity"
 
 @Module({
     imports: [
-        forwardRef(() => DiscordModule),
         TypeOrmModule.forFeature([UserEntity, ApexAccountEntity]),
+        forwardRef(() => DiscordModule),
     ],
     providers: [
         UserService,

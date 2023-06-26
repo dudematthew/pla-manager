@@ -7,6 +7,7 @@ import { EmojiService } from 'src/database/entities/emoji/emoji.service';
 import { ButtonOption, Menu, MenuOption, Row, RowTypes } from 'discord.js-menu-buttons';
 import { ButtonStyle } from 'discord.js';
 import { ComponentType } from 'discord.js';
+import { MongoRuntimeError } from 'typeorm';
 
 export interface InsideMembers {
     id: string;
@@ -56,6 +57,10 @@ export class InsideService {
     }
 
     public async handleGetInsideMembers(interaction: ChatInputCommandInteraction<CacheType>) {
+
+        interaction.reply({
+            content: 'Pobieram listę członków PLA Inside...',
+        });
 
         const insideMembers = await this.getInsideMembers();
         const insideTeamMembersGroup = await this.getInsideMembersGroup(insideMembers, 'team');
@@ -306,7 +311,10 @@ export class InsideService {
             }
         ]);
 
-        menu.start();
+        await menu.start();
+
+        // Remove loading message
+        interaction.deleteReply();
     }
 
     /**

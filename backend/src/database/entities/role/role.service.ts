@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Inject, Injectable, InternalServerErrorException, forwardRef } from '@nestjs/common';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { RoleEntity } from './entities/role.entity';
@@ -13,6 +13,7 @@ export class RoleService {
   constructor(
     @InjectRepository(RoleEntity)
     private readonly roleRepository: Repository<RoleEntity>,
+    @Inject(forwardRef(() => DiscordService))
     private readonly discordService: DiscordService,
     private readonly configService: ConfigService,
   ) {}
@@ -32,7 +33,10 @@ export class RoleService {
 
   async findAll() {
     return await this.roleRepository.find({
-      relations: ['emoji']
+      relations: [
+        'emoji',
+        'roleGroup'
+      ]
     });
   }
 
@@ -45,21 +49,30 @@ export class RoleService {
       where: {
           name: In(prefixedInsideRoleNames)
         },
-        relations: ['emoji']
+        relations: [
+        'emoji',
+        'roleGroup'
+      ]
     });
   }
 
   async findById(id: number): Promise<RoleEntity> {
     return await this.roleRepository.findOne({ 
       where: { id },
-      relations: ['emoji']
-     });;
+      relations: [
+        'emoji',
+        'roleGroup'
+      ]
+     });
   }
 
   async findByDiscordId(discordId: string): Promise<RoleEntity> {
     return await this.roleRepository.findOne({ 
       where: { discordId },
-      relations: ['emoji']
+      relations: [
+        'emoji',
+        'roleGroup'
+      ]
      });
   }
 
@@ -71,8 +84,11 @@ export class RoleService {
   async findByName(name: string): Promise<RoleEntity> {
     return await this.roleRepository.findOne({ 
       where: { name },
-      relations: ['emoji']
-     });;
+      relations: [
+        'emoji',
+        'roleGroup'
+      ]
+     });
   }
 
   /**
@@ -85,7 +101,10 @@ export class RoleService {
         where: {
             name: In(names)
         },
-        relations: ['emoji']
+        relations: [
+        'emoji',
+        'roleGroup'
+      ]
     });
   }
     

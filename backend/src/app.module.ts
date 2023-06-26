@@ -17,27 +17,48 @@ import { ApexApiModule } from './apex-api/apex-api.module';
 import { TourneyModule } from './database/entities/tourney/tourney.module';
 import { ConfigModule } from './config/config.module';
 import { CacheModule } from '@nestjs/cache-manager';
+import { ScheduleModule } from '@nestjs/schedule';
+import { CronModule } from './cron/cron.module';
+import { HealthModule } from './health/health.module';
+import { CommandsModule } from './discord/commands/commands.module';
+import { RoleModule } from './database/entities/role/role.module';
+import { LfgModule } from './discord/lfg/lfg.module';
+import { ApexConnectModule } from './discord/apex-connect/apex-connect.module';
+import { InsideModule } from './discord/inside/inside.module';
+import { RoleGroupModule } from './database/entities/role-group/role-group.module';
+import { MessageEntity } from './database/entities/message/entities/message.entity';
 
 @Module({
   imports: [
-    ConfigModule,
+    ConfigModule, // Config that uses yaml
     CacheModule.register({
       isGlobal: true,
-    }),
+    }), // Cache manager
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '../../../frontend/dist'),
-      exclude: ['/api*', '/auth*', '/admin*'],
-    }),
-    DatabaseModule,
-    DiscordModule,
-    LoggerModule,
-    AuthModule,
-    UserModule,
+      exclude: ['/api*', '/auth*', '/admin*', '/health*'],
+    }), // Serve the frontend
+    ScheduleModule.forRoot(), // Module that powers the cron jobs
+    DatabaseModule, // Everything related to the database
+    DiscordModule, // Discord bot
+    LoggerModule, // Logger
+    AuthModule, // Authentication endpoints and strategies
+    // AdminPanelModule, // Old admin panel
+    ApexApiModule, // Everything related to the Apex API
+    CronModule, // Cron jobs
+    HealthModule, // Health check
+    ApexConnectModule, // Apex connect command related stuff
+
+    // Entities and their modules --
+    CommandsModule,
+    RoleModule,
+    LfgModule,
     ChannelModule,
-    // AdminPanelModule,
-    ApexApiModule,
+    InsideModule,
+    RoleGroupModule,
+    UserModule,
     TourneyModule,
-    ConfigModule,
+    MessageEntity,
   ],
   controllers: [
     AppController,

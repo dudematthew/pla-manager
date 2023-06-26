@@ -1,8 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Context, On, Once, ContextOf } from 'necord';
-import { Client } from 'discord.js';
+import { Client, Typing } from 'discord.js';
 import { ConfigService } from '@nestjs/config';
 import DiscordListeners from './discord.listeners';
+import { on } from 'events';
 
 @Injectable()
 export class DiscordUpdate {
@@ -45,7 +46,11 @@ export class DiscordUpdate {
      */
     @On('messageCreate')
     public onMessageCreate(@Context() [message]: ContextOf<'messageCreate'>) {
-        this.logger.log(`Message sent: ${message.content}`);
         this.discordListeners.handleMessageCreate(message);
+    }
+
+    @On('typingStart')
+    public onTypingStart(@Context() [typing]: ContextOf<'typingStart'>) {
+        this.discordListeners.handleTypingStart(typing);
     }
 }
