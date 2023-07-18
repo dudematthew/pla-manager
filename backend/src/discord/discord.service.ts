@@ -375,14 +375,16 @@ export class DiscordService {
    */
   async getUserRankRole(userId: string): Promise<Role> {
 
-    const rankRoles = this.configService.get<string[]>('discord.ranking-roles');
+    const rankRoles = this.configService.get<string[]>('discord.rank-roles');
+
+    console.log(rankRoles);
     
     // Get member from guild
     const member: GuildMember = await this.guild.members.fetch(userId);
 
-    const userRoles = user.roles.cache;
+    const userRoles = member.roles.cache;
 
-    const userRankRole = userRoles.find(role => rankRoles.some(rankRole => rankRole.id === role.id));
+    const userRankRole = userRoles.find(role => rankRoles.includes(role.id));
 
     return userRankRole;
   }
