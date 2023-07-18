@@ -11,7 +11,7 @@ export class CronService {
 
     constructor (
         private readonly databaseService: DatabaseService,
-        @Inject(forwardRef(() => DiscordService))
+        @Inject(forwardRef(() => ApexSyncService))
         private readonly apexSyncService: ApexSyncService,
         private readonly schedulerRegistry: SchedulerRegistry,
     ) {
