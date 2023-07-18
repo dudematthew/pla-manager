@@ -384,7 +384,7 @@ export class DiscordService {
 
     const userRoles = member.roles.cache;
 
-    const userRankRole = userRoles.find(role => rankRoles.includes(role.id));
+    const userRankRole = userRoles.find(role => rankRoles.includes(role.name.toLowerCase()));
 
     return userRankRole;
   }
