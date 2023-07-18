@@ -45,9 +45,9 @@ export class ApexConnectService {
     ) {}
 
     public async handleConnectCommand(interaction: ChatInputCommandInteraction<CacheType>, options: handleConnectCommandDto) {
-        const playerData = await this.apexApiService.getPlayerStatisticsByName(options.username, options.platform);
-
         await interaction.deferReply({ ephemeral: true });
+
+        const playerData = await this.apexApiService.getPlayerStatisticsByName(options.username, options.platform);
 
         console.log(`User ${interaction.user.username} requested to connect account ${options.username} on platform ${options.platform}. Got player data (global):`, playerData.global);
 
@@ -55,7 +55,7 @@ export class ApexConnectService {
 
         if (typeof playerData?.errorCode !== "undefined") {
             if (playerData.errorCode == 404) {
-                interaction.editReply({ content: `Nie znaleziono gracza o nicku ${options.username} na platformie ${platformAliases[options.platform]}.`});
+                interaction.editReply({ content: `Nie znaleziono gracza o nicku ${options.username} na platformie ${platformAliases[options.platform]}.`}); // Here the error occurs
                 this.sendConnectionStatusToLogChannel(interaction, options, "unresolved");
             }
             
