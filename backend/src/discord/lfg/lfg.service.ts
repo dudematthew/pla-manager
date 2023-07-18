@@ -121,6 +121,7 @@ export class LfgService {
         diamond: 'https://i.imgur.com/EF2HeVR.png',
         master: 'https://i.imgur.com/qdXR2Z7.png',
         predator: 'https://i.imgur.com/7mhAyCl.png',
+        disconnected: 'https://i.imgur.com/rwWetJw.png',
     };
 
     /**
@@ -180,7 +181,8 @@ export class LfgService {
             'bronze',
             'silver',
             'gold',
-        ]
+        ],
+        disconnected: [],
     }
 
     constructor(
@@ -218,7 +220,7 @@ export class LfgService {
             return;
         }
 
-        // Check if the message is cached
+        // Check if the message is cached and a cooldown is set
         let userCacheData: any = await this.getCachedUserLfg(message.message.author.id);
 
         if(userCacheData) {
@@ -250,9 +252,15 @@ export class LfgService {
         let roleMentions = '';
         const globalCache = await this.getCachedGlobalLfg();
 
+        const disconnectedRole = await this.roleService.findByName('disconnected');
+
         // Get the user rank role
-        const userRankRole = await this.discordService.getUserRankRole(message.message.author.id);
-        const userRankRoleName = userRankRole.name.toLowerCase();
+        const userRankRole = await this.discordService.getUserRankRole(message.message.author.id)
+            ?? await this.discordService.getRoleById(disconnectedRole.discordId);
+
+            const userRankRoleName = userRankRole.name.toLowerCase();
+            
+            console.log(`User ${message.message.author.username} has rank role ${userRankRoleName}`);
         
         // Check for each role if it's in a cachedCooldowns
         // If it is, then add the cooldown to the embed
@@ -370,12 +378,15 @@ export class LfgService {
     }
 
     private async getLfgEmbed(message: MessageData, mentionedRoles: RoleEntity[], cooldownTimestamp: number) {
-        const rankRole = await this.discordService.getUserRankRole(message.message.author.id);
+        const disconnectedRole = await this.roleService.findByName(this.configService.get<string>('role-names.disconnected'));
+
+        const rankRole = await this.discordService.getUserRankRole(message.message.author.id)
+            ?? await this.discordService.getRoleById(disconnectedRole.discordId);
+
         let rank = await this.roleService.findByDiscordId(rankRole.id);
 
-
-        // If the user doesn't have a rank role, then set it to rookie
-        const rankIcon = rankRole ? this.rankImages[rank.name.toLowerCase()] : this.rankImages['rookie'];
+        // If the user doesn't have a rank role, then set it to disconnected
+        const rankIcon = this.rankImages[rank.name.toLowerCase()];
         console.log(`Rank icon: ${rankIcon}`);
 
         // If the message is longer than 60 characters cut it
@@ -448,8 +459,8 @@ export class LfgService {
         const rankRole = await this.discordService.getUserRankRole(messageData.message.author.id);
 
         // Check if the user has a rank role
-        if(!rankRole)
-            return mentionedRoles;
+        // if(!rankRole)
+        //     return mentionedRoles;
 
         /**
          * Loop through all the role types and check 
@@ -509,20 +520,23 @@ export class LfgService {
     private async getRoleEmojis(mentionedRoles: RoleEntity[]) {
         const emojis: GuildEmoji[] = [];
 
+        console.log(`Getting emojis for ${mentionedRoles.length} roles: `, mentionedRoles);
+
         for(const role of mentionedRoles) {
             let emoji: GuildEmoji;
 
             try {
-                emoji = await this.emojiService.getDiscordEmojiByName(role.emoji.name);
+                console.log(`Getting emoji for role: `, role, role.emoji, role.emoji.discordName);
+                emoji = await this.emojiService.getDiscordEmojiByName(role.emoji.discordName);
 
                 if(!emoji) {
                     this.logger.error(`Could not find emoji for role ${role.name}`);
-                    return;
+                    continue;
                 }
 
                 emojis.push(emoji);
             } catch (error) {
-                this.logger.error(`Could not find emoji for role ${role.name}`);
+                this.logger.error(`Could not find emoji for role ${role.name}: `, error);
             }
         }
 
