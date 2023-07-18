@@ -39,7 +39,6 @@ export class DiscordService {
   ) {
     // Set main guild ID from env variable
     this.guildId = process.env.MAIN_GUILD_ID;
-
     
     this.init();
   }
@@ -377,13 +376,16 @@ export class DiscordService {
    */
   async getUserRankRole(userId: string): Promise<Role> {
 
-    const rankRoles: Role[] = await this.roleGroupService.findAllDiscordRolesByGroupName(this.configService.get<string>('role-group-names.ranking'));
+    const rankRoles = this.configService.get<string[]>('discord.rank-roles');
 
-    const user = await this.guild.members.fetch(userId);
+    console.log(rankRoles);
+    
+    // Get member from guild
+    const member: GuildMember = await this.guild.members.fetch(userId);
 
-    const userRoles = user.roles.cache;
+    const userRoles = member.roles.cache;
 
-    const userRankRole = userRoles.find(role => rankRoles.some(rankRole => rankRole.id === role.id));
+    const userRankRole = userRoles.find(role => rankRoles.includes(role.name.toLowerCase()));
 
     return userRankRole;
   }

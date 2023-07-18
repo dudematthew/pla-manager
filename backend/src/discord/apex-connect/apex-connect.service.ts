@@ -45,9 +45,9 @@ export class ApexConnectService {
     ) {}
 
     public async handleConnectCommand(interaction: ChatInputCommandInteraction<CacheType>, options: handleConnectCommandDto) {
-        const playerData = await this.apexApiService.getPlayerStatisticsByName(options.username, options.platform);
-
         await interaction.deferReply({ ephemeral: true });
+
+        const playerData = await this.apexApiService.getPlayerStatisticsByName(options.username, options.platform);
 
         console.log(`User ${interaction.user.username} requested to connect account ${options.username} on platform ${options.platform}. Got player data (global):`, playerData.global);
 
@@ -55,7 +55,7 @@ export class ApexConnectService {
 
         if (typeof playerData?.errorCode !== "undefined") {
             if (playerData.errorCode == 404) {
-                interaction.editReply({ content: `Nie znaleziono gracza o nicku ${options.username} na platformie ${platformAliases[options.platform]}.`});
+                interaction.editReply({ content: `Nie znaleziono gracza o nicku ${options.username} na platformie ${platformAliases[options.platform]}.`}); // Here the error occurs
                 this.sendConnectionStatusToLogChannel(interaction, options, "unresolved");
             }
             
@@ -225,9 +225,10 @@ export class ApexConnectService {
      */
     private async logAccountData(playerData: PlayerStatistics, interaction?: ChatInputCommandInteraction<CacheType>, options?: handleConnectCommandDto) {
         const data = {
-            username: playerData.global.name,
-            realtime: playerData.realtime,
-            total: playerData.total,
+            username: playerData?.global?.name,
+            realtime: playerData?.realtime,
+            total: playerData?.total,
+            global: playerData?.global,
         };
 
         // Get admin id from env
@@ -240,11 +241,13 @@ export class ApexConnectService {
 
         const dataString = JSON.stringify(data, null, 2); // spacing level = 2
 
-        const chunks = dataString.match(/[\s\S]{1,2000}/g) || [];
+        const chunks = dataString.match(/[\s\S]{1,1980}/g) || [];
+
+        this.discordService.sendPrivateMessage(adminId, `User ${interaction.user.username} requested to connect account ${options.username} on platform ${options.platform}. Got player data (global):`);
 
         for (const chunk of chunks) {
             // Send ready message to user 426330456753963008
-            this.discordService.sendPrivateMessage(adminId, chunk);
+            this.discordService.sendPrivateMessage(adminId, "```json\n" + chunk + "```");
         }
     }
 
