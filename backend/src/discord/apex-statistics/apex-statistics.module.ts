@@ -4,6 +4,7 @@ import { DiscordModule } from '../discord.module';
 import { ApexAccountModule } from 'src/database/entities/apex-account/apex-account.module';
 import { UserModule } from 'src/database/entities/user/user.module';
 import { ApexApiModule } from 'src/apex-api/apex-api.module';
+import { EmojiModule } from 'src/database/entities/emoji/emoji.module';
 
 @Module({
   imports: [
@@ -11,6 +12,7 @@ import { ApexApiModule } from 'src/apex-api/apex-api.module';
     ApexAccountModule,
     UserModule,
     ApexApiModule,
+    EmojiModule,
   ],
   providers: [ApexStatisticsService],
   exports: [ApexStatisticsService],

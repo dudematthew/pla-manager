@@ -24,6 +24,24 @@ export class ApexAccountService {
     'Apex Predator': 'predator',
   }
 
+  public rankToRoleColorDictionary = {
+    'Rookie': '#e28743',
+    'Bronze': '#873e23',
+    'Silver': '#C0C0C0',
+    'Gold': '	#DAA520',
+    'Platinum': '#6495ED',
+    'Diamond': '#1E90FF',
+    'Master': '	#800080',
+    'Apex Predator': '#8B0000',
+  }
+
+  public platformToEmojiNameDictionary = {
+    'PC': 'origin',
+    'PS4': 'ps4',
+    'X1': 'xbox',
+    'SWITCH': 'switch',
+  };
+
   constructor(
     @InjectRepository(ApexAccountEntity)
     private readonly apexAccountRepository: Repository<ApexAccountEntity>,

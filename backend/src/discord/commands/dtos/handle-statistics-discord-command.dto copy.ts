@@ -1,13 +1,14 @@
-import { StringOption, UserOption } from "necord";
+import { GuildMember, User } from "discord.js";
+import { MemberOption, StringOption, UserOption } from "necord";
 
 class handleStatisticsDiscordCommandDto {
 
-    @UserOption({
+    @MemberOption({
         name: 'użytkownik',
         description: 'Użytkownik na serwerze PLA którego statystyki chcesz sprawdzić',
         required: true,
     })
-    user: string;
+    user: GuildMember;
 }
 
 export { handleStatisticsDiscordCommandDto };
