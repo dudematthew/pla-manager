@@ -9,11 +9,14 @@ import { InsideCommandsService } from './inside-commands.service';
 import { DiscordModule } from '../discord.module';
 import { RoleGroupModule } from 'src/database/entities/role-group/role-group.module';
 import { DatabaseModule } from 'src/database/database.module';
+import { ApexStatisticsModule } from '../apex-statistics/apex-statistics.module';
+import { StatisticsCommandsService } from './statistics-commands.service';
 
 @Module({
   imports: [
     RoleModule,
     ApexConnectModule,
+    ApexStatisticsModule,
     InsideModule,
     EmojiModule,
     DatabaseModule,
@@ -23,6 +26,7 @@ import { DatabaseModule } from 'src/database/database.module';
     CommandsService,
     AdminCommandsService,
     InsideCommandsService,
+    StatisticsCommandsService,
   ],
 })
 export class CommandsModule {}
