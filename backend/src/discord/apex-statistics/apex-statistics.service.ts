@@ -116,7 +116,6 @@ export class ApexStatisticsService {
     }
 
     private async getStatisticsEmbed(statistics: PlayerStatistics, discordUser: GuildMember, user: UserEntity): Promise<EmbedBuilder> {
-        console.group('getStatisticsEmbed');
         const embed = this.getBasicStatisticsEmbed();
         const description = [];
         const rankToRoleNameDictionary = this.apexAccountService.rankToRoleNameDictionary;
@@ -127,8 +126,6 @@ export class ApexStatisticsService {
 
         embed.setColor(rankToRoleColorDictionary[statistics?.global?.rank?.rankName]);
 
-        console.info('MILESTONE 1');
-
         // Rank -----------------------------------------------------------------
         const rankEmoji = await this.emojiService.findByName(
             rankToRoleNameDictionary[statistics?.global?.rank.rankName]
@@ -137,16 +134,12 @@ export class ApexStatisticsService {
         const serverRank = ((user?.apexAccount ?? null) != null) ? await this.apexAccountService.getServerRankByAccountId(user.apexAccount.id): null;
         // ----------------------------------------------------------------------
 
-        console.info('MILESTONE 2');
-
         // Platform -------------------------------------------------------------
         const platform = statistics?.global?.platform;
         const platformEmoji = await this.emojiService.findByName(
             platformToEmojiNameDictionary[platform]
         );
         // ----------------------------------------------------------------------
-
-        console.info('MILESTONE 3');
 
         // Total ---------------------------------------------------------------
 
@@ -174,8 +167,6 @@ export class ApexStatisticsService {
         }
         // ----------------------------------------------------------------------
 
-        console.info('MILESTONE 4');
-
         // Status ---------------------------------------------------------------
         const isOnline = statistics?.realtime?.isOnline;
         const isPlaying = statistics?.realtime?.isInGame;
@@ -197,8 +188,6 @@ export class ApexStatisticsService {
         statusText.push(`> Lobby: ${(lobbyState == 'open') ? `Otwarte` : 'Zamknięte'} <:${lobbyStateEmoji?.name}:${lobbyStateEmoji.discordId}>`);
         statusText.push('ㅤ');
         // ----------------------------------------------------------------------
-
-        console.info('MILESTONE 5');
 
         // Level ----------------------------------------------------------------
         const level = statistics?.global?.level;
@@ -222,8 +211,6 @@ export class ApexStatisticsService {
 
         embed.setTitle(`**<:${platformEmoji?.name}:${platformEmoji.discordId}> ${statistics?.global?.name}**`)
 
-        console.info('MILESTONE 6');
-
         // If discord user is null then user plain data
         if (discordUser) {
             embed.setThumbnail(discordUser.displayAvatarURL())
@@ -238,8 +225,6 @@ export class ApexStatisticsService {
         const urlFriendlyName = statistics?.global?.name.replaceAll(' ', '%20');
         embed.setURL(`https://apexlegendsstatus.com/profile/${statistics?.global?.platform}/${urlFriendlyName}`);
 
-        console.info('MILESTONE 7');
-
         // Rank Content ---------------------------------------------------------
         description.push(`## <:${rankEmoji?.name}:${rankEmoji.discordId}> **${statistics?.global?.rank.rankName} ${rankDivToRomanDictionary[statistics?.global?.rank.rankDiv]}**`);
         
@@ -253,8 +238,6 @@ export class ApexStatisticsService {
         
         description.push('ㅤ');
         // ----------------------------------------------------------------------
-
-        console.info('MILESTONE 8');
 
         if (isOnline) {
             embed.addFields([
@@ -273,8 +256,6 @@ export class ApexStatisticsService {
             ])
         }
 
-        console.info('MILESTONE 9');
-
         embed.addFields([
             {
                 name: `<:${levelEmoji?.name}:${levelEmoji.discordId}> **Poziom ${level}**`,
@@ -285,14 +266,15 @@ export class ApexStatisticsService {
             }
         ]);
 
-        console.info('MILESTONE 10');
-
         // Total Stats ----------------------------------------------------------
         const totalStatsText = [];
 
         for (const stat of totalStats) {
             totalStatsText.push(`> **${stat?.name}**: \`${stat.value}\``);
         }
+
+        if (totalStatsText.length == 0)
+            totalStatsText.push(`> Brak statystyk`);
 
         totalStatsText.push('ㅤ');
 
@@ -303,8 +285,6 @@ export class ApexStatisticsService {
             }
         ]);
         // ----------------------------------------------------------------------
-
-        console.info('MILESTONE 11');
 
         // Legend ----------------------------------------------------------------
 
@@ -320,8 +300,6 @@ export class ApexStatisticsService {
         if (legendText.length == 0)
             legendText.push(`> Brak statystyk`);
 
-        console.info('MILESTONE 12');
-
         embed.addFields([
             {
                 name: `:radio_button:  Wybrana Legenda: **${legend?.LegendName}**`,
@@ -330,13 +308,9 @@ export class ApexStatisticsService {
             }
         ]);
 
-        console.info('MILESTONE 12.5');
-
         if (legend?.ImgAssets?.banner)
             embed.setImage(legend?.ImgAssets?.banner);
         // ----------------------------------------------------------------------
-
-        console.info('MILESTONE 13');
 
         // If some data couldn't be fetched add info to footer
         if (statistics?.global?.rank.ladderPosPlatform == -1 || !serverRank) {
@@ -348,10 +322,6 @@ export class ApexStatisticsService {
 
         embed.setDescription(description.join('\n'));
 
-        console.info('MILESTONE 14');
-
-        console.groupEnd();
-
         return embed;
     }
 
@@ -362,12 +332,12 @@ export class ApexStatisticsService {
     private getBasicStatisticsEmbed() {
         return new EmbedBuilder()
             .setAuthor({
-                name: "Polskie Legendy Apex • Dane są aktualizowane jedynie jeśli założony jest odpowiedni tracker, mogą być więc nieaktualne",
+                name: "Statystyki Apex Legends",
                 // url: "https://www.google.pl",
                 iconURL: "https://www.freepnglogos.com/uploads/apex-legends-logo-png/apex-legends-transparent-picture-20.png",
             })
             .setFooter({
-                text: 'Polskie Legendy Apex',
+                text: 'Polskie Legendy Apex • Dane są aktualizowane jedynie jeśli założony jest odpowiedni tracker, mogą być więc nieaktualne',
                 iconURL: this.configService.get<string>('images.logo-transparent')
             })
             .setColor(this.configService.get<ColorResolvable>('embeds.color-primary'))
