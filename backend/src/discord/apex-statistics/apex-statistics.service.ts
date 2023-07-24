@@ -13,6 +13,7 @@ import { EmojiService } from 'src/database/entities/emoji/emoji.service';
 import { handleStatisticsApexCommandDto } from '../commands/dtos/handle-statistics-apex-command.dto';
 import { platformAliases } from '../commands/dtos/handle-connect.command.dto';
 import { platform } from 'os';
+import { Console } from 'console';
 
 @Injectable()
 export class ApexStatisticsService {
@@ -115,6 +116,7 @@ export class ApexStatisticsService {
     }
 
     private async getStatisticsEmbed(statistics: PlayerStatistics, discordUser: GuildMember, user: UserEntity): Promise<EmbedBuilder> {
+        console.group('getStatisticsEmbed');
         const embed = this.getBasicStatisticsEmbed();
         const description = [];
         const rankToRoleNameDictionary = this.apexAccountService.rankToRoleNameDictionary;
@@ -123,7 +125,9 @@ export class ApexStatisticsService {
         const rankDivToRomanDictionary = this.apexAccountService.rankDivToRomanDictionary;
         const platformAliases = this.apexAccountService.platformAliases;
 
-        embed.setColor(rankToRoleColorDictionary[statistics?.global?.rank.rankName]);
+        embed.setColor(rankToRoleColorDictionary[statistics?.global?.rank?.rankName]);
+
+        console.info('MILESTONE 1');
 
         // Rank -----------------------------------------------------------------
         const rankEmoji = await this.emojiService.findByName(
@@ -133,12 +137,16 @@ export class ApexStatisticsService {
         const serverRank = ((user?.apexAccount ?? null) != null) ? await this.apexAccountService.getServerRankByAccountId(user.apexAccount.id): null;
         // ----------------------------------------------------------------------
 
+        console.info('MILESTONE 2');
+
         // Platform -------------------------------------------------------------
         const platform = statistics?.global?.platform;
         const platformEmoji = await this.emojiService.findByName(
             platformToEmojiNameDictionary[platform]
         );
         // ----------------------------------------------------------------------
+
+        console.info('MILESTONE 3');
 
         // Total ---------------------------------------------------------------
 
@@ -167,6 +175,7 @@ export class ApexStatisticsService {
         }
         // ----------------------------------------------------------------------
 
+        console.info('MILESTONE 4');
 
         // Status ---------------------------------------------------------------
         const isOnline = statistics?.realtime?.isOnline;
@@ -190,6 +199,8 @@ export class ApexStatisticsService {
         statusText.push('ㅤ');
         // ----------------------------------------------------------------------
 
+        console.info('MILESTONE 5');
+
         // Level ----------------------------------------------------------------
         const level = statistics?.global?.level;
         const levelPrestige = statistics?.global?.levelPrestige;
@@ -212,6 +223,8 @@ export class ApexStatisticsService {
 
         embed.setTitle(`**<:${platformEmoji?.name}:${platformEmoji.discordId}> ${statistics?.global?.name}**`)
 
+        console.info('MILESTONE 6');
+
         // If discord user is null then user plain data
         if (discordUser) {
             embed.setThumbnail(discordUser.displayAvatarURL())
@@ -226,6 +239,8 @@ export class ApexStatisticsService {
         const urlFriendlyName = statistics?.global?.name.replaceAll(' ', '%20');
         embed.setURL(`https://apexlegendsstatus.com/profile/${statistics?.global?.platform}/${urlFriendlyName}`);
 
+        console.info('MILESTONE 7');
+
         // Rank Content ---------------------------------------------------------
         description.push(`## <:${rankEmoji?.name}:${rankEmoji.discordId}> **${statistics?.global?.rank.rankName} ${rankDivToRomanDictionary[statistics?.global?.rank.rankDiv]}**`);
         
@@ -239,6 +254,8 @@ export class ApexStatisticsService {
         
         description.push('ㅤ');
         // ----------------------------------------------------------------------
+
+        console.info('MILESTONE 8');
 
         if (isOnline) {
             embed.addFields([
@@ -257,6 +274,8 @@ export class ApexStatisticsService {
             ])
         }
 
+        console.info('MILESTONE 9');
+
         embed.addFields([
             {
                 name: `<:${levelEmoji?.name}:${levelEmoji.discordId}> **Poziom ${level}**`,
@@ -266,6 +285,8 @@ export class ApexStatisticsService {
                 inline: true,
             }
         ]);
+
+        console.info('MILESTONE 10');
 
         // Total Stats ----------------------------------------------------------
         const totalStatsText = [];
@@ -284,6 +305,8 @@ export class ApexStatisticsService {
         ]);
         // ----------------------------------------------------------------------
 
+        console.info('MILESTONE 11');
+
         // Legend ----------------------------------------------------------------
 
         const legend = statistics?.legends?.selected;
@@ -295,6 +318,7 @@ export class ApexStatisticsService {
             legendText.push(`> **${stat?.name}**: \`${stat.value}\``);
         }
 
+        console.info('MILESTONE 12');
 
         embed.addFields([
             {
@@ -308,6 +332,8 @@ export class ApexStatisticsService {
 
         // ----------------------------------------------------------------------
 
+        console.info('MILESTONE 13');
+
         // If some data couldn't be fetched add info to footer
         if (statistics?.global?.rank.ladderPosPlatform == -1 || !serverRank) {
             embed.setFooter({
@@ -317,6 +343,10 @@ export class ApexStatisticsService {
         }
 
         embed.setDescription(description.join('\n'));
+
+        console.info('MILESTONE 14');
+
+        console.groupEnd();
 
         return embed;
     }
