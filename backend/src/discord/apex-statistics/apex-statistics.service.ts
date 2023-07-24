@@ -35,7 +35,7 @@ export class ApexStatisticsService {
     public async handleStatisticsDiscordCommand(Interaction: ChatInputCommandInteraction<CacheType>, options: handleStatisticsDiscordCommandDto) {
         // Check if interaction is deferred
         if (!Interaction.deferred)
-            Interaction.deferReply();
+            await Interaction.deferReply();
         
         const user = await this.userService.findByDiscordId(options.user.id);
 
@@ -73,7 +73,7 @@ export class ApexStatisticsService {
      * @param options Command options
      */
     public async handleStatisticsApexCommand(Interaction: ChatInputCommandInteraction<CacheType>, options: handleStatisticsApexCommandDto) {
-        Interaction.deferReply();
+        await Interaction.deferReply();
 
         const platformAliases = this.apexAccountService.platformAliases;
 
@@ -99,7 +99,7 @@ export class ApexStatisticsService {
     }
 
     public async handleStatisticsOwnCommand(Interaction: ChatInputCommandInteraction<CacheType>) {
-        Interaction.deferReply();
+        await Interaction.deferReply();
 
         const discordUser = Interaction.member;
 
