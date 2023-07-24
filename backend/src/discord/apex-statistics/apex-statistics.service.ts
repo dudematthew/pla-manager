@@ -328,8 +328,10 @@ export class ApexStatisticsService {
             }
         ]);
 
-        embed.setImage(legend?.ImgAssets.banner);
+        console.info('MILESTONE 12.5');
 
+        if (legend?.ImgAssets?.banner)
+            embed.setImage(legend?.ImgAssets?.banner);
         // ----------------------------------------------------------------------
 
         console.info('MILESTONE 13');
