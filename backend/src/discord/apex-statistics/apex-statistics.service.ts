@@ -4,12 +4,15 @@ import { ApexApiService } from 'src/apex-api/apex-api.service';
 import { ApexAccountService } from 'src/database/entities/apex-account/apex-account.service';
 import { UserService } from 'src/database/entities/user/user.service';
 import { DiscordService } from '../discord.service';
-import { handleStatisticsDiscordCommandDto } from '../commands/dtos/handle-statistics-discord-command.dto copy';
+import { handleStatisticsDiscordCommandDto } from '../commands/dtos/handle-statistics-discord-command.dto';
 import { CacheType, ChatInputCommandInteraction, ColorResolvable, EmbedBuilder, GuildMember } from 'discord.js';
 import { ApexAccountEntity } from 'src/database/entities/apex-account/entities/apex-account.entity';
 import { PlayerStatistics } from 'src/apex-api/player-statistics.interface';
 import { UserEntity } from 'src/database/entities/user/user.entity';
 import { EmojiService } from 'src/database/entities/emoji/emoji.service';
+import { handleStatisticsApexCommandDto } from '../commands/dtos/handle-statistics-apex-command.dto';
+import { platformAliases } from '../commands/dtos/handle-connect.command.dto';
+import { platform } from 'os';
 
 @Injectable()
 export class ApexStatisticsService {
@@ -36,38 +39,87 @@ export class ApexStatisticsService {
         // todo: if user not found, create new user
 
         if (!user) {
-            Interaction.editReply(`Nie znaleziono użytkownika **${options.user.displayName}**`);
+            Interaction.editReply(`### :x: Nie znaleziono użytkownika **${options.user.displayName}**`);
             return;
         }
 
         const apexAccount = user.apexAccount;
 
         if (!apexAccount) {
-            Interaction.editReply(`Użytkownik **${options.user.displayName}** nie ma przypisanego konta Apex Legends`);
+            Interaction.editReply(`### :x: Użytkownik **${options.user.displayName}** nie ma przypisanego konta Apex Legends\nKonto może zostać połączone z kontem Apex Legends za pomocą komendy **\`/połącz\`**`);
             return;
         }
 
         const statistics = await this.apexApiService.getPlayerStatisticsByUID(apexAccount.uid, apexAccount.platform as 'PC' | 'PS4' | 'X1' | 'SWITCH', {});
 
-        if (!statistics) {
-            Interaction.editReply(`Nie znaleziono statystyk dla użytkownika **${options.user.displayName}**`);
+        if (statistics?.error) {
+            Interaction.editReply(`### :x: Nie znaleziono statystyk dla użytkownika **${options.user.displayName}**`);
             return;
         }
 
         // Interaction.editReply(`Statystyki użytkownika **${options.user.displayName}**`);
 
-        const embed = await this.getStatisticsEmbed(statistics, options.user);
+        const embed = await this.getStatisticsEmbed(statistics, options.user, user);
 
         Interaction.editReply({ embeds: [embed] });
     }
 
-    private async getStatisticsEmbed(statistics: PlayerStatistics, user: GuildMember): Promise<EmbedBuilder> {
+    /**
+     * Command that handles statistics for Apex Legends account
+     * @param Interaction Discord interaction
+     * @param options Command options
+     */
+    public async handleStatisticsApexCommand(Interaction: ChatInputCommandInteraction<CacheType>, options: handleStatisticsApexCommandDto) {
+        Interaction.deferReply();
+
+        const platformAliases = this.apexAccountService.platformAliases;
+
+        const statistics = await this.apexApiService.getPlayerStatisticsByName(options.username, options.platform, {});
+
+        if (statistics?.error) {
+            Interaction.editReply(`### :x: Nie znaleziono konta na platformie *${platformAliases[options.platform]}* dla użytkownika **${options.username}**`);
+            return;
+        }
+        
+        const apexAccount = await this.apexAccountService.findByUID(`${statistics.global.uid}`) ?? null;
+
+        const user = apexAccount ? apexAccount.user : null;
+
+        if (user)
+            user.apexAccount = apexAccount;
+
+        const discordUser = user ? await this.discordService.getMemberById(user.discordId) : null;
+
+        const embed = await this.getStatisticsEmbed(statistics, discordUser, user);
+
+        Interaction.editReply({ embeds: [embed] });
+    }
+
+    public async handleStatisticsOwnCommand(Interaction: ChatInputCommandInteraction<CacheType>) {
+        Interaction.deferReply();
+
+        const discordUser = Interaction.member;
+
+        const user = await this.userService.findByDiscordId(discordUser.user.id);
+
+        const apexAccount = user?.apexAccount;
+
+        if (!apexAccount || !user) {
+            Interaction.editReply(`### :x: Nie znaleziono przypisanego konta Apex Legends! Możesz je połączyć za pomocą komendy **\`/połącz\`**`);
+            return;
+        }
+
+        this.handleStatisticsDiscordCommand(Interaction, {user: discordUser as GuildMember});
+    }
+
+    private async getStatisticsEmbed(statistics: PlayerStatistics, discordUser: GuildMember, user: UserEntity): Promise<EmbedBuilder> {
         const embed = this.getBasicStatisticsEmbed();
         const description = [];
         const rankToRoleNameDictionary = this.apexAccountService.rankToRoleNameDictionary;
         const rankToRoleColorDictionary = this.apexAccountService.rankToRoleColorDictionary;
         const platformToEmojiNameDictionary = this.apexAccountService.platformToEmojiNameDictionary;
         const rankDivToRomanDictionary = this.apexAccountService.rankDivToRomanDictionary;
+        const platformAliases = this.apexAccountService.platformAliases;
 
         embed.setColor(rankToRoleColorDictionary[statistics.global.rank.rankName]);
 
@@ -75,6 +127,8 @@ export class ApexStatisticsService {
         const rankEmoji = await this.emojiService.getDiscordEmojiByName(
             rankToRoleNameDictionary[statistics.global.rank.rankName]
         );
+        const plaEmoji = await this.emojiService.getDiscordEmojiByName('pla');
+        const serverRank = ((user?.apexAccount ?? null) != null) ? await this.apexAccountService.getServerRankByAccountId(user.apexAccount.id): null;
         // ----------------------------------------------------------------------
 
         // Platform -------------------------------------------------------------
@@ -82,6 +136,33 @@ export class ApexStatisticsService {
         const platformEmoji = await this.emojiService.getDiscordEmojiByName(
             platformToEmojiNameDictionary[platform]
         );
+        // ----------------------------------------------------------------------
+
+        // Total ---------------------------------------------------------------
+
+        const totalStatsNames = {
+            'kills': 'Zabójstwa',
+            'damage': 'Obrażenia',
+            'kd': 'K/D', 
+            'winning_kills': 'Zwycięskie zabójstwa',
+            'top_3': 'Top 3',
+            'kills_as_kill_leader': 'Zabójstwa jako lider zabójstw',
+            'wins': 'Zwycięstwa',
+        };
+
+        const totalStats = [];
+
+        for (const statName in totalStatsNames) {
+            const statValue = statistics.total[statName] ?? null;
+
+            if (statValue == null || statValue.value == -1)
+                continue;
+
+            totalStats.push({
+                name: totalStatsNames[statName],
+                value: statValue.value,
+            });
+        }
         // ----------------------------------------------------------------------
 
 
@@ -97,14 +178,16 @@ export class ApexStatisticsService {
 
         const lobbyStateEmoji = await this.emojiService.getDiscordEmojiByName(lobbyState);
 
+        console.log(currentStateSinceTimestamp);
+
         const statusText = [];
         if (isOnline) {
-            statusText.push(`> ` + (isPlaying ? 'Rozpoczął grę' : 'Wszedł do lobby') + ` <t:${currentStateSinceTimestamp}:R>`);
+            if (currentStateSinceTimestamp != -1)
+                statusText.push(`> ` + (isPlaying ? 'Rozpoczął grę' : 'Wszedł do lobby') + ` <t:${currentStateSinceTimestamp}:R>`);
             statusText.push(`> Skład: ${partyFull ? 'Pełny :x:' : 'Niepełny :white_check_mark:'}`);
-            statusText.push('ㅤ');
         }
-            
         statusText.push(`> Lobby: ${(lobbyState == 'open') ? `Otwarte` : 'Zamknięte'} <:${lobbyStateEmoji.name}:${lobbyStateEmoji.id}>`);
+        statusText.push('ㅤ');
         // ----------------------------------------------------------------------
 
         // Level ----------------------------------------------------------------
@@ -125,31 +208,37 @@ export class ApexStatisticsService {
         }
         
         const levelEmoji = await this.emojiService.getDiscordEmojiByName(levelEmojiName) ?? null;
-
         // ----------------------------------------------------------------------
 
-        // If discord user is null then user plain data
-        if (user) {
-            embed
-                .setTitle(`**<:${platformEmoji.name}:${platformEmoji.id}> ${statistics.global.name}**`)
-                .setThumbnail(user.displayAvatarURL())
+        console.log('Platform Emoji:', platformEmoji)
 
-            description.push(`Konto użytkownika <@${user.id}>`);
+        embed.setTitle(`**<:${platformEmoji.name}:${platformEmoji.id}> ${statistics.global.name}**`)
+
+        // If discord user is null then user plain data
+        if (discordUser) {
+            embed.setThumbnail(discordUser.displayAvatarURL())
+
+            description.push(`Konto użytkownika <@${discordUser.id}>`);
         } else {
-            embed
-                .setTitle(statistics.global.name)
-                .setThumbnail(statistics.global.avatar)
+            embed.setThumbnail(statistics.global.avatar ?? statistics.global.rank.rankImg)
+
+            description.push(`*Konto niepowiązane na serwerze PLA*`);
         }
 
-        const urlFriendlyName = statistics.global.name.replace(' ', '%20');
-        console.log(`https://apexlegendsstatus.com/profile/${statistics.global.platform}/${urlFriendlyName}`)
+        const urlFriendlyName = statistics.global.name.replaceAll(' ', '%20');
+        console.log(`https://apexlegendsstatus.com/profile/${statistics.global.platform}/${urlFriendlyName}`);
         embed.setURL(`https://apexlegendsstatus.com/profile/${statistics.global.platform}/${urlFriendlyName}`);
 
         // Rank Content ---------------------------------------------------------
-        description.push(`## <:${rankEmoji.name}:${rankEmoji.id}> **${statistics.global.rank.rankName} ${rankDivToRomanDictionary[statistics.global.rank.rankDiv]}** [**${statistics.global.rank.rankScore}** LP]`);
+        description.push(`## <:${rankEmoji.name}:${rankEmoji.id}> **${statistics.global.rank.rankName} ${rankDivToRomanDictionary[statistics.global.rank.rankDiv]}**`);
         
         if (statistics.global.rank.ladderPosPlatform != -1)
-            description.push(`:arrow_up: TOP **${statistics.global.rank.ladderPosPlatform}** na ${platform}`);
+            description.push(`:arrow_up: TOP **${statistics.global.rank.ladderPosPlatform}** na ${platformAliases[platform]}`);
+
+        if(serverRank)
+            description.push(`<:${plaEmoji.name}:${plaEmoji.id}> TOP **${serverRank}** na serwerze **PLA**`);
+
+        description.push(`**:chart_with_upwards_trend: ${statistics.global.rank.rankScore}** LP`);
         
         description.push('ㅤ');
         // ----------------------------------------------------------------------
@@ -181,6 +270,23 @@ export class ApexStatisticsService {
             }
         ]);
 
+        // Total Stats ----------------------------------------------------------
+        const totalStatsText = [];
+
+        for (const stat of totalStats) {
+            totalStatsText.push(`> **${stat.name}**: \`${stat.value}\``);
+        }
+
+        totalStatsText.push('ㅤ');
+
+        embed.addFields([
+            {
+                name: `**:globe_with_meridians:  Globalne Statystyki**`,
+                value: totalStatsText.join('\n'),
+            }
+        ]);
+        // ----------------------------------------------------------------------
+
         // Legend ----------------------------------------------------------------
 
         const legend = statistics.legends.selected;
@@ -195,7 +301,7 @@ export class ApexStatisticsService {
 
         embed.addFields([
             {
-                name: `Wybrana Legenda: **${legend.LegendName}**`,
+                name: `:radio_button:  Wybrana Legenda: **${legend.LegendName}**`,
                 value: legendText.join('\n'),
                 inline: false,
             }
@@ -204,6 +310,14 @@ export class ApexStatisticsService {
         embed.setImage(legend.ImgAssets.banner);
 
         // ----------------------------------------------------------------------
+
+        // If some data couldn't be fetched add info to footer
+        if (statistics.global.rank.ladderPosPlatform == -1 || !serverRank) {
+            embed.setFooter({
+                text: 'Polskie Legendy Apex • Dane są aktualizowane jedynie jeśli założony jest odpowiedni tracker, mogą być więc nieaktualne',
+                iconURL: this.configService.get<string>('images.logo-transparent')
+            })
+        }
 
         embed.setDescription(description.join('\n'));
 

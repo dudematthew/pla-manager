@@ -2,8 +2,15 @@ import { StringOption } from "necord";
 
 class handleStatisticsApexCommandDto {
     @StringOption({
-        name: 'użytkownik',
-        description: 'Użytkownik na serwerze PLA którego statystyki chcesz sprawdzić',
+        name: 'nazwa-użytkownika',
+        description: 'Nazwa użytkownika którego statystyki chcesz sprawdzić',
+        required: true,
+    })
+    username: string;
+
+    @StringOption({
+        name: 'platforma',
+        description: 'Platforma na której gra użytkownik',
         required: true,
         autocomplete: false,
         choices: [
@@ -27,13 +34,6 @@ class handleStatisticsApexCommandDto {
         ]
     })
     platform: 'PC' | 'PS4' | 'X1' | 'SWITCH';
-
-    @StringOption({
-        name: 'nazwa-użytkownika',
-        description: 'Alternatywnie możesz podać nazwę użytkownika na Origin',
-        required: true,
-    })
-    username: string;
 }
 
 export { handleStatisticsApexCommandDto };

@@ -50,6 +50,13 @@ export class ApexAccountService {
     '0': '',
   };
 
+  public platformAliases = {
+    'PC': 'PC',
+    'X1': 'Xbox',
+    'PS4': 'PlayStation',
+    'SWITCH': 'Nintendo Switch'
+}
+
   constructor(
     @InjectRepository(ApexAccountEntity)
     private readonly apexAccountRepository: Repository<ApexAccountEntity>,
@@ -198,6 +205,40 @@ export class ApexAccountService {
     return await this.apexAccountRepository.find({
       relations: ['user']
     });
+  }
+
+  /**
+   * @param accountId id of the account
+   * @returns rank of the account on the server
+   */
+  async getServerRankByAccountId(accountId: number) {
+
+    console.log('account id: ', accountId);
+
+    let subquery = this.apexAccountRepository.createQueryBuilder("apexAccount")
+      .select('apexAccount.id', 'id')
+      .addSelect('apexAccount.rank_score', 'rank_score')
+      .addSelect('ROW_NUMBER() OVER (ORDER BY apexAccount.rank_score DESC)', 'rank');
+
+    let result = await this.apexAccountRepository.createQueryBuilder()
+      .select('subQuery.rank')
+      .from("(" + subquery.getSql() + ")", 'subQuery')
+      .where('subQuery.id = :account_id', { account_id: accountId })
+      .getRawOne();
+
+    return result?.rank ?? null;
+  }
+
+  /**
+   * @param limit limit of accounts to return
+   * @returns top X accounts on the server
+   */
+  async getServerRankTopX(limit: number): Promise<ApexAccountEntity[]> {
+    return await this.apexAccountRepository.createQueryBuilder("apexAccount")
+      .select('apexAccount.*')
+      .addSelect('ROW_NUMBER() OVER (ORDER BY apexAccount.rank_score DESC)', 'rank')
+      .limit(limit)
+      .getRawMany();
   }
 
   public getRoleNameByRankName(rankName: string): string {
