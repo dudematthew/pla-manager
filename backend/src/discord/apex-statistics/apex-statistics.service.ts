@@ -124,16 +124,16 @@ export class ApexStatisticsService {
         embed.setColor(rankToRoleColorDictionary[statistics.global.rank.rankName]);
 
         // Rank -----------------------------------------------------------------
-        const rankEmoji = await this.emojiService.getDiscordEmojiByName(
+        const rankEmoji = await this.emojiService.findByName(
             rankToRoleNameDictionary[statistics.global.rank.rankName]
         );
-        const plaEmoji = await this.emojiService.getDiscordEmojiByName('pla');
+        const plaEmoji = await this.emojiService.findByName('pla');
         const serverRank = ((user?.apexAccount ?? null) != null) ? await this.apexAccountService.getServerRankByAccountId(user.apexAccount.id): null;
         // ----------------------------------------------------------------------
 
         // Platform -------------------------------------------------------------
         const platform = statistics.global.platform;
-        const platformEmoji = await this.emojiService.getDiscordEmojiByName(
+        const platformEmoji = await this.emojiService.findByName(
             platformToEmojiNameDictionary[platform]
         );
         // ----------------------------------------------------------------------
@@ -174,9 +174,9 @@ export class ApexStatisticsService {
         const currentStateSinceTimestamp = statistics.realtime.currentStateSinceTimestamp;
 
         const statusEmojiName = !isOnline ? 'offline' : isPlaying ? 'playing' : 'online';
-        const statusEmoji = await this.emojiService.getDiscordEmojiByName(statusEmojiName);
+        const statusEmoji = await this.emojiService.findByName(statusEmojiName);
 
-        const lobbyStateEmoji = await this.emojiService.getDiscordEmojiByName(lobbyState);
+        const lobbyStateEmoji = await this.emojiService.findByName(lobbyState);
 
         console.log(currentStateSinceTimestamp);
 
@@ -186,7 +186,7 @@ export class ApexStatisticsService {
                 statusText.push(`> ` + (isPlaying ? 'Rozpoczął grę' : 'Wszedł do lobby') + ` <t:${currentStateSinceTimestamp}:R>`);
             statusText.push(`> Skład: ${partyFull ? 'Pełny :x:' : 'Niepełny :white_check_mark:'}`);
         }
-        statusText.push(`> Lobby: ${(lobbyState == 'open') ? `Otwarte` : 'Zamknięte'} <:${lobbyStateEmoji.name}:${lobbyStateEmoji.id}>`);
+        statusText.push(`> Lobby: ${(lobbyState == 'open') ? `Otwarte` : 'Zamknięte'} <:${lobbyStateEmoji.name}:${lobbyStateEmoji.discordId}>`);
         statusText.push('ㅤ');
         // ----------------------------------------------------------------------
 
@@ -207,12 +207,12 @@ export class ApexStatisticsService {
                 break;
         }
         
-        const levelEmoji = await this.emojiService.getDiscordEmojiByName(levelEmojiName) ?? null;
+        const levelEmoji = await this.emojiService.findByName(levelEmojiName) ?? null;
         // ----------------------------------------------------------------------
 
         console.log('Platform Emoji:', platformEmoji)
 
-        embed.setTitle(`**<:${platformEmoji.name}:${platformEmoji.id}> ${statistics.global.name}**`)
+        embed.setTitle(`**<:${platformEmoji.name}:${platformEmoji.discordId}> ${statistics.global.name}**`)
 
         // If discord user is null then user plain data
         if (discordUser) {
@@ -230,13 +230,13 @@ export class ApexStatisticsService {
         embed.setURL(`https://apexlegendsstatus.com/profile/${statistics.global.platform}/${urlFriendlyName}`);
 
         // Rank Content ---------------------------------------------------------
-        description.push(`## <:${rankEmoji.name}:${rankEmoji.id}> **${statistics.global.rank.rankName} ${rankDivToRomanDictionary[statistics.global.rank.rankDiv]}**`);
+        description.push(`## <:${rankEmoji.name}:${rankEmoji.discordId}> **${statistics.global.rank.rankName} ${rankDivToRomanDictionary[statistics.global.rank.rankDiv]}**`);
         
         if (statistics.global.rank.ladderPosPlatform != -1)
             description.push(`:arrow_up: TOP **${statistics.global.rank.ladderPosPlatform}** na ${platformAliases[platform]}`);
 
         if(serverRank)
-            description.push(`<:${plaEmoji.name}:${plaEmoji.id}> TOP **${serverRank}** na serwerze **PLA**`);
+            description.push(`<:${plaEmoji.name}:${plaEmoji.discordId}> TOP **${serverRank}** na serwerze **PLA**`);
 
         description.push(`**:chart_with_upwards_trend: ${statistics.global.rank.rankScore}** LP`);
         
@@ -246,14 +246,14 @@ export class ApexStatisticsService {
         if (isOnline) {
             embed.addFields([
                 {
-                    name: `<:${statusEmoji.name}:${statusEmoji.id}> **Online**`,
+                    name: `<:${statusEmoji.name}:${statusEmoji.discordId}> **Online**`,
                     value: statusText.join('\n'),
                 }
             ])
         } else {
             embed.addFields([
                 {
-                    name: `<:${statusEmoji.name}:${statusEmoji.id}> **Offline**`,
+                    name: `<:${statusEmoji.name}:${statusEmoji.discordId}> **Offline**`,
                     value: statusText.join('\n'),
                     inline: true,
                 }
@@ -262,7 +262,7 @@ export class ApexStatisticsService {
 
         embed.addFields([
             {
-                name: `<:${levelEmoji.name}:${levelEmoji.id}> **Poziom ${level}**`,
+                name: `<:${levelEmoji.name}:${levelEmoji.discordId}> **Poziom ${level}**`,
                 value: `> Poziom Prestiżu: **${levelPrestige}**
                 > **${statistics.global.toNextLevelPercent}%** do następnego poziomu
                 ㅤ`,

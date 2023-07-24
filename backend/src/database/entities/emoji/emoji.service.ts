@@ -98,8 +98,10 @@ export class EmojiService {
   async getDiscordEmojiByName(name: string) {
     const emoji = await this.findByName(name);
 
-    if (!emoji)
+    if (!emoji) {
+      console.error(`Emoji with name ${name} not found!`);
       return null;
+    }
 
     return await this.discordService.getServerEmojiByName(emoji.name);
   }
