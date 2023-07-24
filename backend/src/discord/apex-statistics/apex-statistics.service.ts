@@ -186,7 +186,7 @@ export class ApexStatisticsService {
                 statusText.push(`> ` + (isPlaying ? 'Rozpoczął grę' : 'Wszedł do lobby') + ` <t:${currentStateSinceTimestamp}:R>`);
             statusText.push(`> Skład: ${partyFull ? 'Pełny :x:' : 'Niepełny :white_check_mark:'}`);
         }
-        statusText.push(`> Lobby: ${(lobbyState == 'open') ? `Otwarte` : 'Zamknięte'} <:${lobbyStateEmoji.name}:${lobbyStateEmoji.discordId}>`);
+        statusText.push(`> Lobby: ${(lobbyState == 'open') ? `Otwarte` : 'Zamknięte'} <:${lobbyStateEmoji?.name}:${lobbyStateEmoji.discordId}>`);
         statusText.push('ㅤ');
         // ----------------------------------------------------------------------
 
@@ -212,7 +212,7 @@ export class ApexStatisticsService {
 
         console.log('Platform Emoji:', platformEmoji)
 
-        embed.setTitle(`**<:${platformEmoji.name}:${platformEmoji.discordId}> ${statistics.global.name}**`)
+        embed.setTitle(`**<:${platformEmoji?.name}:${platformEmoji.discordId}> ${statistics.global?.name}**`)
 
         // If discord user is null then user plain data
         if (discordUser) {
@@ -225,18 +225,18 @@ export class ApexStatisticsService {
             description.push(`*Konto niepowiązane na serwerze PLA*`);
         }
 
-        const urlFriendlyName = statistics.global.name.replaceAll(' ', '%20');
+        const urlFriendlyName = statistics.global?.name.replaceAll(' ', '%20');
         console.log(`https://apexlegendsstatus.com/profile/${statistics.global.platform}/${urlFriendlyName}`);
         embed.setURL(`https://apexlegendsstatus.com/profile/${statistics.global.platform}/${urlFriendlyName}`);
 
         // Rank Content ---------------------------------------------------------
-        description.push(`## <:${rankEmoji.name}:${rankEmoji.discordId}> **${statistics.global.rank.rankName} ${rankDivToRomanDictionary[statistics.global.rank.rankDiv]}**`);
+        description.push(`## <:${rankEmoji?.name}:${rankEmoji.discordId}> **${statistics.global.rank.rankName} ${rankDivToRomanDictionary[statistics.global.rank.rankDiv]}**`);
         
         if (statistics.global.rank.ladderPosPlatform != -1)
             description.push(`:arrow_up: TOP **${statistics.global.rank.ladderPosPlatform}** na ${platformAliases[platform]}`);
 
         if(serverRank)
-            description.push(`<:${plaEmoji.name}:${plaEmoji.discordId}> TOP **${serverRank}** na serwerze **PLA**`);
+            description.push(`<:${plaEmoji?.name}:${plaEmoji.discordId}> TOP **${serverRank}** na serwerze **PLA**`);
 
         description.push(`**:chart_with_upwards_trend: ${statistics.global.rank.rankScore}** LP`);
         
@@ -246,14 +246,14 @@ export class ApexStatisticsService {
         if (isOnline) {
             embed.addFields([
                 {
-                    name: `<:${statusEmoji.name}:${statusEmoji.discordId}> **Online**`,
+                    name: `<:${statusEmoji?.name}:${statusEmoji.discordId}> **Online**`,
                     value: statusText.join('\n'),
                 }
             ])
         } else {
             embed.addFields([
                 {
-                    name: `<:${statusEmoji.name}:${statusEmoji.discordId}> **Offline**`,
+                    name: `<:${statusEmoji?.name}:${statusEmoji.discordId}> **Offline**`,
                     value: statusText.join('\n'),
                     inline: true,
                 }
@@ -262,7 +262,7 @@ export class ApexStatisticsService {
 
         embed.addFields([
             {
-                name: `<:${levelEmoji.name}:${levelEmoji.discordId}> **Poziom ${level}**`,
+                name: `<:${levelEmoji?.name}:${levelEmoji.discordId}> **Poziom ${level}**`,
                 value: `> Poziom Prestiżu: **${levelPrestige}**
                 > **${statistics.global.toNextLevelPercent}%** do następnego poziomu
                 ㅤ`,
@@ -274,7 +274,7 @@ export class ApexStatisticsService {
         const totalStatsText = [];
 
         for (const stat of totalStats) {
-            totalStatsText.push(`> **${stat.name}**: \`${stat.value}\``);
+            totalStatsText.push(`> **${stat?.name}**: \`${stat.value}\``);
         }
 
         totalStatsText.push('ㅤ');
@@ -295,7 +295,7 @@ export class ApexStatisticsService {
         const legendText = [];
 
         for (const stat of stats) {
-            legendText.push(`> **${stat.name}**: \`${stat.value}\``);
+            legendText.push(`> **${stat?.name}**: \`${stat.value}\``);
         }
 
 
