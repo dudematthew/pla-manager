@@ -56,11 +56,16 @@ export class AdminCommandsService {
 
         const dbEmoji = await this.emojiService.findByName(options.emojiName);
 
+        const regex = /:(\d+)>/;
+        const discordId = emojis[0].match(regex)[1];
+
+        console.log(`Preparing emoji data: ${emojis[0]}`);
+
         const emojiData = {
-            discordId: emojis[0].match(/\d+/g)[0],
+            discordId: discordId,
             discordName: emojis[0].split(":")[1],
             name: options.emojiName,
-        }
+        };
 
         console.log('Prepared emoji data: ', emojiData);
 
