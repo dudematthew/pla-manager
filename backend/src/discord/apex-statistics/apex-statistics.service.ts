@@ -153,7 +153,6 @@ export class ApexStatisticsService {
         const totalStatsNames = {
             'kills': 'Zabójstwa',
             'damage': 'Obrażenia',
-            'kd': 'K/D', 
             'winning_kills': 'Zwycięskie zabójstwa',
             'top_3': 'Top 3',
             'kills_as_kill_leader': 'Zabójstwa jako lider zabójstw',
@@ -317,6 +316,9 @@ export class ApexStatisticsService {
         for (const stat of stats) {
             legendText.push(`> **${stat?.name}**: \`${stat.value}\``);
         }
+
+        if (legendText.length == 0)
+            legendText.push(`> Brak statystyk`);
 
         console.info('MILESTONE 12');
 
