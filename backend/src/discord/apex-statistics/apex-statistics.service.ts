@@ -32,7 +32,9 @@ export class ApexStatisticsService {
      * @param options 
      */
     public async handleStatisticsDiscordCommand(Interaction: ChatInputCommandInteraction<CacheType>, options: handleStatisticsDiscordCommandDto) {
-        Interaction.deferReply();
+        // Check if interaction is deferred
+        if (!Interaction.deferred)
+            Interaction.deferReply();
         
         const user = await this.userService.findByDiscordId(options.user.id);
 
@@ -178,8 +180,6 @@ export class ApexStatisticsService {
 
         const lobbyStateEmoji = await this.emojiService.findByName(lobbyState);
 
-        console.log(currentStateSinceTimestamp);
-
         const statusText = [];
         if (isOnline) {
             if (currentStateSinceTimestamp != -1)
@@ -210,8 +210,6 @@ export class ApexStatisticsService {
         const levelEmoji = await this.emojiService.findByName(levelEmojiName) ?? null;
         // ----------------------------------------------------------------------
 
-        console.log('Platform Emoji:', platformEmoji)
-
         embed.setTitle(`**<:${platformEmoji?.name}:${platformEmoji.discordId}> ${statistics.global?.name}**`)
 
         // If discord user is null then user plain data
@@ -226,7 +224,6 @@ export class ApexStatisticsService {
         }
 
         const urlFriendlyName = statistics.global?.name.replaceAll(' ', '%20');
-        console.log(`https://apexlegendsstatus.com/profile/${statistics.global.platform}/${urlFriendlyName}`);
         embed.setURL(`https://apexlegendsstatus.com/profile/${statistics.global.platform}/${urlFriendlyName}`);
 
         // Rank Content ---------------------------------------------------------
