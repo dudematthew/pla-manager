@@ -358,7 +358,7 @@ export class ApexStatisticsService {
     private getBasicStatisticsEmbed() {
         return new EmbedBuilder()
             .setAuthor({
-                name: "Statystyki Apex Legends",
+                name: "Polskie Legendy Apex • Dane są aktualizowane jedynie jeśli założony jest odpowiedni tracker, mogą być więc nieaktualne",
                 // url: "https://www.google.pl",
                 iconURL: "https://www.freepnglogos.com/uploads/apex-legends-logo-png/apex-legends-transparent-picture-20.png",
             })
