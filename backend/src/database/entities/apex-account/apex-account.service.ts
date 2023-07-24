@@ -26,13 +26,13 @@ export class ApexAccountService {
 
   public rankToRoleColorDictionary = {
     'Rookie': '#e28743',
-    'Bronze': '#873e23',
-    'Silver': '#C0C0C0',
-    'Gold': '	#DAA520',
-    'Platinum': '#6495ED',
-    'Diamond': '#1E90FF',
-    'Master': '	#800080',
-    'Apex Predator': '#8B0000',
+    'Bronze': '#cd7f32',
+    'Silver': '#c0c0c0',
+    'Gold': '#ffd700',
+    'Platinum': '#e5e4e2',
+    'Diamond': '#b9f2ff',
+    'Master': '#8a2be2',
+    'Apex Predator': '#ff0000',
   }
 
   public platformToEmojiNameDictionary = {
@@ -40,6 +40,14 @@ export class ApexAccountService {
     'PS4': 'ps4',
     'X1': 'xbox',
     'SWITCH': 'switch',
+  };
+
+  public rankDivToRomanDictionary = {
+    '1': 'I',
+    '2': 'II',
+    '3': 'III',
+    '4': 'IV',
+    '0': '',
   };
 
   constructor(

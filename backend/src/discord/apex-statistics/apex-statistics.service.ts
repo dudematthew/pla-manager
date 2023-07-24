@@ -36,14 +36,14 @@ export class ApexStatisticsService {
         // todo: if user not found, create new user
 
         if (!user) {
-            Interaction.editReply(`Nie znaleziono użytkownika ${options.user.displayName}`);
+            Interaction.editReply(`Nie znaleziono użytkownika **${options.user.displayName}**`);
             return;
         }
 
         const apexAccount = user.apexAccount;
 
         if (!apexAccount) {
-            Interaction.editReply(`Użytkownik ${options.user.displayName} nie ma przypisanego konta Apex Legends`);
+            Interaction.editReply(`Użytkownik **${options.user.displayName}** nie ma przypisanego konta Apex Legends`);
             return;
         }
 
@@ -62,15 +62,14 @@ export class ApexStatisticsService {
     }
 
     private async getStatisticsEmbed(statistics: PlayerStatistics, user: GuildMember): Promise<EmbedBuilder> {
-        const embed = this.getBasicEmbed();
+        const embed = this.getBasicStatisticsEmbed();
         const description = [];
         const rankToRoleNameDictionary = this.apexAccountService.rankToRoleNameDictionary;
         const rankToRoleColorDictionary = this.apexAccountService.rankToRoleColorDictionary;
         const platformToEmojiNameDictionary = this.apexAccountService.platformToEmojiNameDictionary;
+        const rankDivToRomanDictionary = this.apexAccountService.rankDivToRomanDictionary;
 
         embed.setColor(rankToRoleColorDictionary[statistics.global.rank.rankName]);
-
-        console.log(`Getting rank emoji: ${statistics.global.rank.rankName}`);
 
         // Rank -----------------------------------------------------------------
         const rankEmoji = await this.emojiService.getDiscordEmojiByName(
@@ -102,6 +101,7 @@ export class ApexStatisticsService {
         if (isOnline) {
             statusText.push(`> ` + (isPlaying ? 'Rozpoczął grę' : 'Wszedł do lobby') + ` <t:${currentStateSinceTimestamp}:R>`);
             statusText.push(`> Skład: ${partyFull ? 'Pełny :x:' : 'Niepełny :white_check_mark:'}`);
+            statusText.push('ㅤ');
         }
             
         statusText.push(`> Lobby: ${(lobbyState == 'open') ? `Otwarte` : 'Zamknięte'} <:${lobbyStateEmoji.name}:${lobbyStateEmoji.id}>`);
@@ -109,7 +109,22 @@ export class ApexStatisticsService {
 
         // Level ----------------------------------------------------------------
         const level = statistics.global.level;
-        const levelEmoji = await this.emojiService.getDiscordEmojiByName('level');
+        const levelPrestige = statistics.global.levelPrestige;
+        let levelEmojiName = (level <= 100) ? 'level100' : 'level500';
+
+        switch (true) {
+            case (levelPrestige == 1):
+                levelEmojiName = 'tier1';
+                break;
+            case (levelPrestige == 2):
+                levelEmojiName = 'tier2';
+                break;
+            case (levelPrestige == 3):
+                levelEmojiName = 'tier3';
+                break;
+        }
+        
+        const levelEmoji = await this.emojiService.getDiscordEmojiByName(levelEmojiName) ?? null;
 
         // ----------------------------------------------------------------------
 
@@ -117,20 +132,27 @@ export class ApexStatisticsService {
         if (user) {
             embed
                 .setTitle(`**<:${platformEmoji.name}:${platformEmoji.id}> ${statistics.global.name}**`)
-                .setURL(`https://apexlegendsstatus.com/profile/${statistics.global.platform}/${statistics.global.name}`)
                 .setThumbnail(user.displayAvatarURL())
 
             description.push(`Konto użytkownika <@${user.id}>`);
         } else {
             embed
                 .setTitle(statistics.global.name)
-                .setURL(`https://apexlegendsstatus.com/profile/${statistics.global.platform}/${statistics.global.name}`)
                 .setThumbnail(statistics.global.avatar)
         }
 
-        description.push(`### <:${rankEmoji.name}:${rankEmoji.id}> **${statistics.global.rank.rankName}**`);
+        const urlFriendlyName = statistics.global.name.replace(' ', '%20');
+        console.log(`https://apexlegendsstatus.com/profile/${statistics.global.platform}/${urlFriendlyName}`)
+        embed.setURL(`https://apexlegendsstatus.com/profile/${statistics.global.platform}/${urlFriendlyName}`);
 
-        embed.setDescription(description.join('\n'));
+        // Rank Content ---------------------------------------------------------
+        description.push(`## <:${rankEmoji.name}:${rankEmoji.id}> **${statistics.global.rank.rankName} ${rankDivToRomanDictionary[statistics.global.rank.rankDiv]}** [**${statistics.global.rank.rankScore}** LP]`);
+        
+        if (statistics.global.rank.ladderPosPlatform != -1)
+            description.push(`:arrow_up: TOP **${statistics.global.rank.ladderPosPlatform}** na ${platform}`);
+        
+        description.push('ㅤ');
+        // ----------------------------------------------------------------------
 
         if (isOnline) {
             embed.addFields([
@@ -149,7 +171,41 @@ export class ApexStatisticsService {
             ])
         }
 
-        
+        embed.addFields([
+            {
+                name: `<:${levelEmoji.name}:${levelEmoji.id}> **Poziom ${level}**`,
+                value: `> Poziom Prestiżu: **${levelPrestige}**
+                > **${statistics.global.toNextLevelPercent}%** do następnego poziomu
+                ㅤ`,
+                inline: true,
+            }
+        ]);
+
+        // Legend ----------------------------------------------------------------
+
+        const legend = statistics.legends.selected;
+        const stats = legend.data;
+
+        const legendText = [];
+
+        for (const stat of stats) {
+            legendText.push(`> **${stat.name}**: \`${stat.value}\``);
+        }
+
+
+        embed.addFields([
+            {
+                name: `Wybrana Legenda: **${legend.LegendName}**`,
+                value: legendText.join('\n'),
+                inline: false,
+            }
+        ]);
+
+        embed.setImage(legend.ImgAssets.banner);
+
+        // ----------------------------------------------------------------------
+
+        embed.setDescription(description.join('\n'));
 
         return embed;
     }
@@ -158,7 +214,7 @@ export class ApexStatisticsService {
      * Get basic embed with logo and color
      * @returns basic embed with logo and color
      */
-    private getBasicEmbed() {
+    private getBasicStatisticsEmbed() {
         return new EmbedBuilder()
             .setAuthor({
                 name: "Statystyki Apex Legends",
