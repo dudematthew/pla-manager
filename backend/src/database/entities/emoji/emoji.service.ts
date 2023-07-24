@@ -35,7 +35,7 @@ export class EmojiService {
   findAll() {
     return this.emojiRepository.find({
       relations: [
-        'role'
+        'roles'
       ]
     });
   }
@@ -44,7 +44,7 @@ export class EmojiService {
     return this.emojiRepository.findOne({ 
       where: { id },
       relations: [
-        'role',
+        'roles',
       ]
      });
   }
@@ -53,7 +53,7 @@ export class EmojiService {
     return this.emojiRepository.findOne({ 
       where: { name },
       relations: [
-        'role',
+        'roles',
       ]
      });
   }
@@ -62,7 +62,7 @@ export class EmojiService {
     return this.emojiRepository.findOne({ 
       where: { discordId },
       relations: [
-        'role',
+        'roles',
       ]
      });
   }
@@ -115,7 +115,7 @@ export class EmojiService {
         name: In(teamEmojiNames)
       },
       relations: [
-        'role'
+        'roles'
       ]
     });
   }

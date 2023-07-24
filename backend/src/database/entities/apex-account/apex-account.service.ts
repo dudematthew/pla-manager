@@ -24,6 +24,39 @@ export class ApexAccountService {
     'Apex Predator': 'predator',
   }
 
+  public rankToRoleColorDictionary = {
+    'Rookie': '#e28743',
+    'Bronze': '#cd7f32',
+    'Silver': '#c0c0c0',
+    'Gold': '#ffd700',
+    'Platinum': '#e5e4e2',
+    'Diamond': '#b9f2ff',
+    'Master': '#8a2be2',
+    'Apex Predator': '#ff0000',
+  }
+
+  public platformToEmojiNameDictionary = {
+    'PC': 'origin',
+    'PS4': 'ps4',
+    'X1': 'xbox',
+    'SWITCH': 'switch',
+  };
+
+  public rankDivToRomanDictionary = {
+    '1': 'I',
+    '2': 'II',
+    '3': 'III',
+    '4': 'IV',
+    '0': '',
+  };
+
+  public platformAliases = {
+    'PC': 'PC',
+    'X1': 'Xbox',
+    'PS4': 'PlayStation',
+    'SWITCH': 'Nintendo Switch'
+}
+
   constructor(
     @InjectRepository(ApexAccountEntity)
     private readonly apexAccountRepository: Repository<ApexAccountEntity>,
@@ -172,6 +205,40 @@ export class ApexAccountService {
     return await this.apexAccountRepository.find({
       relations: ['user']
     });
+  }
+
+  /**
+   * @param accountId id of the account
+   * @returns rank of the account on the server
+   */
+  async getServerRankByAccountId(accountId: number) {
+
+    console.log('account id: ', accountId);
+
+    let subquery = this.apexAccountRepository.createQueryBuilder("apexAccount")
+      .select('apexAccount.id', 'id')
+      .addSelect('apexAccount.rank_score', 'rank_score')
+      .addSelect('ROW_NUMBER() OVER (ORDER BY apexAccount.rank_score DESC)', 'rank');
+
+    let result = await this.apexAccountRepository.createQueryBuilder()
+      .select('subQuery.rank')
+      .from("(" + subquery.getSql() + ")", 'subQuery')
+      .where('subQuery.id = :account_id', { account_id: accountId })
+      .getRawOne();
+
+    return result?.rank ?? null;
+  }
+
+  /**
+   * @param limit limit of accounts to return
+   * @returns top X accounts on the server
+   */
+  async getServerRankTopX(limit: number): Promise<ApexAccountEntity[]> {
+    return await this.apexAccountRepository.createQueryBuilder("apexAccount")
+      .select('apexAccount.*')
+      .addSelect('ROW_NUMBER() OVER (ORDER BY apexAccount.rank_score DESC)', 'rank')
+      .limit(limit)
+      .getRawMany();
   }
 
   public getRoleNameByRankName(rankName: string): string {
