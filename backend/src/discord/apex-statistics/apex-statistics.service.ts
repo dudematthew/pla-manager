@@ -79,11 +79,11 @@ export class ApexStatisticsService {
         const statistics = await this.apexApiService.getPlayerStatisticsByName(options.username, options.platform, {});
 
         if (statistics?.error) {
-            Interaction.editReply(`### :x: Nie znaleziono konta na platformie *${platformAliases[options.platform]}* dla użytkownika **${options.username}**`);
+            Interaction.editReply(`### :x: Nie znaleziono konta na platformie *${platformAliases[options.platform]}* dla użytkownika *${options.username}*`);
             return;
         }
         
-        const apexAccount = await this.apexAccountService.findByUID(`${statistics.global.uid}`) ?? null;
+        const apexAccount = await this.apexAccountService.findByUID(`${statistics?.global?.uid}`) ?? null;
 
         const user = apexAccount ? apexAccount.user : null;
 
@@ -123,18 +123,18 @@ export class ApexStatisticsService {
         const rankDivToRomanDictionary = this.apexAccountService.rankDivToRomanDictionary;
         const platformAliases = this.apexAccountService.platformAliases;
 
-        embed.setColor(rankToRoleColorDictionary[statistics.global.rank.rankName]);
+        embed.setColor(rankToRoleColorDictionary[statistics?.global?.rank.rankName]);
 
         // Rank -----------------------------------------------------------------
         const rankEmoji = await this.emojiService.findByName(
-            rankToRoleNameDictionary[statistics.global.rank.rankName]
+            rankToRoleNameDictionary[statistics?.global?.rank.rankName]
         );
         const plaEmoji = await this.emojiService.findByName('pla');
         const serverRank = ((user?.apexAccount ?? null) != null) ? await this.apexAccountService.getServerRankByAccountId(user.apexAccount.id): null;
         // ----------------------------------------------------------------------
 
         // Platform -------------------------------------------------------------
-        const platform = statistics.global.platform;
+        const platform = statistics?.global?.platform;
         const platformEmoji = await this.emojiService.findByName(
             platformToEmojiNameDictionary[platform]
         );
@@ -155,7 +155,7 @@ export class ApexStatisticsService {
         const totalStats = [];
 
         for (const statName in totalStatsNames) {
-            const statValue = statistics.total[statName] ?? null;
+            const statValue = statistics?.total[statName] ?? null;
 
             if (statValue == null || statValue.value == -1)
                 continue;
@@ -169,11 +169,11 @@ export class ApexStatisticsService {
 
 
         // Status ---------------------------------------------------------------
-        const isOnline = statistics.realtime.isOnline;
-        const isPlaying = statistics.realtime.isInGame;
-        const partyFull = statistics.realtime.partyFull;
-        const lobbyState = statistics.realtime.lobbyState == 'open' ? 'open' : 'closed';
-        const currentStateSinceTimestamp = statistics.realtime.currentStateSinceTimestamp;
+        const isOnline = statistics?.realtime?.isOnline;
+        const isPlaying = statistics?.realtime?.isInGame;
+        const partyFull = statistics?.realtime?.partyFull;
+        const lobbyState = statistics?.realtime?.lobbyState == 'open' ? 'open' : 'closed';
+        const currentStateSinceTimestamp = statistics?.realtime?.currentStateSinceTimestamp;
 
         const statusEmojiName = !isOnline ? 'offline' : isPlaying ? 'playing' : 'online';
         const statusEmoji = await this.emojiService.findByName(statusEmojiName);
@@ -191,8 +191,8 @@ export class ApexStatisticsService {
         // ----------------------------------------------------------------------
 
         // Level ----------------------------------------------------------------
-        const level = statistics.global.level;
-        const levelPrestige = statistics.global.levelPrestige;
+        const level = statistics?.global?.level;
+        const levelPrestige = statistics?.global?.levelPrestige;
         let levelEmojiName = (level <= 100) ? 'level100' : 'level500';
 
         switch (true) {
@@ -210,7 +210,7 @@ export class ApexStatisticsService {
         const levelEmoji = await this.emojiService.findByName(levelEmojiName) ?? null;
         // ----------------------------------------------------------------------
 
-        embed.setTitle(`**<:${platformEmoji?.name}:${platformEmoji.discordId}> ${statistics.global?.name}**`)
+        embed.setTitle(`**<:${platformEmoji?.name}:${platformEmoji.discordId}> ${statistics?.global?.name}**`)
 
         // If discord user is null then user plain data
         if (discordUser) {
@@ -218,24 +218,24 @@ export class ApexStatisticsService {
 
             description.push(`Konto użytkownika <@${discordUser.id}>`);
         } else {
-            embed.setThumbnail(statistics.global.avatar ?? statistics.global.rank.rankImg)
+            embed.setThumbnail(statistics?.global?.avatar ?? statistics?.global?.rank.rankImg)
 
             description.push(`*Konto niepowiązane na serwerze PLA*`);
         }
 
-        const urlFriendlyName = statistics.global?.name.replaceAll(' ', '%20');
-        embed.setURL(`https://apexlegendsstatus.com/profile/${statistics.global.platform}/${urlFriendlyName}`);
+        const urlFriendlyName = statistics?.global?.name.replaceAll(' ', '%20');
+        embed.setURL(`https://apexlegendsstatus.com/profile/${statistics?.global?.platform}/${urlFriendlyName}`);
 
         // Rank Content ---------------------------------------------------------
-        description.push(`## <:${rankEmoji?.name}:${rankEmoji.discordId}> **${statistics.global.rank.rankName} ${rankDivToRomanDictionary[statistics.global.rank.rankDiv]}**`);
+        description.push(`## <:${rankEmoji?.name}:${rankEmoji.discordId}> **${statistics?.global?.rank.rankName} ${rankDivToRomanDictionary[statistics?.global?.rank.rankDiv]}**`);
         
-        if (statistics.global.rank.ladderPosPlatform != -1)
-            description.push(`:arrow_up: TOP **${statistics.global.rank.ladderPosPlatform}** na ${platformAliases[platform]}`);
+        if (statistics?.global?.rank.ladderPosPlatform != -1)
+            description.push(`:arrow_up: TOP **${statistics?.global?.rank.ladderPosPlatform}** na ${platformAliases[platform]}`);
 
         if(serverRank)
             description.push(`<:${plaEmoji?.name}:${plaEmoji.discordId}> TOP **${serverRank}** na serwerze **PLA**`);
 
-        description.push(`**:chart_with_upwards_trend: ${statistics.global.rank.rankScore}** LP`);
+        description.push(`**:chart_with_upwards_trend: ${statistics?.global?.rank.rankScore}** LP`);
         
         description.push('ㅤ');
         // ----------------------------------------------------------------------
@@ -261,7 +261,7 @@ export class ApexStatisticsService {
             {
                 name: `<:${levelEmoji?.name}:${levelEmoji.discordId}> **Poziom ${level}**`,
                 value: `> Poziom Prestiżu: **${levelPrestige}**
-                > **${statistics.global.toNextLevelPercent}%** do następnego poziomu
+                > **${statistics?.global?.toNextLevelPercent}%** do następnego poziomu
                 ㅤ`,
                 inline: true,
             }
@@ -286,8 +286,8 @@ export class ApexStatisticsService {
 
         // Legend ----------------------------------------------------------------
 
-        const legend = statistics.legends.selected;
-        const stats = legend.data;
+        const legend = statistics?.legends?.selected;
+        const stats = legend?.data;
 
         const legendText = [];
 
@@ -298,18 +298,18 @@ export class ApexStatisticsService {
 
         embed.addFields([
             {
-                name: `:radio_button:  Wybrana Legenda: **${legend.LegendName}**`,
+                name: `:radio_button:  Wybrana Legenda: **${legend?.LegendName}**`,
                 value: legendText.join('\n'),
                 inline: false,
             }
         ]);
 
-        embed.setImage(legend.ImgAssets.banner);
+        embed.setImage(legend?.ImgAssets.banner);
 
         // ----------------------------------------------------------------------
 
         // If some data couldn't be fetched add info to footer
-        if (statistics.global.rank.ladderPosPlatform == -1 || !serverRank) {
+        if (statistics?.global?.rank.ladderPosPlatform == -1 || !serverRank) {
             embed.setFooter({
                 text: 'Polskie Legendy Apex • Dane są aktualizowane jedynie jeśli założony jest odpowiedni tracker, mogą być więc nieaktualne',
                 iconURL: this.configService.get<string>('images.logo-transparent')
