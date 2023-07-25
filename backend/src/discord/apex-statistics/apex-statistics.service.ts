@@ -5,7 +5,7 @@ import { ApexAccountService } from 'src/database/entities/apex-account/apex-acco
 import { UserService } from 'src/database/entities/user/user.service';
 import { DiscordService } from '../discord.service';
 import { handleStatisticsDiscordCommandDto } from '../commands/dtos/handle-statistics-discord-command.dto';
-import { CacheType, ChatInputCommandInteraction, ColorResolvable, EmbedBuilder, GuildMember } from 'discord.js';
+import { CacheType, ChatInputCommandInteraction, ColorResolvable, EmbedBuilder, GuildMember, PermissionsBitField } from 'discord.js';
 import { ApexAccountEntity } from 'src/database/entities/apex-account/entities/apex-account.entity';
 import { PlayerStatistics } from 'src/apex-api/player-statistics.interface';
 import { UserEntity } from 'src/database/entities/user/user.entity';
@@ -29,58 +29,62 @@ export class ApexStatisticsService {
 
     /**
      * Command that handles statistics for Discord user
-     * @param Interaction 
+     * @param interaction 
      * @param options 
      */
-    public async handleStatisticsDiscordCommand(Interaction: ChatInputCommandInteraction<CacheType>, options: handleStatisticsDiscordCommandDto) {
+    public async handleStatisticsDiscordCommand(interaction: ChatInputCommandInteraction<CacheType>, options: handleStatisticsDiscordCommandDto) {
         // Check if interaction is deferred
-        if (!Interaction.deferred)
-            await Interaction.deferReply();
+        if (!interaction.deferred)
+            await interaction.deferReply();
         
-        const user = await this.userService.findByDiscordId(options.user.id);
+        let user = await this.userService.findByDiscordId(options.user.id);
 
-        // todo: if user not found, create new user
+        // If user is null, create new user
+        if (!user)
+            user = await this.createUser(options.user.id, options.user.permissions.has(PermissionsBitField.Flags.Administrator));
 
+        // If user is null (something went wrong), abort
         if (!user) {
-            Interaction.editReply(`### :x: Nie znaleziono użytkownika **${options.user.displayName}**`);
-            return;
+            interaction.editReply(`### :x: Nie jesteś zapisany w bazie i wystąpił błąd podczas próby naprawy tego faktu. Spróbuj ponownie później.`);
+            console.trace('Couldn\'t create user');
+            return null;
         }
 
         const apexAccount = user.apexAccount;
 
         if (!apexAccount) {
-            Interaction.editReply(`### :x: Użytkownik **${options.user.displayName}** nie ma przypisanego konta Apex Legends\nKonto może zostać połączone z kontem Apex Legends za pomocą komendy **\`/połącz\`**`);
+            interaction.editReply(`### :x: Użytkownik **${options.user.displayName}** nie ma przypisanego konta Apex Legends\nKonto może zostać połączone z kontem Apex Legends za pomocą komendy **\`/połącz\`**`);
             return;
         }
 
         const statistics = await this.apexApiService.getPlayerStatisticsByUID(apexAccount.uid, apexAccount.platform as 'PC' | 'PS4' | 'X1' | 'SWITCH', {});
 
         if (statistics?.error) {
-            Interaction.editReply(`### :x: Nie znaleziono statystyk dla użytkownika **${options.user.displayName}**`);
+            interaction.editReply(`### :x: Nie znaleziono statystyk dla użytkownika **${options.user.displayName}**`);
             return;
         }
 
-        // Interaction.editReply(`Statystyki użytkownika **${options.user.displayName}**`);
+        // interaction.editReply(`Statystyki użytkownika **${options.user.displayName}**`);
 
         const embed = await this.getStatisticsEmbed(statistics, options.user, user);
 
-        Interaction.editReply({ embeds: [embed] });
+        interaction.editReply({ embeds: [embed] });
     }
 
     /**
      * Command that handles statistics for Apex Legends account
-     * @param Interaction Discord interaction
+     * @param interaction Discord interaction
      * @param options Command options
      */
-    public async handleStatisticsApexCommand(Interaction: ChatInputCommandInteraction<CacheType>, options: handleStatisticsApexCommandDto) {
-        await Interaction.deferReply();
+    public async handleStatisticsApexCommand(interaction: ChatInputCommandInteraction<CacheType>, options: handleStatisticsApexCommandDto) {
+        await interaction.deferReply();
 
         const platformAliases = this.apexAccountService.platformAliases;
 
         const statistics = await this.apexApiService.getPlayerStatisticsByName(options.username, options.platform, {});
 
         if (statistics?.error) {
-            Interaction.editReply(`### :x: Nie znaleziono konta na platformie *${platformAliases[options.platform]}* dla użytkownika *${options.username}*`);
+            interaction.editReply(`### :x: Nie znaleziono konta na platformie *${platformAliases[options.platform]}* dla użytkownika *${options.username}*`);
             return;
         }
         
@@ -95,24 +99,32 @@ export class ApexStatisticsService {
 
         const embed = await this.getStatisticsEmbed(statistics, discordUser, user);
 
-        Interaction.editReply({ embeds: [embed] });
+        interaction.editReply({ embeds: [embed] });
     }
 
-    public async handleStatisticsOwnCommand(Interaction: ChatInputCommandInteraction<CacheType>) {
-        await Interaction.deferReply();
+    public async handleStatisticsOwnCommand(interaction: ChatInputCommandInteraction<CacheType>) {
+        await interaction.deferReply();
 
-        const discordUser = Interaction.member;
+        const discordUser = interaction.member;
 
         const user = await this.userService.findByDiscordId(discordUser.user.id);
 
         const apexAccount = user?.apexAccount;
 
         if (!apexAccount || !user) {
-            Interaction.editReply(`### :x: Nie znaleziono przypisanego konta Apex Legends! Możesz je połączyć za pomocą komendy **\`/połącz\`**`);
+            interaction.editReply(`### :x: Nie znaleziono przypisanego konta Apex Legends! Możesz je połączyć za pomocą komendy **\`/połącz\`**`);
             return;
         }
 
-        this.handleStatisticsDiscordCommand(Interaction, {user: discordUser as GuildMember});
+        this.handleStatisticsDiscordCommand(interaction, {user: discordUser as GuildMember});
+    }
+
+    public async createUser(userDiscordId, isAdmin): Promise<UserEntity> {
+        console.log(`Creating user ${userDiscordId} with admin: ${isAdmin}`);
+        return await this.userService.create({
+            discordId: userDiscordId,
+            isAdmin: isAdmin,
+        });
     }
 
     private async getStatisticsEmbed(statistics: PlayerStatistics, discordUser: GuildMember, user: UserEntity): Promise<EmbedBuilder> {
@@ -256,12 +268,18 @@ export class ApexStatisticsService {
             ])
         }
 
+        const levelText = [];
+
+        if (levelPrestige > 0)
+            levelText.push(`> Poziom Prestiżu: **${levelPrestige}**`);
+
+        levelText.push(`> **${statistics?.global?.toNextLevelPercent}%** do następnego poziomu`);
+        levelText.push('ㅤ');
+
         embed.addFields([
             {
                 name: `<:${levelEmoji?.name}:${levelEmoji.discordId}> **Poziom ${level}**`,
-                value: `> Poziom Prestiżu: **${levelPrestige}**
-                > **${statistics?.global?.toNextLevelPercent}%** do następnego poziomu
-                ㅤ`,
+                value: levelText.join('\n'),
                 inline: true,
             }
         ]);
@@ -334,7 +352,7 @@ export class ApexStatisticsService {
             .setAuthor({
                 name: "Statystyki Apex Legends",
                 // url: "https://www.google.pl",
-                iconURL: "https://www.freepnglogos.com/uploads/apex-legends-logo-png/apex-legends-transparent-picture-20.png",
+                iconURL: this.configService.get<string>('images.apex-icon'),
             })
             .setFooter({
                 text: 'Polskie Legendy Apex • Dane są aktualizowane jedynie jeśli założony jest odpowiedni tracker, mogą być więc nieaktualne',

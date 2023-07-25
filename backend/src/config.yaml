@@ -6,6 +6,7 @@ images:
   loading: https://i.imgur.com/ZOjdpq7.gif
   success: https://i.imgur.com/gpEThdv.png
   unresolved: https://i.imgur.com/CIXXYvO.png
+  apex-icon: https://i.imgur.com/XxZ5M0V.png
 
 theme:
   color-primary: '#FF4343'
