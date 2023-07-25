@@ -20,6 +20,7 @@ import { StatisticsCommandsService } from './statistics-commands.service';
     InsideModule,
     EmojiModule,
     DatabaseModule,
+    ApexStatisticsModule,
     forwardRef(() => DiscordModule),
   ],
   providers: [

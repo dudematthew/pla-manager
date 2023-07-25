@@ -11,6 +11,8 @@ import { RoleService } from "src/database/entities/role/role.service";
 import { DatabaseService } from "src/database/database.service";
 import { ApexSyncService } from "../apex-connect/apex-sync.service";
 import { handleAdminCreateMessageDto } from "./dtos/admin-create-message.dto";
+import { AdminCreateLeaderboardDto } from "./dtos/admin-create-leaderboard.dto";
+import { ApexLeaderboardService } from "../apex-statistics/apex-leaderboard.service";
 
 export const AdminCommandsDecorator = createCommandGroupDecorator({
     name: 'admin',
@@ -28,6 +30,7 @@ export class AdminCommandsService {
         private readonly roleService: RoleService,
         private readonly databaseService: DatabaseService,
         private readonly apexSyncService: ApexSyncService,
+        private readonly apexLeaderboardService: ApexLeaderboardService,
     ) {}
 
     @UseGuards(AdminGuard)
@@ -184,4 +187,17 @@ export class AdminCommandsService {
 
         response.edit({ content: `Backup bazy danych został wykonany ✅`});
     }
+
+    @UseGuards(AdminGuard)
+    @UseFilters(ForbiddenExceptionFilter)
+    @Subcommand({
+        name: 'stwórz-tablicę-wyników',
+        description: 'Stwórz tablicę TOP 20 graczy Apex Legends na serwerze',
+    })
+    public async onAdminCreateApexLeaderboard(@Context() [Interaction]: SlashCommandContext, @Options() options: AdminCreateLeaderboardDto) {
+        console.log(`[CommandsService] onAdminCreateApexLeaderboard`);
+
+        await this.apexLeaderboardService.handleAdminCreateLeaderboard(Interaction, options);
+    }
+
 }
