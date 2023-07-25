@@ -53,4 +53,16 @@ export class DiscordUpdate {
     public onTypingStart(@Context() [typing]: ContextOf<'typingStart'>) {
         this.discordListeners.handleTypingStart(typing);
     }
+
+    @On('guildMemberEntered')
+    public onGuildMemberEntered(@Context() [member]: ContextOf<'guildMemberEntered'>) {
+        this.logger.verbose(`Member accepted the server rules: ${member.user.username}`);
+        this.discordListeners.handleGuildMemberEntered(member);
+    }
+
+    @On('guildMemberAdd')
+    public onGuildMemberAdd(@Context() [member]: ContextOf<'guildMemberAdd'>) {
+        this.logger.verbose(`Member added: ${member.user.username}`);
+        this.discordListeners.handleGuildMemberAdd(member);
+    }
 }

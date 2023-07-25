@@ -1,12 +1,13 @@
 import { Injectable } from "@nestjs/common";
 import { LfgService } from "./lfg/lfg.service";
-import { Message, User, Channel, ChannelType, Typing, PartialUser } from "discord.js";
+import { Message, User, Channel, ChannelType, Typing, PartialUser, GuildMember } from "discord.js";
 import { ChannelService } from "src/database/entities/channel/channel.service";
 import { ChannelEntity } from "src/database/entities/channel/channel.entity";
 import { Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { ApexConnectService } from "./apex-connect/apex-connect.service";
 import { IntroduceService } from "./introduce/introduce.service";
+import { UserService } from "src/database/entities/user/user.service";
 
 interface MessageCreateListener {
     channelPattern: string;
@@ -23,6 +24,11 @@ interface TypingStartListener {
     callback: (typing: TypingData) => void;
 }
 
+interface GuildMemberEnteredListener {
+    memberPattern: string;
+    callback: (member: MemberData) => void;
+}
+
 export interface MessageData {
     channel: Channel;
     message: Message;
@@ -32,6 +38,10 @@ export interface MessageData {
 export interface TypingData {
     channel: Channel;
     user: User | PartialUser;
+}
+
+export interface MemberData {
+    user: GuildMember;
 }
 
 /**
@@ -50,6 +60,10 @@ export default class DiscordListeners {
 
     private readonly typingStartListeners: TypingStartListener[];
 
+    private readonly guildMemberEnteredListeners: GuildMemberEnteredListener[];
+
+    private readonly guildMemberAddListeners: GuildMemberEnteredListener[];
+
     /**
      * The logger instance
      */
@@ -61,6 +75,7 @@ export default class DiscordListeners {
         private readonly configService: ConfigService,
         private readonly apexConnectService: ApexConnectService,
         private readonly introduceService: IntroduceService,
+        private readonly userService: UserService,
     ) {
         this.wcmatch = require('wildcard-match');
         
@@ -152,6 +167,37 @@ export default class DiscordListeners {
                 channelType: [],
                 callback: (typingData: TypingData) => {
                     this.introduceService.handleIntroduceTyping(typingData);
+                }
+            }
+        ]
+
+        /**
+         * The guild member entered listeners - these are the listeners that should be
+         * activated when a user enters the server.
+         * 
+         * Available patterns:
+         * memberPattern: The pattern to match against the user name
+         * 
+         * @var GuildMemberEnteredListener[]
+         */
+        this.guildMemberEnteredListeners = [
+            // The guild member rule accept listener
+            // {
+            //     memberPattern: '**',
+            //     callback: (member: MemberData) => {
+            //         console.log(`Member accepted the rules: ${member.user.user.username}`);
+            //     }
+            // }
+        ]
+
+        this.guildMemberAddListeners = [
+            // The guild member join listener
+            {
+                memberPattern: '**',
+                callback: async (member: MemberData) => {
+                    const user = await this.userService.getOrCreateByDiscordUser(member.user.user);
+                    
+                    this.logger.verbose(`Member joined: ${member.user.user.username} - Updated user in database: ${user.id}`);
                 }
             }
         ]
@@ -282,7 +328,7 @@ export default class DiscordListeners {
                 continue;
             }
 
-            console.log('Matched listener: ' + listener);
+            console.log('Matched listener: ' + listener.channelPattern + ' ' + listener.messagePattern + ' ' + listener.userPattern);
 
             // If all patterns match, add callback to callbacks
             callbacks.push(listener.callback);
@@ -293,6 +339,68 @@ export default class DiscordListeners {
             try {
                 this.logger.log('Calling callback: ' + callback.name);
                 callback(messageData);
+            } catch (e) {
+                this.logger.error(e);
+            }
+        });
+    }
+
+    public async handleGuildMemberEntered(member: GuildMember) {
+        const memberData: MemberData = {
+            user: member,
+        };
+
+        let callbacks: ((member: MemberData) => void)[] = [];
+
+        // Check if member matches any of the listeners
+        for(const listener of this.guildMemberEnteredListeners) {
+            // Check if user matches pattern ------------------------------
+            if (!this.matchPattern(memberData.user.id, this.escapeSpecialCharacters(listener.memberPattern))) {
+                continue;
+            }
+
+            console.log('Matched listener: ' + listener.memberPattern);
+
+            // If all patterns match, add callback to callbacks
+            callbacks.push(listener.callback);
+        }
+
+        // Call all callbacks
+        callbacks.forEach((callback: (member: MemberData) => void) => {
+            try {
+                this.logger.log('Calling callback: ' + callback.name);
+                callback(memberData);
+            } catch (e) {
+                this.logger.error(e);
+            }
+        });
+    }
+
+    public async handleGuildMemberAdd(member: GuildMember) {
+        const memberData: MemberData = {
+            user: member,
+        };
+
+        let callbacks: ((member: MemberData) => void)[] = [];
+
+        // Check if member matches any of the listeners
+        for(const listener of this.guildMemberAddListeners) {
+            // Check if user matches pattern ------------------------------
+            if (!this.matchPattern(memberData.user.id, this.escapeSpecialCharacters(listener.memberPattern))) {
+                continue;
+            }
+
+            console.log('Matched listener: ' + listener.memberPattern);
+
+            // If all patterns match, add callback to callbacks
+            callbacks.push(listener.callback);
+        }
+
+        // Call all callbacks
+        callbacks.forEach((callback: (member: MemberData) => void) => {
+            try {
+                this.logger.log('Calling callback: ' + callback.name);
+                callback(memberData);
             } catch (e) {
                 this.logger.error(e);
             }
