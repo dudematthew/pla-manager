@@ -18,6 +18,7 @@ import { DatabaseService } from "./database.service";
 import { DiscordModule } from "src/discord/discord.module";
 import { MessageModule } from './entities/message/message.module';
 import { MessageEntity } from "./entities/message/entities/message.entity";
+import { ApexAccountHistoryEntity } from "./entities/apex-account-history/entities/apex-account-history.entity";
 
 @Module({
     imports: [
@@ -40,6 +41,7 @@ import { MessageEntity } from "./entities/message/entities/message.entity";
                     TourneyEntity,
                     TourneyTeamEntity,
                     ApexAccountEntity,
+                    ApexAccountHistoryEntity,
                     EmojiEntity,
                     MessageEntity,
                 ],

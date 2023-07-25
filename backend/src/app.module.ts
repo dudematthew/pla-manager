@@ -27,6 +27,7 @@ import { ApexConnectModule } from './discord/apex-connect/apex-connect.module';
 import { InsideModule } from './discord/inside/inside.module';
 import { RoleGroupModule } from './database/entities/role-group/role-group.module';
 import { MessageEntity } from './database/entities/message/entities/message.entity';
+import { ApexAccountHistoryModule } from './database/entities/apex-account-history/apex-account-history.module';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { MessageEntity } from './database/entities/message/entities/message.enti
     InsideModule,
     RoleGroupModule,
     UserModule,
+    ApexAccountHistoryModule,
     TourneyModule,
     MessageEntity,
   ],
