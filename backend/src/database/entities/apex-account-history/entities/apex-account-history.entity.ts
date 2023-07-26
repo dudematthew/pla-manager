@@ -15,11 +15,11 @@ export class ApexAccountHistoryEntity extends BaseEntity {
     apexAccount: ApexAccountEntity;
 
     // name
-    @Column({ unique: true })
+    @Column()
     name: string;
 
     // uid
-    @Column({ unique: true })
+    @Column()
     uid: string;
 
     // avatar url

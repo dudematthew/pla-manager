@@ -15,6 +15,7 @@ export class ApexAccountHistoryService {
   ) {}
 
   public async create (account: ApexAccountEntity) {
+
     // Create new ApexAccountHistoryEntity
     const newAccountHistoryChunk = this.apexAccountHistoryRepository.create({
       ...account,
@@ -23,6 +24,11 @@ export class ApexAccountHistoryService {
       updatedAt: new Date(),
     });
 
-    return await this.apexAccountHistoryRepository.save(newAccountHistoryChunk);
+    // Remove id from new ApexAccountHistoryEntity so it can be created
+    delete newAccountHistoryChunk.id;
+
+    console.log("Creating new account history chunk: ", newAccountHistoryChunk);
+
+    return await this.apexAccountHistoryRepository.insert(newAccountHistoryChunk);
   }
 }
