@@ -1,13 +1,16 @@
 import { Injectable } from "@nestjs/common";
-import { CacheType, ChannelType, ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
+import { CacheType, ChannelType, ChatInputCommandInteraction, EmbedBuilder, GuildMember } from "discord.js";
 import { AdminCreateLeaderboardDto } from "../commands/dtos/admin-create-leaderboard.dto";
 import { ConfigService } from "@nestjs/config";
+import { HtmlApiService } from "src/html-api/html-api.service";
+import { TopPlayerTemplateParams } from "src/html-api/templates/top-player";
 
 @Injectable()
 export class ApexLeaderboardService {
 
     constructor(
         private readonly configService: ConfigService,
+        private readonly htmlApiService: HtmlApiService,
     ) {}
 
     public async handleAdminCreateLeaderboard(interaction: ChatInputCommandInteraction<CacheType>, options: AdminCreateLeaderboardDto) {
@@ -25,6 +28,19 @@ export class ApexLeaderboardService {
         }
 
         const embed = await this.getBasicLeaderboardEmbed();
+
+        const member = interaction.member as GuildMember;
+
+        console.log('LOGO: ', this.configService.get<string>('images.logo'));
+
+        const topImageUrl = await this.htmlApiService.getImageFromHtml({
+            logoUrl: this.configService.get<string>('images.logo-transparent-small'),
+            avatarImgUrl: interaction.user.displayAvatarURL(),
+            playerName: member.displayName,
+            playerNickname: interaction.user.username,
+        } as TopPlayerTemplateParams, 'topPlayer');
+
+        console.info('TOP IMAGE URL: ', topImageUrl);
 
         const message = await options.channel.send({ embeds: [embed] });
     }
