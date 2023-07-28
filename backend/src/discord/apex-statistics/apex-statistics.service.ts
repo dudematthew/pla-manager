@@ -5,7 +5,7 @@ import { ApexAccountService } from 'src/database/entities/apex-account/apex-acco
 import { UserService } from 'src/database/entities/user/user.service';
 import { DiscordService } from '../discord.service';
 import { handleStatisticsDiscordCommandDto } from '../commands/dtos/handle-statistics-discord-command.dto';
-import { CacheType, ChatInputCommandInteraction, ColorResolvable, EmbedBuilder, GuildMember, PermissionsBitField } from 'discord.js';
+import { AttachmentBuilder, BufferResolvable, CacheType, ChatInputCommandInteraction, Client, ColorResolvable, EmbedBuilder, GuildMember, MessagePayload, PermissionsBitField } from 'discord.js';
 import { ApexAccountEntity } from 'src/database/entities/apex-account/entities/apex-account.entity';
 import { PlayerStatistics } from 'src/apex-api/player-statistics.interface';
 import { UserEntity } from 'src/database/entities/user/user.entity';
@@ -14,9 +14,15 @@ import { handleStatisticsApexCommandDto } from '../commands/dtos/handle-statisti
 import { platformAliases } from '../commands/dtos/handle-connect.command.dto';
 import { platform } from 'os';
 import { Console } from 'console';
+import { ApexAccountHistoryEntity } from 'src/database/entities/apex-account-history/entities/apex-account-history.entity';
+import { ApexAccountHistoryService } from 'src/database/entities/apex-account-history/apex-account-history.service';
+const { ChartJSNodeCanvas } = require('chartjs-node-canvas');
 
 @Injectable()
 export class ApexStatisticsService {
+
+    // Canvas render service
+    private canvasRenderService;
 
     constructor(
         private readonly apexApiService: ApexApiService,
@@ -25,7 +31,32 @@ export class ApexStatisticsService {
         private readonly userService: UserService,
         private readonly discordService: DiscordService,
         private readonly emojiService: EmojiService,
-    ) {}
+        private readonly apexAccountHistoryService: ApexAccountHistoryService,
+    ) {
+        const Annotation = require('chartjs-plugin-annotation');
+
+        // Create canvas render service
+        this.canvasRenderService = new ChartJSNodeCanvas({ 
+            width: 700, 
+            height: 300,
+            plugins: {
+                modern: ['chartjs-plugin-annotation']
+            },
+            chartCallback: (ChartJS) => {
+                console.log('ChartJS callback: ', Annotation);
+                ChartJS.register(Annotation);
+                ChartJS.register({
+                    id: 'theme',
+                    beforeDraw: (chart) => {
+                        const ctx = chart.ctx;
+                        ctx.fillStyle = '#202124';
+                        ctx.fillRect(0, 0, chart.width, chart.height);
+                    }
+                });
+            }
+        });
+
+    }
 
     /**
      * Command that handles statistics for Discord user
@@ -66,9 +97,9 @@ export class ApexStatisticsService {
 
         // interaction.editReply(`Statystyki użytkownika **${options.user.displayName}**`);
 
-        const embed = await this.getStatisticsEmbed(statistics, options.user, user);
+        const message = await this.getStatisticsMessage(statistics, options.user, user);
 
-        interaction.editReply({ embeds: [embed] });
+        interaction.editReply(message);
     }
 
     /**
@@ -97,9 +128,9 @@ export class ApexStatisticsService {
 
         const discordUser = user ? await this.discordService.getMemberById(user.discordId) : null;
 
-        const embed = await this.getStatisticsEmbed(statistics, discordUser, user);
+        const message = await this.getStatisticsMessage(statistics, discordUser, user);
 
-        interaction.editReply({ embeds: [embed] });
+        interaction.editReply(message);
     }
 
     public async handleStatisticsOwnCommand(interaction: ChatInputCommandInteraction<CacheType>) {
@@ -119,7 +150,7 @@ export class ApexStatisticsService {
         this.handleStatisticsDiscordCommand(interaction, {user: discordUser as GuildMember});
     }
 
-    public async createUser(userDiscordId, isAdmin): Promise<UserEntity> {
+    private async createUser(userDiscordId, isAdmin): Promise<UserEntity> {
         console.log(`Creating user ${userDiscordId} with admin: ${isAdmin}`);
         return await this.userService.create({
             discordId: userDiscordId,
@@ -127,7 +158,7 @@ export class ApexStatisticsService {
         });
     }
 
-    private async getStatisticsEmbed(statistics: PlayerStatistics, discordUser: GuildMember, user: UserEntity): Promise<EmbedBuilder> {
+    private async getStatisticsMessage(statistics: PlayerStatistics, discordUser: GuildMember, user: UserEntity) {
         const embed = this.getBasicStatisticsEmbed();
         const description = [];
         const rankToRoleNameDictionary = this.apexAccountService.rankToRoleNameDictionary;
@@ -326,11 +357,31 @@ export class ApexStatisticsService {
             }
         ]);
 
-        if (legend?.ImgAssets?.banner) {
-            const urlFriendlyBanner = legend?.ImgAssets?.banner.replaceAll(' ', '%20');
-            embed.setImage(urlFriendlyBanner);
-        }
         // ----------------------------------------------------------------------
+
+        const files = [];
+
+        const history = (user?.apexAccount) ? await this.apexAccountHistoryService.getPlayerHistory(user.apexAccount, 14) : [];
+
+        if (history.length > 0) {
+            // Save history chunk
+            const historyChart: BufferResolvable = await this.getStatisticsHistoryChart(history);
+    
+            const attachment = new AttachmentBuilder(historyChart, {
+                name: 'history-chart.png',
+                description: 'Wykres historii statystyk',
+            });
+    
+            embed.setImage('attachment://history-chart.png');
+
+            files.push(attachment);
+        } else {
+            if (legend?.ImgAssets?.banner) {
+                const urlFriendlyBanner = legend?.ImgAssets?.banner.replaceAll(' ', '%20');
+                embed.setImage(urlFriendlyBanner);
+            }
+        }
+
 
         // If some data couldn't be fetched add info to footer
         if (statistics?.global?.rank.ladderPosPlatform == -1 || !serverRank) {
@@ -342,7 +393,7 @@ export class ApexStatisticsService {
 
         embed.setDescription(description.join('\n'));
 
-        return embed;
+        return { embeds: [embed], files };
     }
 
     /**
@@ -363,5 +414,182 @@ export class ApexStatisticsService {
             .setColor(this.configService.get<ColorResolvable>('embeds.color-primary'))
             .setTimestamp();
     }
+    
+    private async getStatisticsHistoryChart(statistics: ApexAccountHistoryEntity[]) {
 
+        const avgRankScore = await this.apexAccountService.getServerAvgRankScore();
+
+        const predatorRequirements = await this.apexApiService.getCurrentPredatorRequirements();
+        const predatorLp = predatorRequirements['RP'][statistics[0]?.platform]?.val ?? null;
+
+        const l = 14; // history length
+        let dates = Array.from({ length: l }, (_, i) => {
+          let d = new Date();
+          d.setDate(d.getDate() - (l - 1 - i));
+          return d;
+        });
+      
+        // create empty data array of length l
+        let data = Array(l).fill(null);
+      
+        statistics.forEach(stat => {
+          let index = dates.findIndex(d => d.getDate() === stat.createdAt.getDate()); // assuming createdAt is a Date
+          if (index !== -1) {
+            data[index] = stat.rankScore;
+          }
+        });
+
+        const filteredData = data.filter(v => v !== null);  // Filter out null values before calculating min and max
+
+        const dataMax = Math.max(...filteredData);
+        const dataMin = Math.min(...filteredData);
+        const padding = 0.2;  // 20% padding
+
+        const yMax = dataMax + dataMax * padding;
+        const yMin = dataMin - dataMin * padding;
+
+        const rankLevelEntries = this.apexAccountService.rankToScoreDictionary;
+        const rankLevelColors = this.apexAccountService.rankToRoleColorDictionary;
+
+        const levelLines = [];
+
+        // Create rank level lines
+        for (const [rank, level] of Object.entries(rankLevelEntries)) {
+            const color = rankLevelColors[rank];
+            console.log(`yMin: ${yMin}, level: ${level}, yMax: ${yMax}, ${yMin - level}, ${yMax - level}, ${yMin - level < 4000 || yMax - level < 4000}`)
+            levelLines.push({
+                type: 'line',
+                yMin: level,
+                yMax: level,
+                borderColor: color,
+                borderWidth: 1,
+                borderDash: [5, 5],
+                // Adjust scale range if line is too close to the edge
+                // adjustScaleRange: (Math.abs(yMin - level)) < 2000 || (Math.abs(yMax - level)) < 2000,
+                adjustScaleRange: false,
+                label: {
+                    backgroundColor: 'rgba(32, 33, 36, 1)',
+                    content: rank,
+                    display: true,
+                    font: {
+                        size: 14,
+                        weight: 'bold',
+                    },
+                },
+            });
+        };
+
+        // Create avg PLA rank line
+        levelLines.push({
+            type: 'line',
+                yMin: avgRankScore,
+                yMax: avgRankScore,
+                borderColor: 'rgba(255, 255, 255, 0.5)',
+                borderWidth: 1,
+                borderDash: [5, 5],
+                adjustScaleRange: false,
+                label: {
+                    backgroundColor: 'rgba(32, 33, 36, 1)',
+                    content: 'Średnie LP na serwerze PLA',
+                    display: true,
+                    font: {
+                        size: 14,
+                        weight: 'bold',
+                    },
+                },
+        })
+
+        // Create predator rank line
+        if (predatorLp) {
+            levelLines.push({
+                type: 'line',
+                    yMin: predatorLp,
+                    yMax: predatorLp,
+                    borderColor: 'rgba(255, 255, 255, 0.5)',
+                    borderWidth: 1,
+                    borderDash: [5, 5],
+                    adjustScaleRange: false,
+                    label: {
+                        backgroundColor: 'rgba(32, 33, 36, 1)',
+                        content: 'Predator',
+                        display: true,
+                        font: {
+                            size: 14,
+                            weight: 'bold',
+                        },
+                    },
+            })
+        }
+        
+      
+        // create canvas config
+        const canvasConfig = {
+            type: 'line',
+            data: {
+                labels: dates.map(d => `${d.getMonth() + 1}-${d.getDate()}`), // Dates in MM-DD format
+                datasets: [{
+                    label: `Codzienna ilość LP przez ostatnie ${l} dni`,
+                    data: data,
+                    backgroundColor: 'rgba(153, 0, 0, 0.2)', // reddish background
+                    borderColor: 'rgba(153, 0, 0, 1)', // reddish borders
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                        //   beginAtZero: true,
+                          min: yMin,
+                          max: yMax,
+                          fontColor: 'white',
+                          fontSize: 20
+                        },
+                        gridLines: {
+                            color: 'rgba(255, 255, 255, 0.1)',
+                        }
+                    }],
+                    xAxes: [{
+                        type: 'time',
+                        distribution: 'series',
+                        time: {
+                          unit: 'day',
+                          displayFormats: {
+                              day: 'MM/DD'
+                          }
+                        },
+                        ticks: {
+                            fontColor: 'white',
+                            fontSize: 20
+                        },
+                        gridLines: {
+                            color: 'rgba(255, 255, 255, 0.1)',
+                        }
+                    }]
+                },
+                background: {
+                      color: '#2C3E50'
+                },
+                legend: {
+                      labels: {
+                          fontColor: 'white',
+                          fontSize: 18
+                      }
+                },
+                plugins: {
+                    annotation: {
+                      annotations: {
+                        ...levelLines,
+                      }
+                    }
+                  }
+            },
+        };
+      
+        const image = await this.canvasRenderService.renderToBuffer(canvasConfig);
+      
+        return image;
+      }
+      
+      
 }
