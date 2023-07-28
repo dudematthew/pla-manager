@@ -326,8 +326,10 @@ export class ApexStatisticsService {
             }
         ]);
 
-        if (legend?.ImgAssets?.banner)
-            embed.setImage(legend?.ImgAssets?.banner);
+        if (legend?.ImgAssets?.banner) {
+            const urlFriendlyBanner = legend?.ImgAssets?.banner.replaceAll(' ', '%20');
+            embed.setImage(urlFriendlyBanner);
+        }
         // ----------------------------------------------------------------------
 
         // If some data couldn't be fetched add info to footer
