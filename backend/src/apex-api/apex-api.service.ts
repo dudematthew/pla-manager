@@ -63,9 +63,11 @@ export class ApexApiService {
      */
     public async getPlayerStatisticsByUID(playerUID: string, platform: 'PC' | 'PS4' | 'X1' | 'SWITCH', options: PlayerStatisticsParamsDto): Promise<PlayerStatistics> {
 
-        // Make sure options are set
+        // Make sure options are set and defaults are set
         options.uid = options.uid || playerUID;
         options.platform = options.platform || platform;
+        options.merge = options.merge || 1;
+        options.removeMerged = options.removeMerged || 1;
 
         const hashedOptions = hash(options);
         const cachedValue = await this.cache.get(`player-statistics-${hash(options)}`);
@@ -84,9 +86,12 @@ export class ApexApiService {
                 url += `&${option}=${options[option]}`;
         }
 
+        console.log('URL: ', url);
+
         try {
             const response = await this.axiosGet(url);
             this.cache.set(`player-statistics-${hash(options)}`, response.data, this.cacheTTL);
+            console.log(`Response data: `, response.data);
             return response.data;
         }
         catch (e) {
@@ -106,9 +111,11 @@ export class ApexApiService {
     */
     public async getPlayerStatisticsByName(playerName: string, platform: 'PC' | 'PS4' | 'X1' | 'SWITCH', options: PlayerStatisticsParamsDto = {}): Promise<PlayerStatistics> {
        
-        // Make sure options are set
+        // Make sure options are set and defaults are set
         options.player = options.player || playerName;
         options.platform = options.platform || platform;
+        options.merge = options.merge || 1;
+        options.removeMerged = options.removeMerged || 1;
 
         const hashedOptions = hash(options);
         const cachedValue = await this.cache.get(`player-statistics-${hash(options)}`);
@@ -131,6 +138,7 @@ export class ApexApiService {
             const response = await this.axiosGet(url);
 
             this.cache.set(`player-statistics-${hash(options)}`, response.data, this.cacheTTL);
+            console.log(`Response data: `, response.data);
             return response.data;
         }
         catch (e) {
