@@ -86,12 +86,9 @@ export class ApexApiService {
                 url += `&${option}=${options[option]}`;
         }
 
-        console.log('URL: ', url);
-
         try {
             const response = await this.axiosGet(url);
             this.cache.set(`player-statistics-${hash(options)}`, response.data, this.cacheTTL);
-            console.log(`Response data: `, response.data);
             return response.data;
         }
         catch (e) {
@@ -138,7 +135,6 @@ export class ApexApiService {
             const response = await this.axiosGet(url);
 
             this.cache.set(`player-statistics-${hash(options)}`, response.data, this.cacheTTL);
-            console.log(`Response data: `, response.data);
             return response.data;
         }
         catch (e) {
