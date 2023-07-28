@@ -1,28 +1,25 @@
-import { BaseEntity, OneToMany, OneToOne } from "typeorm";
+import { BaseEntity, ManyToOne, OneToOne } from "typeorm";
 import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { UserEntity } from "../../user/user.entity";
-import { ApexAccountHistoryEntity } from "../../apex-account-history/entities/apex-account-history.entity";
+import { ApexAccountEntity } from "../../apex-account/entities/apex-account.entity";
 
 @Entity({
-    name: 'apex_account',
+    name: 'apex_account_history',
 })
-export class ApexAccountEntity extends BaseEntity {
+export class ApexAccountHistoryEntity extends BaseEntity {
 
     @PrimaryGeneratedColumn()
     id: number;
 
-    @OneToOne(() => UserEntity, user => user.apexAccount, { nullable: true })
-    user: UserEntity;
-
-    @OneToMany(() => ApexAccountHistoryEntity, apexAccountHistory => apexAccountHistory.apexAccount)
-    apexAccountHistory: ApexAccountHistoryEntity[];
+    @ManyToOne(() => ApexAccountEntity, apexAccount => apexAccount.apexAccountHistory)
+    apexAccount: ApexAccountEntity;
 
     // name
-    @Column({ unique: true })
+    @Column()
     name: string;
 
     // uid
-    @Column({ unique: true })
+    @Column()
     uid: string;
 
     // avatar url

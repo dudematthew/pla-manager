@@ -5,6 +5,8 @@ import { ApexAccountModule } from 'src/database/entities/apex-account/apex-accou
 import { UserModule } from 'src/database/entities/user/user.module';
 import { ApexApiModule } from 'src/apex-api/apex-api.module';
 import { EmojiModule } from 'src/database/entities/emoji/emoji.module';
+import { ApexLeaderboardService } from './apex-leaderboard.service';
+import { HtmlApiModule } from 'src/html-api/html-api.module';
 
 @Module({
   imports: [
@@ -13,8 +15,15 @@ import { EmojiModule } from 'src/database/entities/emoji/emoji.module';
     UserModule,
     ApexApiModule,
     EmojiModule,
+    HtmlApiModule,
   ],
-  providers: [ApexStatisticsService],
-  exports: [ApexStatisticsService],
+  providers: [
+    ApexStatisticsService,
+    ApexLeaderboardService,
+  ],
+  exports: [
+    ApexStatisticsService,
+    ApexLeaderboardService,
+  ],
 })
 export class ApexStatisticsModule {}

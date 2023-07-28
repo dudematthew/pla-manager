@@ -82,6 +82,28 @@ declare namespace NodeJS {
          */
         APEX_TRACKER_API_WAIT_MILISECONDS?: string;
 
+        // HTML CSS API ---------------------------------
+        /**
+         * HTML_CSS_USER_ID - User ID for the HTML CSS API
+         */
+        HTML_CSS_USER_ID?: string;
+        /**
+         * HTML_CSS_API_KEY - API key for the HTML CSS API
+         */
+        HTML_CSS_API_KEY?: string;
+        /**
+         * HTML_CSS_API_RATE_LIMIT - Rate limit for the HTML CSS API
+         */
+        HTML_CSS_API_RATE_LIMIT?: string;
+        /**
+         * HTML_CSS_API_RATE_MILISECONDS_TRESHOLD - Rate limit treshold for the HTML CSS API
+         */
+        HTML_CSS_API_RATE_MILISECONDS_TRESHOLD?: string;
+        /**
+         * HTML_CSS_API_WAIT_MILISECONDS - Wait time for the HTML CSS API
+         */
+        HTML_CSS_API_WAIT_MILISECONDS?: string;
+
         // DISCORD --------------------------------------
         /**
          * DISCORD_TOKEN - Discord bot token

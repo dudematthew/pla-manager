@@ -9,6 +9,7 @@ import { UserService } from '../user/user.service';
 import { PlayerStatistics } from 'src/apex-api/player-statistics.interface';
 import { RoleService } from '../role/role.service';
 import { RoleEntity } from '../role/entities/role.entity';
+import { ApexAccountHistoryService } from '../apex-account-history/apex-account-history.service';
 
 @Injectable()
 export class ApexAccountService {
@@ -60,8 +61,9 @@ export class ApexAccountService {
   constructor(
     @InjectRepository(ApexAccountEntity)
     private readonly apexAccountRepository: Repository<ApexAccountEntity>,
-    private userService: UserService,
-    private roleService: RoleService,
+    private readonly userService: UserService,
+    private readonly roleService: RoleService,
+    private readonly apexAccountHistoryService: ApexAccountHistoryService,
   ) {}
 
   async create(account: CreateApexAccountDto): Promise<ApexAccountEntity> {
@@ -89,7 +91,12 @@ export class ApexAccountService {
       lastLegendPlayed: account.lastLegendPlayed,
     });
 
-    return await this.apexAccountRepository.save(newAccount);
+    const newAccountEntity = await this.apexAccountRepository.save(newAccount);
+
+    // Create new history chunk
+    await this.apexAccountHistoryService.create(newAccountEntity);
+
+    return newAccountEntity;
   }
 
   public async saveAccount(playerData: PlayerStatistics, user: UserEntity): Promise<UserEntity> {
@@ -144,6 +151,7 @@ export class ApexAccountService {
     // Update users apex account
     await this.userService.update(user.id, user);
 
+    // return updated user
     return user;
   }
 
@@ -157,7 +165,12 @@ export class ApexAccountService {
     try {
         Object.assign(account, properties);
 
-        return await this.apexAccountRepository.save(account);
+        const modifiedAccountEntity = await this.apexAccountRepository.save(account);
+
+        // Create new history chunk
+        await this.apexAccountHistoryService.create(modifiedAccountEntity);
+
+        return modifiedAccountEntity;
     } catch (error) {
         throw new InternalServerErrorException(error);
     }
@@ -176,8 +189,6 @@ export class ApexAccountService {
       account.user.apexAccount = null;
       await account.user.save();
     }
-
-    return await this.apexAccountRepository.remove(account);
   }
 
   async findById(id: number): Promise<ApexAccountEntity> {
