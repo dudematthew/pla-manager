@@ -7,6 +7,7 @@ import { ApexApiModule } from 'src/apex-api/apex-api.module';
 import { EmojiModule } from 'src/database/entities/emoji/emoji.module';
 import { ApexLeaderboardService } from './apex-leaderboard.service';
 import { HtmlApiModule } from 'src/html-api/html-api.module';
+import { ApexAccountHistoryModule } from 'src/database/entities/apex-account-history/apex-account-history.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { HtmlApiModule } from 'src/html-api/html-api.module';
     ApexApiModule,
     EmojiModule,
     HtmlApiModule,
+    ApexAccountHistoryModule,
   ],
   providers: [
     ApexStatisticsService,
