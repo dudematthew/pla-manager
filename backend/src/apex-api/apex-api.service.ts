@@ -63,9 +63,11 @@ export class ApexApiService {
      */
     public async getPlayerStatisticsByUID(playerUID: string, platform: 'PC' | 'PS4' | 'X1' | 'SWITCH', options: PlayerStatisticsParamsDto): Promise<PlayerStatistics> {
 
-        // Make sure options are set
+        // Make sure options are set and defaults are set
         options.uid = options.uid || playerUID;
         options.platform = options.platform || platform;
+        options.merge = options.merge || 1;
+        options.removeMerged = options.removeMerged || 1;
 
         const hashedOptions = hash(options);
         const cachedValue = await this.cache.get(`player-statistics-${hash(options)}`);
@@ -106,9 +108,11 @@ export class ApexApiService {
     */
     public async getPlayerStatisticsByName(playerName: string, platform: 'PC' | 'PS4' | 'X1' | 'SWITCH', options: PlayerStatisticsParamsDto = {}): Promise<PlayerStatistics> {
        
-        // Make sure options are set
+        // Make sure options are set and defaults are set
         options.player = options.player || playerName;
         options.platform = options.platform || platform;
+        options.merge = options.merge || 1;
+        options.removeMerged = options.removeMerged || 1;
 
         const hashedOptions = hash(options);
         const cachedValue = await this.cache.get(`player-statistics-${hash(options)}`);
