@@ -34,6 +34,8 @@ export class ApexStatisticsService {
         private readonly apexAccountHistoryService: ApexAccountHistoryService,
     ) {
         const Annotation = require('chartjs-plugin-annotation');
+        const ChartMomentAdapter = require('chartjs-adapter-moment');
+        
 
         // Create canvas render service
         this.canvasRenderService = new ChartJSNodeCanvas({ 
@@ -45,6 +47,7 @@ export class ApexStatisticsService {
             chartCallback: (ChartJS) => {
                 console.log('ChartJS callback: ', Annotation);
                 ChartJS.register(Annotation);
+                ChartJS.register(ChartMomentAdapter);
                 ChartJS.register({
                     id: 'theme',
                     beforeDraw: (chart) => {
@@ -422,6 +425,8 @@ export class ApexStatisticsService {
         const predatorRequirements = await this.apexApiService.getCurrentPredatorRequirements();
         const predatorLp = predatorRequirements['RP'][statistics[0]?.platform]?.val ?? null;
 
+        const moment = require('moment');
+
         const l = 14; // history length
         let dates = Array.from({ length: l }, (_, i) => {
           let d = new Date();
@@ -443,10 +448,11 @@ export class ApexStatisticsService {
 
         const dataMax = Math.max(...filteredData);
         const dataMin = Math.min(...filteredData);
+        const range = dataMax - dataMin;
         const padding = 0.2;  // 20% padding
 
-        const yMax = dataMax + dataMax * padding;
-        const yMin = dataMin - dataMin * padding;
+        const yMax = Math.round((dataMax + range * padding) / 100) * 100;
+        const yMin = Math.round((dataMin - range * padding) / 100) * 100;
 
         const rankLevelEntries = this.apexAccountService.rankToScoreDictionary;
         const rankLevelColors = this.apexAccountService.rankToRoleColorDictionary;
@@ -474,6 +480,7 @@ export class ApexStatisticsService {
                     font: {
                         size: 14,
                         weight: 'bold',
+                        color: "#F2F2F2"
                     },
                 },
             });
@@ -495,6 +502,7 @@ export class ApexStatisticsService {
                     font: {
                         size: 14,
                         weight: 'bold',
+                        color: "#F2F2F2"
                     },
                 },
         })
@@ -516,6 +524,7 @@ export class ApexStatisticsService {
                         font: {
                             size: 14,
                             weight: 'bold',
+                            color: "#F2F2F2"
                         },
                     },
             })
@@ -526,7 +535,7 @@ export class ApexStatisticsService {
         const canvasConfig = {
             type: 'line',
             data: {
-                labels: dates.map(d => `${d.getMonth() + 1}-${d.getDate()}`), // Dates in MM-DD format
+                labels: dates.map(d => moment(d).format('YYYY-MM-DD')), // Dates in MM-DD format
                 datasets: [{
                     label: `Codzienna ilość LP przez ostatnie ${l} dni`,
                     data: data,
@@ -537,50 +546,55 @@ export class ApexStatisticsService {
             },
             options: {
                 scales: {
-                    yAxes: [{
+                    y: {
+                        min: yMin,
+                        max: yMax,
                         ticks: {
-                        //   beginAtZero: true,
-                          min: yMin,
-                          max: yMax,
-                          fontColor: 'white',
-                          fontSize: 20
+                            color: '#F2F2F2',
                         },
-                        gridLines: {
+                        grid: {
                             color: 'rgba(255, 255, 255, 0.1)',
                         }
-                    }],
-                    xAxes: [{
+                    },
+                    x: {
                         type: 'time',
                         distribution: 'series',
                         time: {
-                          unit: 'day',
-                          displayFormats: {
-                              day: 'MM/DD'
-                          }
+                            unit: 'day',
+                            displayFormats: {
+                                day: 'MM/DD'
+                            }
                         },
                         ticks: {
-                            fontColor: 'white',
-                            fontSize: 20
+                            color: '#F2F2F2',
                         },
-                        gridLines: {
+                        grid: {
                             color: 'rgba(255, 255, 255, 0.1)',
                         }
-                    }]
+                    },
                 },
                 background: {
                       color: '#2C3E50'
                 },
                 legend: {
-                      labels: {
-                          fontColor: 'white',
-                          fontSize: 18
-                      }
+                    labels: {
+                        font: {
+                            size: 14,
+                            weight: 'bold',
+                            color: '#F2F2F2',
+                        },
+                    }
                 },
                 plugins: {
                     annotation: {
                       annotations: {
                         ...levelLines,
                       }
+                    },
+                    legend: {
+                        labels: {
+                            color: '#F2F2F2' // Set the color to white
+                        }
                     }
                   }
             },
