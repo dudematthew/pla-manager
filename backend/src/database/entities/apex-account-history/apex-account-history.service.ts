@@ -31,4 +31,38 @@ export class ApexAccountHistoryService {
 
     return await this.apexAccountHistoryRepository.insert(newAccountHistoryChunk);
   }
+
+  /**
+   * Get player history
+   * Note: history records wont contain userAccount data
+   * @param account account to get history for
+   * @param days how many days to get history for
+   * @returns player history for last x days
+   */
+  public async getPlayerHistory(account: ApexAccountEntity, days: number): Promise<ApexAccountHistoryEntity[]> {
+  
+    let daysAgo = new Date();
+    daysAgo.setDate(daysAgo.getDate() - days);
+    
+    // inner query to get the max id for each day
+    const subQueryResults = await this.apexAccountHistoryRepository.createQueryBuilder('ah2')
+      .select('MAX(ah2.id)', 'id')
+      .where("ah2.apexAccount = :accountId", { accountId: account.id })
+      .andWhere("ah2.createdAt >= :daysAgo", { daysAgo: daysAgo.toISOString() })
+      .groupBy("DATE(ah2.createdAt)")
+      .getRawMany();
+  
+    const maxIds = subQueryResults.map(result => result.id);
+  
+    // make the outer query to get full records
+    const playerHistory = await this.apexAccountHistoryRepository.createQueryBuilder('ah')
+      .whereInIds(maxIds)
+      .getMany();
+  
+    return playerHistory;
+  }
+  
+  
+
+
 }
