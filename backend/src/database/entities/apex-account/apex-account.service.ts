@@ -56,18 +56,7 @@ export class ApexAccountService {
     'X1': 'Xbox',
     'PS4': 'PlayStation',
     'SWITCH': 'Nintendo Switch'
-  }
-
-  public rankToScoreDictionary = {
-    'Rookie': 0,
-    'Bronze': 4000,
-    'Silver': 8000,
-    'Gold': 12000,
-    'Platinum': 16000,
-    'Diamond': 20000,
-    'Master': 24000,
-    // 'Apex Predator': 24300, // test
-  }
+}
 
   constructor(
     @InjectRepository(ApexAccountEntity)
@@ -298,14 +287,6 @@ export class ApexAccountService {
     }
 
     return await this.getRoleByRankName(account.rankName);
-  }
-
-  public async getServerAvgRankScore(): Promise<number> {
-    const result = await this.apexAccountRepository.createQueryBuilder("apexAccount")
-      .select('AVG(apexAccount.rank_score)', 'avg')
-      .getRawOne();
-
-    return result?.avg ?? null;
   }
 
 }

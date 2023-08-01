@@ -162,32 +162,6 @@ export class ApexApiService {
         }
     }
 
-    public async getCurrentPredatorRequirements() {
-        const cachedValue = await this.cache.get(`current-predator-requirements`);
-
-        if (cachedValue) {
-            console.log('Returning cached value for current predator requirements');
-            return cachedValue;
-        }
-
-        const url = `https://api.mozambiquehe.re/predator?auth=${this.apiKey}`;
-
-        try {
-            const response = await this.axiosGet(url);
-            // Cache for 1 hour
-            this.cache.set(`current-predator-requirements`, response.data, 3600000);
-
-            return response.data;
-        }
-        catch (e) {
-            this.logger.error(e);
-            return {
-                error: 'Error fetching current predator LP: ' + e.message || 'Unknown error',
-                errorCode: e.response?.status,
-            };
-        }
-    }
-
     // public async scrapeClubData() {
     //     try {
     //         return this.apexApiScraperService.getClubData();
