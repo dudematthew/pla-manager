@@ -1,0 +1,13 @@
+{
+    "builds": {
+        "my-app": {
+            "phases": {
+                "setup": {
+                    "packages": [
+                        "fontconfig"
+                    ]
+                }
+            }
+        }
+    }
+}
