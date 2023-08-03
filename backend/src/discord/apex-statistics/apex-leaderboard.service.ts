@@ -52,6 +52,7 @@ export class ApexLeaderboardService {
 
 
         const embed = await this.getBasicLeaderboardEmbed();
+        const bottomEmbed = new EmbedBuilder();
 
         const topPlayers = await this.apexAccountService.getServerRankTopX(20);
         const totalAccounts = await this.apexAccountService.countAll();
@@ -69,7 +70,7 @@ export class ApexLeaderboardService {
 
         description.push(`## ${totalAccounts} połączonych kont na serwerze`);
         description.push(`### **${lastTopPlayerLp} LP** aby znaleźć się na liście`);
-        description.push(`Zaktualizowano tablicę <t:${currentTimestamp}:R>`);
+        description.push(`Zaktualizowano tablicę <t:${currentTimestamp}:T>`);
         description.push(`Następna aktualizacja <t:${currentTimestamp + 60 * 60 * 24}:R>`);
         description.push(`Zmiany pozycji liczone są od <t:${Math.floor(differenceDate.getTime() / 1000)}:f>`);
         description.push(`ㅤ`);
@@ -121,7 +122,7 @@ export class ApexLeaderboardService {
                 // generate random number from -2 to 2
                 // const rankChange = Math.floor(Math.random() * 5) - 2;
 
-                console.log(`Player found in history: ${playerHistory.apexAccount.name} - ${playerIndex} - ${position} - ${rankChange}`);
+                console.log(`Player found in history: ${playerHistory.apexAccount?.name} - ${playerIndex} - ${position} - ${rankChange}`);
                 if (rankChange < 0) {
                   dropAscend = `${Math.abs(rankChange)} <:${arrowDownEmoji.name}:${arrowDownEmoji.discordId}>`;
                 } else if (rankChange > 0) {
@@ -163,14 +164,23 @@ export class ApexLeaderboardService {
             value += `<:${discordEmoji.name}:${discordEmoji.discordId}> <@${player.user.discordId}>${dropAscend}`;
 
             // Add a divider if it's not the last player
-            if (index < topPlayers.length - 1) {
+            if (index < topPlayers.length - 1 && index != 10) {
                 value += `\nㅤ\n`;
                 value += `:heavy_minus_sign::heavy_minus_sign::heavy_minus_sign::heavy_minus_sign::heavy_minus_sign::heavy_minus_sign::heavy_minus_sign:`;
-            }
-        
+            } 
+
             if (index <= 1) {
                 description.push(`${titleHashTagAmount}${name}`);
                 description.push(`${subTitleHashTagAmount}${value}`);
+                continue;
+            }
+
+            if (index > 10) {
+                bottomEmbed.addFields({
+                    name,
+                    value: value + '\nㅤ',
+                    inline: false,
+                });
                 continue;
             }
 
@@ -184,13 +194,15 @@ export class ApexLeaderboardService {
         embed.setDescription(description.join('\n'));
 
         embed.setFooter({
+            text: 'ㅤ'.repeat(42),
+        })
+
+        bottomEmbed.setFooter({
             text: `Polskie Legendy Apex • Pozycja na liście jest wyznaczana na podstawie ilości LP gracza • Aby znaleźć się na tablicy wyników należy połączyć konto za pomocą komendy /połącz`,
             iconURL: this.configService.get<string>('images.logo'),
         });
 
-        // embed.setTimestamp();
-
-        const message = await options.channel.send({ embeds: [embed] });
+        const message = await options.channel.send({ embeds: [embed, bottomEmbed] });
     }
 
     private async getBasicLeaderboardEmbed (): Promise<EmbedBuilder> {
