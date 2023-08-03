@@ -53,6 +53,18 @@ export class ApexLeaderboardService {
 
         const embed = await this.getBasicLeaderboardEmbed();
         const bottomEmbed = new EmbedBuilder();
+        
+        let embedCounter = 0;
+        let bottomEmbedCounter = 0;
+
+        function updateCounter(length: number) {
+            embedCounter += length;
+        }
+            
+        function updateBottomCounter(length: number) {
+            bottomEmbedCounter += length;
+        }
+        updateCounter(17);
 
         const topPlayers = await this.apexAccountService.getServerRankTopX(20);
         const totalAccounts = await this.apexAccountService.countAll();
@@ -181,6 +193,7 @@ export class ApexLeaderboardService {
                     value: value + '\nㅤ',
                     inline: false,
                 });
+                updateBottomCounter(name.length + value.length + 1);
                 continue;
             }
 
@@ -189,18 +202,25 @@ export class ApexLeaderboardService {
               value: value + '\nㅤ',
               inline: false,
             });
+            updateCounter(name.length + value.length + 1);
         }
 
         embed.setDescription(description.join('\n'));
+        updateCounter(description.length);
 
         embed.setFooter({
             text: 'ㅤ'.repeat(42),
         })
+        updateCounter(42);
 
         bottomEmbed.setFooter({
             text: `Polskie Legendy Apex • Pozycja na liście jest wyznaczana na podstawie ilości LP gracza • Aby znaleźć się na tablicy wyników należy połączyć konto za pomocą komendy /połącz`,
             iconURL: this.configService.get<string>('images.logo'),
         });
+        updateBottomCounter(171);
+
+        console.info(`Embed counter: ${embedCounter} | Bottom embed counter: ${bottomEmbedCounter}`);
+
 
         const message = await options.channel.send({ embeds: [embed, bottomEmbed] });
     }
