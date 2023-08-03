@@ -52,6 +52,7 @@ export class ApexLeaderboardService {
 
 
         const embed = await this.getBasicLeaderboardEmbed();
+        const middleEmbed = new EmbedBuilder();
         const bottomEmbed = new EmbedBuilder();
         
         let embedCounter = 0;
@@ -86,7 +87,7 @@ export class ApexLeaderboardService {
         description.push(`Następna aktualizacja <t:${currentTimestamp + 60 * 60 * 24}:R>`);
         description.push(`Zmiany pozycji liczone są od <t:${Math.floor(differenceDate.getTime() / 1000)}:f>`);
         description.push(`ㅤ`);
-        description.push(`:heavy_minus_sign::heavy_minus_sign::heavy_minus_sign::heavy_minus_sign::heavy_minus_sign::heavy_minus_sign::heavy_minus_sign:`);
+        description.push(`:heavy_minus_sign:`.repeat(7));
 
         const topAccount = topPlayers[0];
         const topDiscordMember = await this.discordService.getMemberById(topAccount.user.discordId);
@@ -176,9 +177,9 @@ export class ApexLeaderboardService {
             value += `<:${discordEmoji.name}:${discordEmoji.discordId}> <@${player.user.discordId}>${dropAscend}`;
 
             // Add a divider if it's not the last player
-            if (index < topPlayers.length - 1 && index != 10) {
+            if (index < topPlayers.length - 1 && index != 6 && index != 12) {
                 value += `\nㅤ\n`;
-                value += `:heavy_minus_sign::heavy_minus_sign::heavy_minus_sign::heavy_minus_sign::heavy_minus_sign::heavy_minus_sign::heavy_minus_sign:`;
+                value += `:heavy_minus_sign:`.repeat(7);
             } 
 
             if (index <= 1) {
@@ -187,13 +188,23 @@ export class ApexLeaderboardService {
                 continue;
             }
 
-            if (index > 10) {
+            if (index > 6 && index < 13) {
+                middleEmbed.addFields({
+                    name,
+                    value: value + '\nㅤ',
+                    inline: false,
+                });
+                updateBottomCounter(name.length + value.length + 1);
+                console.log(`Field length for name: ${name.length} | value: ${value.length}`);
+                continue;
+            } else if (index >= 13 && index < 20) {
                 bottomEmbed.addFields({
                     name,
                     value: value + '\nㅤ',
                     inline: false,
                 });
                 updateBottomCounter(name.length + value.length + 1);
+                console.log(`Field length for name: ${name.length} | value: ${value.length}`);
                 continue;
             }
 
@@ -202,27 +213,34 @@ export class ApexLeaderboardService {
               value: value + '\nㅤ',
               inline: false,
             });
+            console.log(`Field length for name: ${name.length} | value: ${value.length}`);
             updateCounter(name.length + value.length + 1);
         }
 
         embed.setDescription(description.join('\n'));
         updateCounter(description.length);
+        console.log(`Description length: ${description.length}`);
 
         embed.setFooter({
             text: 'ㅤ'.repeat(42),
         })
+        middleEmbed.setFooter({
+            text: 'ㅤ'.repeat(42),
+        });
         updateCounter(42);
+        console.log(`Footer length: 42`);
 
         bottomEmbed.setFooter({
             text: `Polskie Legendy Apex • Pozycja na liście jest wyznaczana na podstawie ilości LP gracza • Aby znaleźć się na tablicy wyników należy połączyć konto za pomocą komendy /połącz`,
             iconURL: this.configService.get<string>('images.logo'),
         });
         updateBottomCounter(171);
+        console.log(`Bottom footer length: 171`);
 
         console.info(`Embed counter: ${embedCounter} | Bottom embed counter: ${bottomEmbedCounter}`);
 
 
-        const message = await options.channel.send({ embeds: [embed, bottomEmbed] });
+        const message = await options.channel.send({ embeds: [embed, middleEmbed, bottomEmbed] });
     }
 
     private async getBasicLeaderboardEmbed (): Promise<EmbedBuilder> {
