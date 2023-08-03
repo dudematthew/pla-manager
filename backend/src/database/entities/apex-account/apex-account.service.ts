@@ -10,6 +10,7 @@ import { PlayerStatistics } from 'src/apex-api/player-statistics.interface';
 import { RoleService } from '../role/role.service';
 import { RoleEntity } from '../role/entities/role.entity';
 import { ApexAccountHistoryService } from '../apex-account-history/apex-account-history.service';
+import { PlainObjectToNewEntityTransformer } from 'typeorm/query-builder/transformer/PlainObjectToNewEntityTransformer.js';
 
 @Injectable()
 export class ApexAccountService {
@@ -252,15 +253,21 @@ export class ApexAccountService {
   }
 
   /**
-   * @param limit limit of accounts to return
-   * @returns top X accounts on the server
-   */
+ * @param limit limit of accounts to return
+ * @returns top X accounts on the server
+ */
   async getServerRankTopX(limit: number): Promise<ApexAccountEntity[]> {
-    return await this.apexAccountRepository.createQueryBuilder("apexAccount")
-      .select('apexAccount.*')
-      .addSelect('ROW_NUMBER() OVER (ORDER BY apexAccount.rank_score DESC)', 'rank')
+    const entities = await this.apexAccountRepository
+      .createQueryBuilder("apexAccount")
+      .leftJoinAndSelect("apexAccount.user", "user")
+      .select(["apexAccount", "user"])
+      .orderBy("apexAccount.rank_score", "DESC")
       .limit(limit)
-      .getRawMany();
+      .getMany();
+  
+    console.log(entities);
+  
+    return entities;
   }
 
   public getRoleNameByRankName(rankName: string): string {
@@ -307,5 +314,8 @@ export class ApexAccountService {
 
     return result?.avg ?? null;
   }
-
+  
+  public async countAll(): Promise<number> {
+    return await this.apexAccountRepository.count();
+  }
 }

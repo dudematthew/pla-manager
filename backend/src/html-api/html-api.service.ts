@@ -72,6 +72,9 @@ export class HtmlApiService {
     public async getImageFromHtml(parameters: Parameters, templateName: string): Promise<string> {
         const templateHtml = this.TemplateToHtmlCode[templateName];
 
+        // Comment out to enable fetching
+        return `https://images-ext-2.discordapp.net/external/7PVOP6Wco5URuf-Z1lAWp47ndAXpAglnz-9fMowykxU/https/hcti.io/v1/image/95d66153-5fc0-4f1e-a37f-b2f1e0ab337d?width=670&height=670`;
+
         console.log(`Code before replace (${typeof parameters}): ${templateHtml}`);
 
         const hashKey = hash({ parameters });
@@ -103,7 +106,7 @@ export class HtmlApiService {
         const response = await this.axiosPost('https://hcti.io/v1/image', JSON.stringify(payload), headers);
 
         // const imageUrl = `https://hcti.io/v1/image/6ca8ea49-9cce-48e7-a59c-d354d3fbfb40`;
-        const imageUrl = response.data;
+        const imageUrl = response.data?.url;
 
         return imageUrl;
     }
