@@ -1,5 +1,5 @@
-import { Injectable } from "@nestjs/common";
-import { CacheType, ChannelType, ChatInputCommandInteraction, EmbedBuilder, GuildMember } from "discord.js";
+import { Inject, Injectable, forwardRef } from "@nestjs/common";
+import { CacheType, ChannelType, ChatInputCommandInteraction, EmbedBuilder, GuildMember, Message } from "discord.js";
 import { AdminCreateLeaderboardDto } from "../commands/dtos/admin-create-leaderboard.dto";
 import { ConfigService } from "@nestjs/config";
 import { HtmlApiService } from "src/html-api/html-api.service";
@@ -9,6 +9,11 @@ import { EmojiService } from "src/database/entities/emoji/emoji.service";
 import { DiscordService } from "../discord.service";
 import { start } from "repl";
 import { ApexAccountHistoryService } from "src/database/entities/apex-account-history/apex-account-history.service";
+import { MessageService } from "src/database/entities/message/message.service";
+import { ChannelService } from "src/database/entities/channel/channel.service";
+import { MessageEntity } from "src/database/entities/message/entities/message.entity";
+import { CronService } from "src/cron/cron.service";
+import { SynchronizationStatusOptions } from "../apex-connect/apex-sync.service";
 
 @Injectable()
 export class ApexLeaderboardService {
@@ -20,6 +25,10 @@ export class ApexLeaderboardService {
         private readonly emojiService: EmojiService,
         private readonly discordService: DiscordService,
         private readonly apexAccountHistoryService: ApexAccountHistoryService,
+        private readonly messageService: MessageService,
+        private readonly channelService: ChannelService,
+        @Inject(forwardRef(() => CronService))
+        private readonly cronService: CronService,
     ) {}
 
     public async handleAdminCreateLeaderboard(interaction: ChatInputCommandInteraction<CacheType>, options: AdminCreateLeaderboardDto) {
@@ -36,6 +45,110 @@ export class ApexLeaderboardService {
             return false;
         }
 
+        const message = await this.getLeaderboardMessage();
+        let sentMessage: Message;
+
+        try {
+            sentMessage = await options.channel.send(message);
+        } catch (e) {
+            console.error(e);
+            interaction.editReply({ content: '### :x: Nie udało się utworzyć tablicy!'});
+            return false;
+        }
+
+        const leaderboardChannel = await this.channelService.findByName('leaderboard');
+
+        if (!leaderboardChannel) {
+            interaction.editReply({ content: '### :x: Nie udało się utworzyć tablicy - nie znaleziono kanału TOP20!'});
+            sentMessage.delete();
+            return false;
+        }
+
+        if (leaderboardChannel.discordId == options.channel.id) {
+            // Check if message already exists
+            const dbMessageExists = await this.messageService.findByDiscordId(`${sentMessage.id}`);
+    
+            let dbMessage: MessageEntity = null;
+    
+            if (dbMessageExists) {
+                dbMessage = await this.messageService.update(dbMessageExists.id, {
+                    discordId: `${sentMessage.id}`,
+                    name: 'leaderboard',
+                    channelId: leaderboardChannel.id,
+                });
+            } else {
+                dbMessage = await this.messageService.create({
+                    discordId: `${sentMessage.id}`,
+                    name: 'leaderboard',
+                    channelId: leaderboardChannel.id,
+                })
+            }
+    
+            if (!dbMessage) {
+                interaction.editReply({ content: '### :x: Nie udało się utworzyć tablicy - błąd bazy danych!'});
+                sentMessage.delete();
+                return false;
+            }
+            interaction.editReply({ content: '### :white_check_mark: Tablica została utworzona!'});
+
+            return;
+        }
+            
+        interaction.editReply({ content: `### :x: Uwaga! kanał <#${options.channel.id}> nie jest kanałem TOP20!\nZostanie wysłana testowa wiadomość która nie będzie aktualizowana!`});
+    }
+
+    public async handleAdminUpdateLeaderboard(interaction: ChatInputCommandInteraction<CacheType>) {
+        interaction.reply({ content: 'Aktualizowanie tablicy...', ephemeral: true });
+
+        const success = await this.updateLeaderboard();
+
+        if (success) {
+            interaction.editReply({ content: '### :white_check_mark: Tablica została zaktualizowana!'});
+        } else {
+            interaction.editReply({ content: '### :x: Nie udało się zaktualizować tablicy!\nSprawdź czy tablica została utworzona i czy kanał TOP20 jest poprawnie ustawiony!'});
+        }
+    }
+
+    /**
+     * Updates the leaderboard message
+     */
+    public async updateLeaderboard() {
+        const dbLeaderboardMessage = await this.messageService.findByName('leaderboard');
+
+        if (!dbLeaderboardMessage) {
+            console.error(`[ApexLeaderboardService] handleAdminUpdateLeaderboard: Leaderboard message not found`);
+            return false;
+        }
+
+        const leaderboardChannel = dbLeaderboardMessage.channel;
+
+        if (!leaderboardChannel) {
+            console.error(`[ApexLeaderboardService] handleAdminUpdateLeaderboard: Leaderboard channel not found`);
+            return false;
+        }
+
+        const discordMessage = await this.discordService.getMessage(leaderboardChannel.discordId, dbLeaderboardMessage.discordId);
+
+        if (!discordMessage) {
+            console.error(`[ApexLeaderboardService] handleAdminUpdateLeaderboard: Leaderboard message not found on Discord`);
+            return false;
+        }
+
+        const message = await this.getLeaderboardMessage();
+
+        try {
+            await discordMessage.edit(message);
+        } catch (error) {
+            console.error(`[ApexLeaderboardService] handleAdminUpdateLeaderboard: Error while updating leaderboard message`);
+            console.error(error);
+            return false;
+        }
+        
+        console.log(`[ApexLeaderboardService] handleAdminUpdateLeaderboard: Leaderboard message updated`);
+        return true;
+    }
+
+    private async getLeaderboardMessage () {
         // --- Create embed ---
 
         const currentTimestamp = Math.floor(Date.now() / 1000);
@@ -78,13 +191,19 @@ export class ApexLeaderboardService {
 
         const differenceDate = lastMonday;
 
+        const cronJob = this.cronService.getCronJob('updateLeaderboard');
+       
+        let nextSynchronization = cronJob.nextDate() ?? null;
+
+        const nextSynchronizationTimestamp = !!nextSynchronization ? nextSynchronization.toUnixInteger() : null;
+
         const description = [];
 
 
         description.push(`## ${totalAccounts} połączonych kont na serwerze`);
         description.push(`### **${lastTopPlayerLp} LP** aby znaleźć się na liście`);
         description.push(`Zaktualizowano tablicę <t:${currentTimestamp}:T>`);
-        description.push(`Następna aktualizacja <t:${currentTimestamp + 60 * 60 * 24}:R>`);
+        description.push(`Następna aktualizacja <t:${nextSynchronizationTimestamp}:R>`);
         description.push(`Zmiany pozycji liczone są od <t:${Math.floor(differenceDate.getTime() / 1000)}:f>`);
         description.push(`ㅤ`);
         description.push(`:heavy_minus_sign:`.repeat(7));
@@ -240,7 +359,7 @@ export class ApexLeaderboardService {
         console.info(`Embed counter: ${embedCounter} | Bottom embed counter: ${bottomEmbedCounter}`);
 
 
-        const message = await options.channel.send({ embeds: [embed, middleEmbed, bottomEmbed] });
+        return { embeds: [embed, middleEmbed, bottomEmbed] };
     }
 
     private async getBasicLeaderboardEmbed (): Promise<EmbedBuilder> {

@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger, forwardRef } from "@nestjs/common";
 import { Cron, SchedulerRegistry } from "@nestjs/schedule";
 import { DatabaseService } from "src/database/database.service";
 import { ApexSyncService } from "src/discord/apex-connect/apex-sync.service";
+import { ApexLeaderboardService } from "src/discord/apex-statistics/apex-leaderboard.service";
 import { DiscordService } from "src/discord/discord.service";
 
 @Injectable()
@@ -14,6 +15,8 @@ export class CronService {
         @Inject(forwardRef(() => ApexSyncService))
         private readonly apexSyncService: ApexSyncService,
         private readonly schedulerRegistry: SchedulerRegistry,
+        @Inject(forwardRef(() => ApexLeaderboardService))
+        private readonly apexLeaderboardService: ApexLeaderboardService,
     ) {
         this.init();
     }
@@ -55,5 +58,14 @@ export class CronService {
         this.logger.log('updateConnectedAccounts started working...');
 
         await this.apexSyncService.updateConnectedAccounts();
+    }
+    // Schedule a cron job to run every 5 hours
+    @Cron('0 0 */5 * * *', {
+        name: 'updateLeaderboard',
+    })
+    public async updateLeaderboard () {
+        this.logger.log('updateLeaderboard started working...');
+
+        await this.apexLeaderboardService.updateLeaderboard();
     }
 }
