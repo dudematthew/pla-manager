@@ -38,7 +38,7 @@ export class ApexLeaderboardService {
 
         console.log(`[ApexLeaderboardService] handleAdminCreateLeaderboard: ${options.channel}`);
 
-        interaction.reply({ content: 'Tworzenie tablicy...', ephemeral: true });
+        await interaction.reply({ content: 'Tworzenie tablicy...', ephemeral: true });
 
         if (options.channel.type !== ChannelType.GuildText) {
             interaction.editReply({ content: '### :x: Tablica może być tworzona tylko na kanale tekstowym!'});
@@ -98,7 +98,7 @@ export class ApexLeaderboardService {
     }
 
     public async handleAdminUpdateLeaderboard(interaction: ChatInputCommandInteraction<CacheType>) {
-        interaction.reply({ content: 'Aktualizowanie tablicy...', ephemeral: true });
+        await interaction.reply({ content: 'Aktualizowanie tablicy...', ephemeral: true });
 
         const success = await this.updateLeaderboard();
 
