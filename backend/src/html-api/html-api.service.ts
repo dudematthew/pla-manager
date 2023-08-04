@@ -72,8 +72,9 @@ export class HtmlApiService {
     public async getImageFromHtml(parameters: Parameters, templateName: string): Promise<string> {
         const templateHtml = this.TemplateToHtmlCode[templateName];
 
-        // Comment out to enable fetching
-        return `https://images-ext-2.discordapp.net/external/7PVOP6Wco5URuf-Z1lAWp47ndAXpAglnz-9fMowykxU/https/hcti.io/v1/image/95d66153-5fc0-4f1e-a37f-b2f1e0ab337d?width=670&height=670`;
+        // Return dummy image if environment is not production
+        if (process.env.NODE_ENV !== 'production')
+            return `https://images-ext-2.discordapp.net/external/7PVOP6Wco5URuf-Z1lAWp47ndAXpAglnz-9fMowykxU/https/hcti.io/v1/image/95d66153-5fc0-4f1e-a37f-b2f1e0ab337d?width=670&height=670`;
 
         console.log(`Code before replace (${typeof parameters}): ${templateHtml}`);
 

@@ -200,4 +200,16 @@ export class AdminCommandsService {
         await this.apexLeaderboardService.handleAdminCreateLeaderboard(Interaction, options);
     }
 
+    @UseGuards(AdminGuard)
+    @UseFilters(ForbiddenExceptionFilter)
+    @Subcommand({
+        name: 'zaktualizuj-tablicę-wyników',
+        description: 'Zaktualizuj tablicę TOP 20 graczy Apex Legends na serwerze',
+    })
+    public async onAdminUpdateLeaderbord(@Context() [Interaction]: SlashCommandContext) {
+        console.log(`[CommandsService] onAdminUpdateLeaderbord`);
+
+        await this.apexLeaderboardService.handleAdminUpdateLeaderboard(Interaction);
+    }
+
 }
