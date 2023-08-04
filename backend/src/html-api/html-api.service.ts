@@ -22,7 +22,12 @@ export class HtmlApiService {
      */
     private logger = new Logger('HtmlApiService');
 
-    private cacheTTL = 5000; // 5 seconds
+    /**
+     * TTL for cache in seconds
+     * Set to a huge number because cache is going to reset
+     * on every restart anyway
+     */
+    private cacheTTL = 12096 * 100; // two weeks
 
     private TemplateToHtmlCode = {
         'topPlayer': topPlayerTemplate,
@@ -78,7 +83,7 @@ export class HtmlApiService {
 
         console.log(`Code before replace (${typeof parameters}): ${templateHtml}`);
 
-        const hashKey = hash({ parameters });
+        const hashKey = hash({ parameters, templateName });
 
         const cachedImage = await this.cache.get(hashKey);
 
@@ -102,12 +107,12 @@ export class HtmlApiService {
           }
         }
 
-        console.info(payload, headers);
-
         const response = await this.axiosPost('https://hcti.io/v1/image', JSON.stringify(payload), headers);
 
         // const imageUrl = `https://hcti.io/v1/image/6ca8ea49-9cce-48e7-a59c-d354d3fbfb40`;
         const imageUrl = response.data?.url;
+
+        this.cache.set(hashKey, imageUrl, this.cacheTTL);
 
         return imageUrl;
     }
