@@ -219,7 +219,7 @@ export class ApexLeaderboardService {
             logoUrl: this.configService.get<string>('images.logo-transparent-small'),
             avatarImgUrl: topDiscordMember.displayAvatarURL(),
             playerName: topDiscordMember.displayName,
-            playerNickname: topDiscordMember.user.username,
+            playerNickname: '@' + topDiscordMember.user.username,
         } as TopPlayerTemplateParams, 'topPlayer');
 
         console.info('TOP IMAGE URL: ', topImageUrl);
