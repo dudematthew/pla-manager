@@ -55,8 +55,24 @@ export class ApexConnectService {
 
         if (typeof playerData?.errorCode !== "undefined") {
             if (playerData.errorCode == 404) {
-                interaction.editReply({ content: `Nie znaleziono gracza o nicku ${options.username} na platformie ${platformAliases[options.platform]}.`}); // Here the error occurs
+                const confirmResponse = await interaction.editReply(this.messageProviderService.getAccountNotFoundMessage(options.username, platformAliases[options.platform]));
                 this.sendConnectionStatusToLogChannel(interaction, options, "unresolved");
+
+                let confirmation;
+
+                const collectorFilter = i => i.user.id == interaction.user.id;
+
+                try {
+                    confirmation = await confirmResponse.awaitMessageComponent({ filter: collectorFilter, time: 60000 });
+                } catch (e) {
+                    await interaction.editReply(this.messageProviderService.getPlayerDataExpiredMessage());
+                }
+        
+                if (confirmation.customId == 'apex-link-steam') {
+                    await interaction.editReply(this.messageProviderService.getConnectSteamMessage(options.username, options.platform));
+                    confirmation.deferUpdate();
+                    return;
+                }
             }
             
             else {
@@ -81,10 +97,11 @@ export class ApexConnectService {
             return;
         }
 
-        // if (confirmation.customId !== 'apex-connect-confirm') {
-        //     this.logger.error(`Confirmation customId is not apex-connect-confirm. Received: ${confirmation.customId}`);
-        //     return;
-        // }
+        if (confirmation.customId == 'apex-link-steam') {
+            await interaction.editReply(this.messageProviderService.getConnectSteamMessage(options.username, options.platform));
+            confirmation.deferUpdate();
+            return;
+        }
 
         // Account that could be connected to user
         const checkForAccount = await this.apexAccountService.findByUID(playerData.global.uid.toString());

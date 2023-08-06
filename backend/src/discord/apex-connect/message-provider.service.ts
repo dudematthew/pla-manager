@@ -46,10 +46,16 @@ export class MessageProviderService {
      */
     public getPlayerDataConfirmMessage(playerData: PlayerStatistics): InteractionReplyOptions {
 
-        const linkEAButton = new ButtonBuilder()
-            .setStyle(ButtonStyle.Link)
-            .setLabel('Masz konto Steam?')
-            .setURL('https://help.ea.com/pl/help/pc/link-ea-and-steam/')
+        // const linkEAButton = new ButtonBuilder()
+        //     .setStyle(ButtonStyle.Link)
+        //     .setLabel('Masz konto Steam?')
+        //     .setURL('https://help.ea.com/pl/help/pc/link-ea-and-steam/')
+        //     .setEmoji('🔗');
+
+        const linkSteam = new ButtonBuilder()
+            .setStyle(ButtonStyle.Secondary)
+            .setLabel('Mam konto Steam')
+            .setCustomId('apex-link-steam')
             .setEmoji('🔗');
 
         const confirmButton = new ButtonBuilder()
@@ -59,7 +65,7 @@ export class MessageProviderService {
             .setEmoji('✅');
 
         const row = new ActionRowBuilder()
-            .addComponents(linkEAButton, confirmButton);
+            .addComponents(linkSteam, confirmButton);
 
         const rankDivisionRomanSystem = {
             1: 'I',
@@ -97,6 +103,50 @@ export class MessageProviderService {
                 },
             )
             .setThumbnail(playerData.global.avatar)
+
+            return {
+                embeds: [embed],
+                components: [row as any],
+                ephemeral: true,
+            }
+    }
+
+    public getConnectSteamMessage(nickname: string, platform: string): InteractionReplyOptions {
+
+        const urlFriendlyName = nickname.replaceAll(' ', '%20');
+        const url = `https://apexlegendsstatus.com/profile/${platform}/${urlFriendlyName}`;
+
+        const tutorialImage = this.configService.get<string>('images.steam-connect-tutorial');
+        const steamImage = this.configService.get<string>('images.steam-logo');
+
+        const connectCommand = this.commands.find(command => command.name == 'połącz') ?? null;
+
+        console.info(url, tutorialImage);
+
+        const description = [];
+
+        description.push(`### Nawet jeśli posiadasz konto Steam, wciąż musisz użyć nicku platformy Origin.`);
+        description.push(`Aby znaleźć swój nick Origin, możesz odwiedzić [link](${url}) poniżej, wybrać swoje konto a następnie znaleźć swój nick Origin w sekcji \`Account info >> Username aliases\``);
+        description.push(`### ` + url);
+        description.push('');
+        description.push(`Gdy już znajdziesz swój nick Origin, użyj komendy </${connectCommand.name}:${connectCommand.id}> ponownie.`);
+
+        const linkEAButton = new ButtonBuilder()
+            .setStyle(ButtonStyle.Link)
+            .setLabel('Znajdź swoje konto Steam')
+            .setURL(url)
+            .setEmoji('🔎');
+
+        const row = new ActionRowBuilder()
+            .addComponents(linkEAButton);
+
+        // Are you sure this is your account?
+        const embed = this.getBasicEmbed()
+            .setTitle('Łączenie konta Steam')
+            .setDescription(description.join('\n'))
+            .setURL(`https://help.ea.com/pl/help/pc/link-ea-and-steam/`)
+            .setImage(tutorialImage)
+            .setThumbnail(steamImage);
 
             return {
                 embeds: [embed],
@@ -463,6 +513,28 @@ export class MessageProviderService {
             components: [row as any],
             ephemeral: true,
         }
+    }
+
+    public getAccountNotFoundMessage (username, platform): InteractionReplyOptions {
+        const linkSteam = new ButtonBuilder()
+            .setStyle(ButtonStyle.Secondary)
+            .setLabel('Mam konto Steam')
+            .setCustomId('apex-link-steam')
+            .setEmoji('🔗');
+
+        const row = new ActionRowBuilder()
+            .addComponents(linkSteam);
+
+        const embed = this.getBasicEmbed()
+            .setTitle(':x: Nie znaleziono konta')
+            .setDescription(`Nie znaleziono gracza o nicku **${username}** na platformie **${platform}**.`)
+            .setThumbnail(this.configService.get<string>('images.unresolved'))
+
+            return {
+                embeds: [embed],
+                components: [row as any],
+                ephemeral: true,
+            }
     }
 
     public getChannelNotFoundMessage (): InteractionReplyOptions {
