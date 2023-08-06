@@ -14,20 +14,17 @@ import { ApexAccountHistoryEntity } from "src/database/entities/apex-account-his
 import { ApexSeasonService } from "src/database/entities/apex-season/apex-season.service";
 import { ApexSeasonEntity } from "src/database/entities/apex-season/entities/apex-season.entity";
 import { platform } from "os";
+import { ApexApiService } from "src/apex-api/apex-api.service";
 
 @Injectable()
 export class ApexRankingReportService {
     constructor(
-        private readonly configService: ConfigService,
         private readonly apexAccountService: ApexAccountService,
         private readonly emojiService: EmojiService,
         private readonly discordService: DiscordService,
         private readonly apexAccountHistoryService: ApexAccountHistoryService,
-        private readonly messageService: MessageService,
-        private readonly channelService: ChannelService,
-        @Inject(forwardRef(() => CronService))
-        private readonly cronService: CronService,
         private readonly apexSeasonService: ApexSeasonService,
+        private readonly apexApiService: ApexApiService,
     ) {}
 
     public async handleAdminCreateRankingReport(interaction: ChatInputCommandInteraction<CacheType>, options: AdminCreateRankingReportDto) {
@@ -96,9 +93,17 @@ export class ApexRankingReportService {
 
         const isCurrentSeason = await this.apexSeasonService.isCurrentSeason(season);
 
+        let predatorData = null;
+
         if (isCurrentSeason) {
             console.log(`[ApexRankingReportService] generateRankingReport: ${season.name} is current season`)
             accounts = await this.apexAccountService.getServerRankTopX(null);
+            predatorData = await this.apexApiService.getCurrentPredatorRequirements();
+
+            if (predatorData.error) {
+                console.error(`[ApexRankingReportService] generateRankingReport: ${season.name} - ${predatorData.error}`);
+                predatorData = null;
+            }
         } else {
             console.log(`[ApexRankingReportService] generateRankingReport: ${season.name} is not current season`)
             accounts = await this.apexAccountHistoryService.getTopXAtTime(null, new Date(season.endDate), false);
@@ -119,6 +124,10 @@ export class ApexRankingReportService {
 
         const plaEmoji = await this.emojiService.findByName('pla');
 
+        const firstEmoji = await this.emojiService.findByName('first');
+        const secondEmoji = await this.emojiService.findByName('second');
+        const thirdEmoji = await this.emojiService.findByName('third');
+
         let content = ``;
         const rankGroups = new Object();
         
@@ -131,17 +140,13 @@ export class ApexRankingReportService {
         });
 
 
-        console.log(`[ApexRankingReportService] generateRankingReport: ${Object.keys(rankGroups).length} rank groups found: `, rankGroups);
-
         console.log(plaEmoji.toString, plaEmoji.toString());
 
-        content += `## ${plaEmoji} Wykaz ${accounts.length} połączonych kont PLA`;
+        content += `## ${plaEmoji} TOP ${accounts.length} połączonych kont PLA`;
 
         content += `\n# Sezon ${season.id} - ${season.name}`
 
         content += `\n### <t:${seasonStartTimestamp}:d> - <t:${seasonEndTimestamp}:d>\n\n`
-
-        // content += `\n` + `:heavy_minus_sign:`.repeat(15);
 
         for (const rankGroupName in rankGroups) {
             const rankGroup = rankGroups[rankGroupName];
@@ -152,24 +157,33 @@ export class ApexRankingReportService {
             const rankEmojiName = rankToRoleNameDictionary[rankGroupName];
             const rankEmoji = await this.emojiService.findByName(rankEmojiName);
 
+            const platformEmojis = [];
+
             if (rankGroup.length === 0) {
-                console.info(`[ApexRankingReportService] generateRankingReport: ${rankGroupName} - ${rankScore} RP - Rank group is empty!`);
+                console.info(`[ApexRankingReportService] generateRankingReport: ${rankGroupName} - ${rankScore} LP - Rank group is empty!`);
                 continue;
             }
 
-            content += `\n\n\n` + `:heavy_minus_sign:`.repeat(15);
+            content += `\n\n\n` + `:heavy_minus_sign:`.repeat(14) + `ㅤ`;
 
-            content += `\n## ${rankEmoji} ${rankGroupName} - ${rankScore} RP (${Object.keys(rankGroup).length} graczy)`;
+            if (rankGroupName == `Apex Predator`) {
+                content += `\n## ${rankEmoji} ${rankGroupName} (${Object.keys(rankGroup).length} graczy)`;
+            } else {
+                content += `\n## ${rankEmoji} ${rankGroupName} - ${rankScore} LP (${Object.keys(rankGroup).length} graczy)`;
+            }
 
-            content += `\n` + `:heavy_minus_sign:`.repeat(15);
+
+            content += `\n` + `:heavy_minus_sign:`.repeat(14) + `ㅤ`;
 
             for (const accountKey in rankGroup) {
                 const account: ApexAccountEntity | ApexAccountHistoryEntity = rankGroup[accountKey];
 
                 console.log(`[ApexRankingReportService] generateRankingReport: ${accountKey} - ${account.name}`)
 
+                // Optimize emoji fetching
                 const platformEmojiName = platformToEmojiNameDictionary[account.platform];
-                const platformEmoji = await this.emojiService.findByName(platformEmojiName);
+                const platformEmoji = platformEmojis[platformEmojiName] || await this.emojiService.findByName(platformEmojiName);
+                platformEmojis[platformEmojiName] = platformEmoji;
 
                 const rankDiv = rankDivToRomanDictionary[account.rankDivision];
                 const rankName = rankGroupName;
@@ -186,10 +200,43 @@ export class ApexRankingReportService {
                     console.error(`[ApexRankingReportService] generateRankingReport: ${accountKey} - ${account.name} - Discord user not found!`);
                     continue;
                 }
+
+                let accountKeySymbol = `#` + accountKey;
+
+                switch (accountKey) {
+                    case '1':
+                        accountKeySymbol = firstEmoji.toString();
+                        break;
+                    case '2':
+                        accountKeySymbol = secondEmoji.toString();
+                        break;
+                    case '3':
+                        accountKeySymbol = thirdEmoji.toString();
+                        break;
+                }
+            
+
+                if (rankGroupName == `Apex Predator`) {
+                    let predatorRequirement = ``;
+
+                    console.log(predatorData);
+
+                    if (predatorData) {
+                        predatorRequirement += ` / `;
+                        predatorRequirement += predatorData['RP'][account.platform]?.val ?? null;
+                    }
+
+                    content += `\n**${accountKeySymbol}** ${rankEmoji} ${platformEmoji} **${account.name}** | ${rankName} | **${account.rankScore}${predatorRequirement}** LP [${discordUser}]\n`;
+                } else {
+                    content += `\n**${accountKeySymbol}** ${rankEmoji} ${platformEmoji} **${account.name}** | ${rankName} ${rankDiv} | **${account.rankScore}** LP [${discordUser}]\n`;
+                }
                 
-                content += `\n### ${rankEmoji} ${platformEmoji} **${account.name}** - ${rankName} ${rankDiv} - ${account.rankScore} RP [${discordUser.id}]\n`;
             }
         }
+
+        content += `\n` + `:heavy_minus_sign:`.repeat(14) + `ㅤ`
+
+        content += `\n### ${plaEmoji} Gratulujemy wszystkim graczom zdobytych rang!`;
 
         const messages = [];
 
