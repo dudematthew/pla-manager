@@ -13,6 +13,8 @@ import { ApexSyncService } from "../apex-connect/apex-sync.service";
 import { handleAdminCreateMessageDto } from "./dtos/admin-create-message.dto";
 import { AdminCreateLeaderboardDto } from "./dtos/admin-create-leaderboard.dto";
 import { ApexLeaderboardService } from "../apex-statistics/apex-leaderboard.service";
+import { ApexRankingReportService } from "../apex-statistics/apex-ranking-report.service";
+import { AdminCreateRankingReportDto } from "./dtos/admin-create-ranking-report.dto";
 
 export const AdminCommandsDecorator = createCommandGroupDecorator({
     name: 'admin',
@@ -31,6 +33,7 @@ export class AdminCommandsService {
         private readonly databaseService: DatabaseService,
         private readonly apexSyncService: ApexSyncService,
         private readonly apexLeaderboardService: ApexLeaderboardService,
+        private readonly apexRankingReportService: ApexRankingReportService,
     ) {}
 
     @UseGuards(AdminGuard)
@@ -210,6 +213,18 @@ export class AdminCommandsService {
         console.log(`[CommandsService] onAdminUpdateLeaderbord`);
 
         await this.apexLeaderboardService.handleAdminUpdateLeaderboard(Interaction);
+    }
+
+    @UseGuards(AdminGuard)
+    @UseFilters(ForbiddenExceptionFilter)
+    @Subcommand({
+        name: 'stwórz-raport-rankingowy',
+        description: 'Stwórz raport rankingowy dla graczy Apex Legends na serwerze',
+    })
+    public async onAdminCreateRankingReport(@Context() [Interaction]: SlashCommandContext, @Options() options: AdminCreateRankingReportDto) {
+        console.log(`[CommandsService] onAdminUpdateLeaderbord`);
+
+        await this.apexRankingReportService.handleAdminCreateRankingReport(Interaction, options);
     }
 
 }

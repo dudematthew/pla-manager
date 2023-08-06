@@ -45,7 +45,6 @@ export class ApexStatisticsService {
                 modern: ['chartjs-plugin-annotation']
             },
             chartCallback: (ChartJS) => {
-                console.log('ChartJS callback: ', Annotation);
                 ChartJS.register(Annotation);
                 ChartJS.register(ChartMomentAdapter);
                 ChartJS.register({

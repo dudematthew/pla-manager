@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger, forwardRef } from "@nestjs/common";
 import { Cron, SchedulerRegistry } from "@nestjs/schedule";
+import { CronJob } from "cron";
 import { DatabaseService } from "src/database/database.service";
 import { ApexSyncService } from "src/discord/apex-connect/apex-sync.service";
 import { ApexLeaderboardService } from "src/discord/apex-statistics/apex-leaderboard.service";
@@ -28,6 +29,23 @@ export class CronService {
     public getCronJob (name: string) {
         return this.schedulerRegistry.getCronJob(name);
     }
+
+    public scheduleCronJob(
+        name: string,
+        cronExpression: string,
+        callback: () => void
+    ): CronJob {
+        const cronJob = new CronJob(cronExpression, callback);
+
+        this.schedulerRegistry.addCronJob(name, cronJob);
+
+        cronJob.start();
+
+        this.logger.log(`Scheduled cron job '${name}' with expression '${cronExpression} to run at '${cronJob.nextDates()}'`);
+        
+        return cronJob;
+    }
+    
 
     // Schedule a cron job to run every hour
     // TODO: Change this to run every 6 hours

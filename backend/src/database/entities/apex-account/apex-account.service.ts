@@ -254,9 +254,10 @@ export class ApexAccountService {
 
   /**
  * @param limit limit of accounts to return
+ * if null returns all accounts
  * @returns top X accounts on the server
  */
-  async getServerRankTopX(limit: number): Promise<ApexAccountEntity[]> {
+  async getServerRankTopX(limit: number = 20): Promise<ApexAccountEntity[]> {
     const entities = await this.apexAccountRepository
       .createQueryBuilder("apexAccount")
       .leftJoinAndSelect("apexAccount.user", "user")

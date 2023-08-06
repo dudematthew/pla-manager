@@ -63,29 +63,38 @@ export class ApexAccountHistoryService {
   }
   
   
-  public async getTopXAtTime(topX: number, atTime: Date): Promise<ApexAccountHistoryEntity[]> {
+  public async getTopXAtTime(topX: number | null = 20, atTime: Date, afterDate: boolean = true): Promise<ApexAccountHistoryEntity[]> {
   
     // Find the most recent history record that is after the given time for each user
-    const subQueryResults = await this.apexAccountHistoryRepository.createQueryBuilder('ah2')
+    const subQuery = this.apexAccountHistoryRepository.createQueryBuilder('ah2')
       .innerJoinAndSelect('ah2.apexAccount', 'apexAccount')
       .select(['ah2.apexAccount', 'MAX(ah2.createdAt) AS maxCreatedAt', 'MAX(ah2.id) AS maxId'])
-      .where('ah2.createdAt > :atTime', { atTime })
-      .groupBy('ah2.apexAccount')
-      .getRawMany();
+      .groupBy('ah2.apexAccount');
   
+    if (afterDate) {
+      subQuery.where('ah2.createdAt > :atTime', { atTime });
+    } else {
+      subQuery.where('ah2.createdAt = :atTime', { atTime });
+    }
+  
+    const subQueryResults = await subQuery.getRawMany();
+    
     const maxIds = subQueryResults.map(result => result.maxId);
-  
+    
     // Get the full history records for the maxIDs we found earlier
     const historiesAtTime = await this.apexAccountHistoryRepository.createQueryBuilder('ah')
       .innerJoinAndSelect('ah.apexAccount', 'apexAccount')
       .whereInIds(maxIds)
       .getMany();
-  
+    
     // Next, we sort the histories by rankScore and get the top X
-    const topXHistoriesAtTime = historiesAtTime
-      .sort((a, b) => b.rankScore - a.rankScore)
-      .slice(0, topX);
+    let topXHistoriesAtTime = historiesAtTime
+      .sort((a, b) => b.rankScore - a.rankScore);
   
+    if (topX !== null) {
+      topXHistoriesAtTime = topXHistoriesAtTime.slice(0, topX);
+    }
+    
     return topXHistoriesAtTime;
   }
 

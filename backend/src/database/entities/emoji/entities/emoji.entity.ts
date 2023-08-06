@@ -29,4 +29,8 @@ export class EmojiEntity extends BaseEntity {
 
     @OneToMany(() => RoleEntity, role => role.emoji)
     roles: RoleEntity[];
+
+    toString() {
+        return `<:${this.name}:${this.discordId}>`;
+    }
 }

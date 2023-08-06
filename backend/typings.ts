@@ -90,6 +90,26 @@ export type Schema = {
       'apexAccount:user:apexAccountId': number;
     };
   };
+  'apex_season': {
+    plain: {
+      'id': number;
+      'name': string;
+      'tagline': string;
+      'current_split': number;
+      'start_date': string;
+      'end_date': string;
+      'split_date': string;
+      'color': string;
+      'link': string;
+      'new_legend': string;
+      'new_weapon': string;
+      'new_map': string;
+      'created_at': string;
+      'updated_at': string;
+    };
+    nested: {};
+    flat: {};
+  };
   'channel': {
     plain: {
       'id': number;

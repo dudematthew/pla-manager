@@ -1,9 +1,11 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ApexApiService } from './apex-api.service';
 import { ApexApiController } from './apex-api.controller';
 import { PuppeteerModule } from 'nest-puppeteer';
 import { ApexApiScraperService } from './apex-api-scraper.service';
 import { HttpModule } from '@nestjs/axios';
+import { ApexSeasonApiService } from './apex-season-api.service';
+import { DiscordModule } from 'src/discord/discord.module';
 
 @Module({
   imports: [
@@ -13,8 +15,12 @@ import { HttpModule } from '@nestjs/axios';
   providers: [
     ApexApiService,
     // ApexApiScraperService,
+    ApexSeasonApiService,
   ],
   controllers: [ApexApiController],
-  exports: [ApexApiService],
+  exports: [
+    ApexApiService,
+    ApexSeasonApiService,
+  ],
 })
 export class ApexApiModule {}

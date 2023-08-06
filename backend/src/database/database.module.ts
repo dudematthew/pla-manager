@@ -19,6 +19,8 @@ import { DiscordModule } from "src/discord/discord.module";
 import { MessageModule } from './entities/message/message.module';
 import { MessageEntity } from "./entities/message/entities/message.entity";
 import { ApexAccountHistoryEntity } from "./entities/apex-account-history/entities/apex-account-history.entity";
+import { ApexSeasonModule } from './entities/apex-season/apex-season.module';
+import { ApexSeasonEntity } from "./entities/apex-season/entities/apex-season.entity";
 
 @Module({
     imports: [
@@ -44,6 +46,7 @@ import { ApexAccountHistoryEntity } from "./entities/apex-account-history/entiti
                     ApexAccountHistoryEntity,
                     EmojiEntity,
                     MessageEntity,
+                    ApexSeasonEntity,
                 ],
                 synchronize: true,
                 autoLoadEntities: true,
@@ -52,6 +55,7 @@ import { ApexAccountHistoryEntity } from "./entities/apex-account-history/entiti
         }),
         TypeOrmModule.forFeature([TypeORMSession]),
         forwardRef(() => DiscordModule),
+        ApexSeasonModule,
     ],
     providers: [
         TypeORMSession,

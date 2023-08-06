@@ -7,8 +7,8 @@ import { forwardRef } from '@nestjs/common';
 
 @Module({
     imports: [
-        forwardRef(() => DiscordModule),
         TypeOrmModule.forFeature([ChannelEntity]),
+        forwardRef(() => DiscordModule),
     ],
     controllers: [],
     providers: [

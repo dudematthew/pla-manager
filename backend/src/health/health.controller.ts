@@ -14,6 +14,7 @@ export class HealthController {
     return this.healthCheckService.check([
       () => this.http.pingCheck('discord-api', 'https://discord.com/api/v8/gateway'),
       () => this.http.pingCheck('apex-api', `https://api.mozambiquehe.re/?auth=${process.env.APEX_API_KEY}`),
+      () => this.http.pingCheck('apex-season-api', `https://api.jumpmaster.xyz`),
     ]);
   }
   

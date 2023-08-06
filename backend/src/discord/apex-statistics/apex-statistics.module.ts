@@ -11,6 +11,8 @@ import { ApexAccountHistoryModule } from 'src/database/entities/apex-account-his
 import { MessageModule } from 'src/database/entities/message/message.module';
 import { ChannelModule } from 'src/database/entities/channel/channel.module';
 import { CronModule } from 'src/cron/cron.module';
+import { ApexRankingReportService } from './apex-ranking-report.service';
+import { ApexSeasonModule } from 'src/database/entities/apex-season/apex-season.module';
 
 @Module({
   imports: [
@@ -24,14 +26,17 @@ import { CronModule } from 'src/cron/cron.module';
     MessageModule,
     ChannelModule,
     forwardRef(() => CronModule),
+    ApexSeasonModule,
   ],
   providers: [
     ApexStatisticsService,
     ApexLeaderboardService,
+    ApexRankingReportService,
   ],
   exports: [
     ApexStatisticsService,
     ApexLeaderboardService,
+    ApexRankingReportService,
   ],
 })
 export class ApexStatisticsModule {}
