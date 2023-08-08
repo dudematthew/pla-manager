@@ -36,7 +36,7 @@ export class ApexRankingReportService {
 
         await interaction.reply({ content: 'Generowanie raportu...', ephemeral: true });
 
-        if (options.channel.type !== ChannelType.GuildText) {
+        if (options.channel.type in [ChannelType.GuildText, ChannelType.GuildAnnouncement]) {
             interaction.editReply({ content: '### :x: Tablica może być tworzona tylko na kanale tekstowym!'});
             return false;
         }
@@ -76,7 +76,7 @@ export class ApexRankingReportService {
         }
 
         raportMessages.forEach(async (message) => {
-            if (options.channel.type === ChannelType.GuildText)
+            if (options.channel.type == ChannelType.GuildText || options.channel.type == ChannelType.GuildAnnouncement)
                 options.channel.send(message);
         });
 
