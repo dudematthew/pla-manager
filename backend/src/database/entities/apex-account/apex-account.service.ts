@@ -16,6 +16,7 @@ import { PlainObjectToNewEntityTransformer } from 'typeorm/query-builder/transfo
 export class ApexAccountService {
 
   public rankToRoleNameDictionary = {
+    'Unranked': 'rookie',
     'Rookie': 'rookie',
     'Bronze': 'bronze',
     'Silver': 'silver',
@@ -27,6 +28,7 @@ export class ApexAccountService {
   }
 
   public rankToRoleColorDictionary = {
+    'Unranked': '#e28743',
     'Rookie': '#e28743',
     'Bronze': '#cd7f32',
     'Silver': '#c0c0c0',
