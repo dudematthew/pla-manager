@@ -4,6 +4,7 @@ import { RoleModule } from 'src/database/entities/role/role.module';
 import { DiscordModule } from '../discord.module';
 import { forwardRef } from '@nestjs/common';
 import { EmojiModule } from 'src/database/entities/emoji/emoji.module';
+import { manageMembersService } from './manage-members.service';
 
 @Module({
   imports: [
@@ -13,7 +14,11 @@ import { EmojiModule } from 'src/database/entities/emoji/emoji.module';
   ],
   providers: [
     InsideService,
+    manageMembersService,
   ],
-  exports: [InsideService],
+  exports: [
+    InsideService,
+    manageMembersService,
+  ],
 })
 export class InsideModule {}
