@@ -16,7 +16,7 @@ import { PlainObjectToNewEntityTransformer } from 'typeorm/query-builder/transfo
 export class ApexAccountService {
 
   public rankToRoleNameDictionary = {
-    'Unranked': 'rookie',
+    'Unranked': 'unranked',
     'Rookie': 'rookie',
     'Bronze': 'bronze',
     'Silver': 'silver',
@@ -25,6 +25,18 @@ export class ApexAccountService {
     'Diamond': 'diamond',
     'Master': 'master',
     'Apex Predator': 'predator',
+  }
+
+  public rankToDisplayNameDictionary = {
+    'Unranked': 'Placement',
+    'Rookie': 'Rookie',
+    'Bronze': 'Bronze',
+    'Silver': 'Silver',
+    'Gold': 'Gold',
+    'Platinum': 'Platinum',
+    'Diamond': 'Diamond',
+    'Master': 'Master',
+    'Apex Predator': 'Apex Predator',
   }
 
   public rankToRoleColorDictionary = {
@@ -142,20 +154,23 @@ export class ApexAccountService {
 
     let profile = null;
 
-    // Check if user already has an apex account
-    if(user.apexAccount) {
+    // Check if account with given UID already exists
+    const existingAccount = await this.findByUID(data.uid);
+
+    if(existingAccount) {
         // Update existing profile
         console.log("Updating existing profile");
-        profile = await this.update(user.apexAccount.id, data);
+        profile = await this.update(existingAccount.id, data);
+        console.log(`Updated profile: ${profile.name}`);
     } else {
         // Create new profile
-        console.log("Creating new profile");
+        console.log(`Creating new profile: ${data.name}`);
         profile = await this.create(data);
     }
 
-
     // Check if profile was created or updated
     if (!profile) {
+        console.error("Failed to create or update profile");
         return null;
     }
 
@@ -203,6 +218,14 @@ export class ApexAccountService {
       account.user.apexAccount = null;
       await account.user.save();
     }
+  }
+
+  async unlink(user: UserEntity): Promise<UserEntity> {
+    if (user.apexAccount) {
+      user.apexAccount = null;
+      await user.save();
+    }
+    return user;
   }
 
   async findById(id: number): Promise<ApexAccountEntity> {
