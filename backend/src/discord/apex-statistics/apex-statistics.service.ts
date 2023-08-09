@@ -16,6 +16,7 @@ import { platform } from 'os';
 import { Console } from 'console';
 import { ApexAccountHistoryEntity } from 'src/database/entities/apex-account-history/entities/apex-account-history.entity';
 import { ApexAccountHistoryService } from 'src/database/entities/apex-account-history/apex-account-history.service';
+import { ApexSeasonService } from 'src/database/entities/apex-season/apex-season.service';
 const { ChartJSNodeCanvas } = require('chartjs-node-canvas');
 
 @Injectable()
@@ -32,6 +33,7 @@ export class ApexStatisticsService {
         private readonly discordService: DiscordService,
         private readonly emojiService: EmojiService,
         private readonly apexAccountHistoryService: ApexAccountHistoryService,
+        private readonly seasonService: ApexSeasonService,
     ) {
         const Annotation = require('chartjs-plugin-annotation');
         const ChartMomentAdapter = require('chartjs-adapter-moment');
@@ -128,7 +130,7 @@ export class ApexStatisticsService {
         if (user)
             user.apexAccount = apexAccount;
 
-        const discordUser = user ? await this.discordService.getMemberById(user.discordId) : null;
+        const discordUser = user ? await this.discordService.getMemberById(user?.discordId) : null;
 
         const message = await this.getStatisticsMessage(statistics, discordUser, user);
 
@@ -161,13 +163,17 @@ export class ApexStatisticsService {
     }
 
     private async getStatisticsMessage(statistics: PlayerStatistics, discordUser: GuildMember, user: UserEntity) {
+        console.info(`Getting statistics message for ${statistics?.global?.name}, ${discordUser?.displayName}, ${user?.discordId}`);
+
         const embed = this.getBasicStatisticsEmbed();
         const description = [];
         const rankToRoleNameDictionary = this.apexAccountService.rankToRoleNameDictionary;
         const rankToRoleColorDictionary = this.apexAccountService.rankToRoleColorDictionary;
         const platformToEmojiNameDictionary = this.apexAccountService.platformToEmojiNameDictionary;
+        const rankToDisplayNameDictionary = this.apexAccountService.rankToDisplayNameDictionary;
         const rankDivToRomanDictionary = this.apexAccountService.rankDivToRomanDictionary;
         const platformAliases = this.apexAccountService.platformAliases;
+        const apexAccount = user?.apexAccount ?? await this.apexAccountService.findByUID(`${statistics?.global?.uid}`) ?? null;
 
         embed.setColor(rankToRoleColorDictionary[statistics?.global?.rank?.rankName]);
 
@@ -175,8 +181,10 @@ export class ApexStatisticsService {
         const rankEmoji = await this.emojiService.findByName(
             rankToRoleNameDictionary[statistics?.global?.rank.rankName]
         );
+        console.info(`Rank emoji: ${rankEmoji} for ${statistics?.global?.rank.rankName}`); 
         const plaEmoji = await this.emojiService.findByName('pla');
         const serverRank = ((user?.apexAccount ?? null) != null) ? await this.apexAccountService.getServerRankByAccountId(user.apexAccount.id): null;
+        const rankDisplayName = rankToDisplayNameDictionary[statistics?.global?.rank.rankName];
         // ----------------------------------------------------------------------
 
         // Platform -------------------------------------------------------------
@@ -230,7 +238,7 @@ export class ApexStatisticsService {
                 statusText.push(`> ` + (isPlaying ? 'Rozpoczął grę' : 'Wszedł do lobby') + ` <t:${currentStateSinceTimestamp}:R>`);
             statusText.push(`> Skład: ${partyFull ? 'Pełny :x:' : 'Niepełny :white_check_mark:'}`);
         }
-        statusText.push(`> Lobby: ${(lobbyState == 'open') ? `Otwarte` : 'Zamknięte'} <:${lobbyStateEmoji?.name}:${lobbyStateEmoji.discordId}>`);
+        statusText.push(`> Lobby: ${(lobbyState == 'open') ? `Otwarte` : 'Zamknięte'} ${lobbyStateEmoji}`);
         statusText.push('ㅤ');
         // ----------------------------------------------------------------------
 
@@ -254,30 +262,34 @@ export class ApexStatisticsService {
         const levelEmoji = await this.emojiService.findByName(levelEmojiName) ?? null;
         // ----------------------------------------------------------------------
 
-        embed.setTitle(`**<:${platformEmoji?.name}:${platformEmoji.discordId}> ${statistics?.global?.name}**`)
+        embed.setTitle(`**${platformEmoji} ${statistics?.global?.name}**`)
 
         // If discord user is null then user plain data
         if (discordUser) {
             embed.setThumbnail(discordUser.displayAvatarURL())
 
             description.push(`Konto użytkownika <@${discordUser.id}>`);
-        } else {
+        }
+        else {
             embed.setThumbnail(statistics?.global?.avatar ?? statistics?.global?.rank.rankImg)
 
-            description.push(`*Konto niepowiązane na serwerze PLA*`);
+            if (apexAccount)
+                description.push(`*Konto odłączone od użytkownika*`);
+            else
+                description.push(`*Konto niepowiązane na serwerze PLA*`);
         }
 
         const urlFriendlyName = statistics?.global?.name.replaceAll(' ', '%20');
         embed.setURL(`https://apexlegendsstatus.com/profile/${statistics?.global?.platform}/${urlFriendlyName}`);
 
         // Rank Content ---------------------------------------------------------
-        description.push(`## <:${rankEmoji?.name}:${rankEmoji.discordId}> **${statistics?.global?.rank.rankName} ${rankDivToRomanDictionary[statistics?.global?.rank.rankDiv]}**`);
+        description.push(`## ${rankEmoji} **${rankDisplayName} ${rankDivToRomanDictionary[statistics?.global?.rank.rankDiv]}**`);
         
         if (statistics?.global?.rank.ladderPosPlatform != -1)
             description.push(`:arrow_up: TOP **${statistics?.global?.rank.ladderPosPlatform}** na ${platformAliases[platform]}`);
 
         if(serverRank)
-            description.push(`<:${plaEmoji?.name}:${plaEmoji.discordId}> TOP **${serverRank}** na serwerze **PLA**`);
+            description.push(`${plaEmoji} TOP **${serverRank}** na serwerze **PLA**`);
 
         description.push(`**:chart_with_upwards_trend: ${statistics?.global?.rank.rankScore}** LP`);
         
@@ -287,14 +299,14 @@ export class ApexStatisticsService {
         if (isOnline) {
             embed.addFields([
                 {
-                    name: `<:${statusEmoji?.name}:${statusEmoji.discordId}> **Online**`,
+                    name: `${statusEmoji} **Online**`,
                     value: statusText.join('\n'),
                 }
             ])
         } else {
             embed.addFields([
                 {
-                    name: `<:${statusEmoji?.name}:${statusEmoji.discordId}> **Offline**`,
+                    name: `${statusEmoji} **Offline**`,
                     value: statusText.join('\n'),
                     inline: true,
                 }
@@ -311,7 +323,7 @@ export class ApexStatisticsService {
 
         embed.addFields([
             {
-                name: `<:${levelEmoji?.name}:${levelEmoji.discordId}> **Poziom ${level}**`,
+                name: `${levelEmoji} **Poziom ${level}**`,
                 value: levelText.join('\n'),
                 inline: true,
             }
@@ -363,7 +375,7 @@ export class ApexStatisticsService {
 
         const files = [];
 
-        const history = (user?.apexAccount) ? await this.apexAccountHistoryService.getPlayerHistory(user.apexAccount, 14) : [];
+        const history = (apexAccount) ? await this.apexAccountHistoryService.getPlayerHistory(apexAccount, 14) : [];
 
         if (history.length > 0) {
             // Save history chunk
@@ -424,6 +436,12 @@ export class ApexStatisticsService {
         const predatorRequirements = await this.apexApiService.getCurrentPredatorRequirements();
         const predatorLp = predatorRequirements['RP'][statistics[0]?.platform]?.val ?? null;
 
+        const newestSeason = await this.seasonService.getNewestSeason();
+        const currentSeason = this.seasonService.isCurrentSeason(newestSeason) ? newestSeason : null;
+        const lastSeason = await this.seasonService.findById(newestSeason.id - 1);
+
+        console.info(`Colors: ${currentSeason?.color}, ${lastSeason?.color}`);
+
         const moment = require('moment');
 
         const l = 14; // history length
@@ -457,6 +475,58 @@ export class ApexStatisticsService {
         const rankLevelColors = this.apexAccountService.rankToRoleColorDictionary;
 
         const levelLines = [];
+
+        console.log(`Creating lines for seasons: ${lastSeason?.name}, ${currentSeason?.name}`);
+
+        // Create last season end date line
+        if (lastSeason) {
+            const lastSeasonEndDate = lastSeason.endDate;
+            levelLines.push({
+                type: 'line',
+                xMin: lastSeasonEndDate,
+                xMax: lastSeasonEndDate,
+                borderColor: `#${lastSeason.color}`,
+                borderWidth: 1,
+                // borderDash: [5,5],
+                adjustScaleRange: false,
+                label: {
+                    enabled: true,
+                    content: lastSeason.name,
+                    position: "end",
+                    backgroundColor: 'rgba(32, 33, 36, 1)',
+                    font: {
+                        size: 14,
+                        weight: 'bold',
+                        color: "#F2F2F2"
+                    },
+                },
+            });
+        }
+         
+        // Create current season end date line
+        if (currentSeason) {
+            const currentSeasonEndDate = currentSeason.endDate;
+            levelLines.push({
+                type: 'line',
+                xMin: currentSeasonEndDate,
+                xMax: currentSeasonEndDate,
+                borderColor: `#${currentSeason.color}`,
+                borderWidth: 1,
+                borderDash: [5,5],
+                adjustScaleRange: false,
+                label: {
+                    enabled: true,
+                    content: currentSeason.name,
+                    position: "end",
+                    backgroundColor: 'rgba(32, 33, 36, 1)',
+                    font: {
+                        size: 14,
+                        weight: 'bold',
+                        color: "#F2F2F2"
+                    },
+                },
+            });
+        }
 
         // Create rank level lines
         for (const [rank, level] of Object.entries(rankLevelEntries)) {
@@ -602,7 +672,7 @@ export class ApexStatisticsService {
         const image = await this.canvasRenderService.renderToBuffer(canvasConfig);
       
         return image;
-      }
+    }
       
       
 }

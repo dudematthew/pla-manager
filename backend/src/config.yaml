@@ -44,4 +44,4 @@ lfg:
   rank-cooldown: 1200
   
 discord:
-  rank-roles: ['rookie', 'bronze', 'silver', 'gold', 'platinum', 'diamond', 'master', 'predator']
+  rank-roles: ['rookie', 'bronze', 'silver', 'gold', 'platinum', 'diamond', 'master', 'predator', 'unranked']

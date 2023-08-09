@@ -156,6 +156,7 @@ export class ApexLeaderboardService {
         const rankToEmojiNameDictionary = this.apexAccountService.rankToRoleNameDictionary;
         const rankDivToRomanDictionary = this.apexAccountService.rankDivToRomanDictionary;
         const platformToEmojiNameDictionary = this.apexAccountService.platformToEmojiNameDictionary;
+        const rankToDisplayNameDictionary = this.apexAccountService.rankToDisplayNameDictionary;
         const discordEmoji = await this.emojiService.findByName('discord');
         const arrowUpEmoji = await this.emojiService.findByName('arrowup');
         const arrowDownEmoji = await this.emojiService.findByName('arrowdown');
@@ -234,6 +235,8 @@ export class ApexLeaderboardService {
             const position = index + 1;
             let name = '';
             let value = '';
+            
+            const rankDisplayName = rankToDisplayNameDictionary[player.rankName];
             const rankEmojiName = rankToEmojiNameDictionary[player.rankName];
             const rankEmoji = rankEmojis[rankEmojiName] ?? await this.emojiService.findByName(rankEmojiName);
             const userInfo = `${player.name}`;
@@ -291,9 +294,12 @@ export class ApexLeaderboardService {
         
             name += `${userInfo}`;
         
-            value += `<:${rankEmoji.name}:${rankEmoji.discordId}> **${player.rankName} ${rankDivToRomanDictionary[player.rankDivision]}** - ${player.rankScore} LP`;
+            value += `${rankEmoji} **${rankDisplayName} ${rankDivToRomanDictionary[player.rankDivision]}** - ${player.rankScore} LP`;
             value += `\n`;
-            value += `<:${discordEmoji.name}:${discordEmoji.discordId}> <@${player.user.discordId}>${dropAscend}`;
+            if (player?.user?.discordId)
+                value += `${discordEmoji} <@${player.user.discordId}>${dropAscend}`;
+            else
+                value += `${discordEmoji} *Niepowiązane*${dropAscend}`;
 
             // Add a divider if it's not the last player
             if (index < topPlayers.length - 1 && index != 6 && index != 12) {
