@@ -121,6 +121,7 @@ export class ApexRankingReportService {
         const rankDivToRomanDictionary = this.apexAccountService.rankDivToRomanDictionary;
         const rankToScoreDictionary = this.apexAccountService.rankToScoreDictionary;
         const platformToEmojiNameDictionary = this.apexAccountService.platformToEmojiNameDictionary;
+        const rankToDisplayNameDictionary = this.apexAccountService.rankToDisplayNameDictionary;
 
         const plaEmoji = await this.emojiService.findByName('pla');
 
@@ -151,9 +152,9 @@ export class ApexRankingReportService {
         for (const rankGroupName in rankGroups) {
             const rankGroup = rankGroups[rankGroupName];
             const rankRoleName = rankToRoleNameDictionary[rankGroupName];
-            const rankToDisplayNameDictionary = this.apexAccountService.rankToDisplayNameDictionary;
             const rankRoleColor = rankToRoleColorDictionary[rankGroupName];
             const rankScore = rankToScoreDictionary[rankGroupName];
+            const rankDisplayName = rankToDisplayNameDictionary[rankGroupName];
 
             const rankEmojiName = rankToRoleNameDictionary[rankGroupName];
             const rankEmoji = await this.emojiService.findByName(rankEmojiName);
@@ -168,13 +169,13 @@ export class ApexRankingReportService {
             content += `\n\n\n` + `:heavy_minus_sign:`.repeat(14) + `ㅤ`;
 
             if (rankGroupName == `Apex Predator`) {
-                content += `\n## ${rankEmoji} ${rankGroupName} (${Object.keys(rankGroup).length} graczy)`;
+                content += `\n## ${rankEmoji} ${rankDisplayName} (${Object.keys(rankGroup).length} graczy)`;
             }
             else if (rankGroupName == `Unranked`) {
-                content += `\n## ${rankEmoji} ${rankGroupName} (${Object.keys(rankGroup).length} graczy)`;
+                content += `\n## ${rankEmoji} ${rankDisplayName} (${Object.keys(rankGroup).length} graczy)`;
             }
             else {
-                content += `\n## ${rankEmoji} ${rankGroupName} - ${rankScore} LP (${Object.keys(rankGroup).length} graczy)`;
+                content += `\n## ${rankEmoji} ${rankDisplayName} - ${rankScore} LP (${Object.keys(rankGroup).length} graczy)`;
             }
 
 
