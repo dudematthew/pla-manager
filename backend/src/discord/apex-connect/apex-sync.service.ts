@@ -88,7 +88,7 @@ export class ApexSyncService {
             continue;
 
         // If user has connected Apex Account, remove disconnected role
-        if (usersWithConnectedApexAccount.some(apexAccount => apexAccount.user.discordId === user.id)) {
+        if (usersWithConnectedApexAccount.some(apexAccount => apexAccount?.user?.discordId === user.id)) {
             await this.discordService.removeRoleFromUser(user.id, disconnectRole.discordId);
         }
         // Else give user disconnected role
@@ -132,7 +132,7 @@ export class ApexSyncService {
 
         // Create a fusion of discord users and users with connected Apex Account
         const usersWithConnectedApexAccountAndDiscord = await Promise.all(usersWithConnectedApexAccount
-            .filter(apexAccount => users.has(apexAccount.user.discordId))
+            .filter(apexAccount => users.has(apexAccount?.user?.discordId))
             .map(async apexAccount => {
                 return {
                     ...apexAccount,

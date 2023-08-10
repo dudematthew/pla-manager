@@ -121,6 +121,7 @@ export class LfgService {
         diamond: 'https://i.imgur.com/EF2HeVR.png',
         master: 'https://i.imgur.com/qdXR2Z7.png',
         predator: 'https://i.imgur.com/7mhAyCl.png',
+        unranked: 'https://i.imgur.com/Ur6XZwa.png',
         disconnected: 'https://i.imgur.com/rwWetJw.png',
     };
 
@@ -178,6 +179,11 @@ export class LfgService {
             'predator',
         ],
         rookie: [
+            'bronze',
+            'silver',
+            'gold',
+        ],
+        unranked: [
             'bronze',
             'silver',
             'gold',

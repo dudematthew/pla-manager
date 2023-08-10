@@ -97,35 +97,49 @@ export class ApexConnectService {
             return;
         }
 
+        confirmation.deferUpdate();
+        
         if (confirmation.customId == 'apex-link-steam') {
             await interaction.editReply(this.messageProviderService.getConnectSteamMessage(options.username, options.platform));
-            confirmation.deferUpdate();
             return;
         }
-
+        
         // Account that could be connected to user
         const checkForAccount = await this.apexAccountService.findByUID(playerData.global.uid.toString());
 
         // Check if account already exists
         if (checkForAccount) {
-            const sameUser = checkForAccount.user.discordId == interaction.user.id;
-
-            const message = this.messageProviderService.getAccountExistMessage(checkForAccount, sameUser);
-
+            let message;
+            let sameUser;
+          
+            if(checkForAccount.user == null){
+                sameUser = null;
+                message = this.messageProviderService.getAccountExistButNotLinkedMessage(checkForAccount);
+            } else {
+                sameUser = checkForAccount?.user?.discordId == interaction.user.id;
+                message = this.messageProviderService.getAccountExistMessage(checkForAccount, sameUser);
+            }
+        
             interaction.editReply(message);
-            
+        
             if (sameUser)
                 return;
-
+        
             const collectorFilter = i => i.user.id == interaction.user.id;
-
+        
             let confirmation: any;
-
+        
             try {
                 confirmation = await interaction.channel.awaitMessageComponent({ filter: collectorFilter, time: 60000 });
-            }
-            catch (e) {
+            } catch (e) {
                 await interaction.editReply(this.messageProviderService.getPlayerDataExpiredMessage());
+                return;
+            }
+            
+            confirmation.deferUpdate();
+
+            if (confirmation.customId == 'apex-connect-cancel') {
+                await interaction.editReply(this.messageProviderService.getCanceledMessage());
                 return;
             }
         }
@@ -156,6 +170,7 @@ export class ApexConnectService {
         await interaction.editReply(this.messageProviderService.getConnectAccountMessage('', false, expireTimestamp, undefined, { current: 0, target: 3 }));
 
         // Check if bot is in development mode
+        // If yes, verify if account belongs to user
         const isDevelopment = this.configService.get('NODE_ENV') == 'development';
 
         if (!isDevelopment) {
@@ -198,20 +213,21 @@ export class ApexConnectService {
             // If user is null (something went wrong), abort
             if (!user) {
                 await interaction.editReply(this.messageProviderService.getErrorMessage("Nie udało się utworzyć twojego konta."));
+                console.error("Connection failed, couldn't create user.");
                 this.sendConnectionStatusToLogChannel(interaction, options, "error");
                 return;
             }
         }
 
-        // If user already has apex account, delete it
+        // If user already has apex account, unlink it
         if (user.apexAccount) {
-            console.log("User already has apex account, deleting...", user.apexAccount.name);
-            await this.apexAccountService.remove(user.apexAccount.id);
+            console.log("User already has apex account, unlinking...", user.apexAccount.name);
+            await this.apexAccountService.unlink(user);
         }
 
-        if (checkForAccount) {
-            console.log("Account already exists, deleting...", checkForAccount.name);
-            await this.apexAccountService.remove(checkForAccount.id);
+        if (checkForAccount && checkForAccount.user) {
+            console.log("Account already exists, unlinking...", checkForAccount.name);
+            await this.apexAccountService.unlink(checkForAccount.user);
         }
 
         const newUser: UserEntity = await this.apexAccountService.saveAccount(playerData, user);
@@ -219,6 +235,7 @@ export class ApexConnectService {
         // If newUser is null (something went wrong), abort
         if (!newUser || !newUser.apexAccount) {
             await interaction.editReply(this.messageProviderService.getErrorMessage("Nie udało się powiązać twojego konta."));
+            console.error("Connection failed, couldn't save account.");
             this.sendConnectionStatusToLogChannel(interaction, options, "error");
             return;
         }

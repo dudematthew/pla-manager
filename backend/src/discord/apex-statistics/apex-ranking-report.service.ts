@@ -121,6 +121,7 @@ export class ApexRankingReportService {
         const rankDivToRomanDictionary = this.apexAccountService.rankDivToRomanDictionary;
         const rankToScoreDictionary = this.apexAccountService.rankToScoreDictionary;
         const platformToEmojiNameDictionary = this.apexAccountService.platformToEmojiNameDictionary;
+        const rankToDisplayNameDictionary = this.apexAccountService.rankToDisplayNameDictionary;
 
         const plaEmoji = await this.emojiService.findByName('pla');
 
@@ -153,6 +154,7 @@ export class ApexRankingReportService {
             const rankRoleName = rankToRoleNameDictionary[rankGroupName];
             const rankRoleColor = rankToRoleColorDictionary[rankGroupName];
             const rankScore = rankToScoreDictionary[rankGroupName];
+            const rankDisplayName = rankToDisplayNameDictionary[rankGroupName];
 
             const rankEmojiName = rankToRoleNameDictionary[rankGroupName];
             const rankEmoji = await this.emojiService.findByName(rankEmojiName);
@@ -167,9 +169,13 @@ export class ApexRankingReportService {
             content += `\n\n\n` + `:heavy_minus_sign:`.repeat(14) + `ㅤ`;
 
             if (rankGroupName == `Apex Predator`) {
-                content += `\n## ${rankEmoji} ${rankGroupName} (${Object.keys(rankGroup).length} graczy)`;
-            } else {
-                content += `\n## ${rankEmoji} ${rankGroupName} - ${rankScore} LP (${Object.keys(rankGroup).length} graczy)`;
+                content += `\n## ${rankEmoji} ${rankDisplayName} (${Object.keys(rankGroup).length} graczy)`;
+            }
+            else if (rankGroupName == `Unranked`) {
+                content += `\n## ${rankEmoji} ${rankDisplayName} (${Object.keys(rankGroup).length} graczy)`;
+            }
+            else {
+                content += `\n## ${rankEmoji} ${rankDisplayName} - ${rankScore} LP (${Object.keys(rankGroup).length} graczy)`;
             }
 
 
@@ -186,20 +192,20 @@ export class ApexRankingReportService {
                 platformEmojis[platformEmojiName] = platformEmoji;
 
                 const rankDiv = rankDivToRomanDictionary[account.rankDivision];
-                const rankName = rankGroupName;
+                const rankName = rankToDisplayNameDictionary[account.rankName];
                 const rankRole = rankRoleName;
 
                 let discordUser;
                 if (account instanceof ApexAccountHistoryEntity) {
-                    discordUser = await this.discordService.getUserById(account.apexAccount.user.discordId)
+                    discordUser = (account?.apexAccount?.user) ? await this.discordService.getUserById(account.apexAccount.user.discordId) : null;
                 } else if (account instanceof ApexAccountEntity) {
-                    discordUser = await this.discordService.getUserById(account.user.discordId)
+                    discordUser = (account?.user) ? await this.discordService.getUserById(account.user.discordId) : null;
                 }
 
-                if (!discordUser) {
-                    console.error(`[ApexRankingReportService] generateRankingReport: ${accountKey} - ${account.name} - Discord user not found!`);
-                    continue;
-                }
+                // if (!discordUser) {
+                //     console.error(`[ApexRankingReportService] generateRankingReport: ${accountKey} - ${account.name} - Discord user not found!`);
+                //     continue;
+                // }
 
                 let accountKeySymbol = `#` + accountKey;
 
@@ -226,9 +232,12 @@ export class ApexRankingReportService {
                         predatorRequirement += predatorData['RP'][account.platform]?.val ?? null;
                     }
 
-                    content += `\n**${accountKeySymbol}** ${rankEmoji} ${platformEmoji} **${account.name}** | ${rankName} | **${account.rankScore}${predatorRequirement}** LP [${discordUser}]\n`;
-                } else {
-                    content += `\n**${accountKeySymbol}** ${rankEmoji} ${platformEmoji} **${account.name}** | ${rankName} ${rankDiv} | **${account.rankScore}** LP [${discordUser}]\n`;
+                    content += `\n**${accountKeySymbol}** ${rankEmoji} ${platformEmoji} **${account.name}** | ${rankName} | **${account.rankScore}${predatorRequirement}** LP [${discordUser ?? '*niepowiązane*'}]\n`;
+                } else if (rankGroupName == `Unranked`) {
+                    content += `\n${rankEmoji} ${platformEmoji} **${account.name}** | ${rankName} ${rankDiv} [${discordUser ?? '*niepowiązane*'}]\n`;
+                }
+                else {
+                    content += `\n**${accountKeySymbol}** ${rankEmoji} ${platformEmoji} **${account.name}** | ${rankName} ${rankDiv} | **${account.rankScore}** LP [${discordUser ?? '*niepowiązane*'}]\n`;
                 }
                 
             }
