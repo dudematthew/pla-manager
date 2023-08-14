@@ -7,7 +7,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import * as hash from 'object-hash';
 import Bottleneck from 'bottleneck';
-import { Axios, AxiosInstance } from 'axios';
+import { Axios, AxiosError, AxiosInstance, AxiosResponse } from 'axios';
 import { Interface } from 'readline';
 
 import { TopPlayerTemplateParams, topPlayerTemplate } from './templates/top-player';
@@ -78,8 +78,8 @@ export class HtmlApiService {
         const templateHtml = this.TemplateToHtmlCode[templateName];
 
         // Return dummy image if environment is not production
-        if (process.env.NODE_ENV !== 'production')
-            return `https://images-ext-2.discordapp.net/external/7PVOP6Wco5URuf-Z1lAWp47ndAXpAglnz-9fMowykxU/https/hcti.io/v1/image/95d66153-5fc0-4f1e-a37f-b2f1e0ab337d?width=670&height=670`;
+        // if (process.env.NODE_ENV !== 'production')
+        //     return `https://images-ext-2.discordapp.net/external/7PVOP6Wco5URuf-Z1lAWp47ndAXpAglnz-9fMowykxU/https/hcti.io/v1/image/95d66153-5fc0-4f1e-a37f-b2f1e0ab337d?width=670&height=670`;
 
         console.log(`Code before replace (${typeof parameters}): ${templateHtml}`);
 
@@ -91,6 +91,10 @@ export class HtmlApiService {
             return cachedImage as string;
         }
 
+        // todo: return null if ratelimit is reached
+        if (this.cache.get('html-api-ratelimit-reset')) {
+            return null;
+        }
 
         const html = this.replaceParameters(templateHtml, parameters, templateName);
 
@@ -106,8 +110,28 @@ export class HtmlApiService {
             'Content-Type': 'application/json'
           }
         }
+        
+        let response: AxiosResponse;
 
-        const response = await this.axiosPost('https://hcti.io/v1/image', JSON.stringify(payload), headers);
+        try {
+            response = await this.axiosPost('https://hcti.io/v1/image', JSON.stringify(payload), headers);
+        } catch (e) {
+            this.logger.error(`HTML API error: ${e.response.data.error.message} (${e.response.data.error.code})`);
+
+
+            if (e.response.data.error.code === 429) {
+                // Rate limit reached
+                const resetTimestamp = e.response.headers['x-ratelimit-reset'];
+                const waitTime = resetTimestamp - Math.floor(Date.now() / 1000);
+                
+                console.info(`Rate limit reached, waiting ${waitTime} seconds`);
+
+                // Set cache to true for the amount of seconds we need to wait
+                this.cache.set('html-api-ratelimit-reset', true, waitTime * 1000);
+            }
+
+            return null;
+        }
 
         // const imageUrl = `https://hcti.io/v1/image/6ca8ea49-9cce-48e7-a59c-d354d3fbfb40`;
         const imageUrl = response.data?.url;

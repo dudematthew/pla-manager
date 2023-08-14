@@ -66,7 +66,7 @@ export class ApexLeaderboardService {
 
         if (leaderboardChannel.discordId == options.channel.id) {
             // Check if message already exists
-            const dbMessageExists = await this.messageService.findByDiscordId(`${sentMessage.id}`);
+            const dbMessageExists = await this.messageService.findByName('leaderboard');
     
             let dbMessage: MessageEntity = null;
     
@@ -216,7 +216,7 @@ export class ApexLeaderboardService {
 
         console.log('LOGO: ', this.configService.get<string>('images.logo'));
 
-        const topImageUrl = await this.htmlApiService.getImageFromHtml({
+        let topImageUrl = await this.htmlApiService.getImageFromHtml({
             logoUrl: this.configService.get<string>('images.logo-transparent-small'),
             avatarImgUrl: topDiscordMember.displayAvatarURL(),
             playerName: topDiscordMember.displayName,
@@ -224,6 +224,10 @@ export class ApexLeaderboardService {
         } as TopPlayerTemplateParams, 'topPlayer');
 
         console.info('TOP IMAGE URL: ', topImageUrl);
+
+        if (!topImageUrl) {
+            topImageUrl = topDiscordMember.displayAvatarURL();
+        }
 
         embed.setThumbnail(topImageUrl);
 
