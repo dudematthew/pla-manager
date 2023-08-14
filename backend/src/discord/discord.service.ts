@@ -246,7 +246,7 @@ export class DiscordService {
    * @returns The member
    */
   async getMemberById(userId: string): Promise<GuildMember> {
-    return await this.guild.members.fetch(userId);
+    return (!userId) ? null : await this.guild.members.fetch(userId);
   }
 
   /**
@@ -374,17 +374,16 @@ export class DiscordService {
    * @returns 
    */
   async getUserRankRole(userId: string): Promise<Role> {
+    const rankRoleGroup = await this.roleGroupService.findByName('rank');
 
-    const rankRoles = this.configService.get<string[]>('discord.rank-roles');
+    const rankRoles = rankRoleGroup.roles;
 
-    console.log(rankRoles);
-    
     // Get member from guild
     const member: GuildMember = await this.guild.members.fetch(userId);
 
     const userRoles = member.roles.cache;
 
-    const userRankRole = userRoles.find(role => rankRoles.includes(role.name.toLowerCase()));
+    const userRankRole = userRoles.find(role => rankRoles.filter(rankRole => rankRole.discordId === role.id).length > 0);
 
     return userRankRole;
   }

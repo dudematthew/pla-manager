@@ -191,6 +191,37 @@ export class MessageProviderService {
         }
     }
 
+    public getAccountExistButNotLinkedMessage(account: ApexAccountEntity) {
+        // interaction.reply({ content: `Konto o nicku ${options.username} jest już połączone.`, ephemeral: true});
+        const embed = this.getBasicEmbed()
+            
+        // Check if it's the same user
+        embed.setTitle('Podane konto było wcześniej połączone')
+        embed.setDescription(`Podane konto o nazwie **${account.name}** było już raz połączone na serwerze PLA. Zostanie ono powiązane z Twoim kontem Discord. Czy kontynuować?`)
+        embed.setThumbnail(this.configService.get<string>('images.danger'));
+
+
+        const cancelButton = new ButtonBuilder()
+            .setStyle(ButtonStyle.Danger)
+            .setLabel('Anuluj')
+            .setCustomId('apex-connect-cancel')
+            .setEmoji('⚠');
+
+        const confirmButton = new ButtonBuilder()
+            .setStyle(ButtonStyle.Success)
+            .setLabel('Kontynuuj')
+            .setCustomId('apex-connect-continue')
+            .setEmoji('✅');
+
+        const row = new ActionRowBuilder()
+            .addComponents(cancelButton, confirmButton);
+
+        return {
+            embeds: [embed],
+            components: [row as any],
+        }
+    }
+
     public getAlreadyConnectedMessage(account: ApexAccountEntity) {
 
         const embed = this.getBasicEmbed()
@@ -280,6 +311,18 @@ export class MessageProviderService {
         const embed = this.getBasicEmbed()
             .setTitle('Czas na wykonanie akcji wygasł')
             .setDescription('Minął maksymalny czas na wykonanie akcji. Spróbuj ponownie.')
+            .setThumbnail(this.configService.get<string>('images.logo-transparent'));
+            
+        return {
+            embeds: [embed],
+            components: [],
+        }
+    }
+
+    public getCanceledMessage() {
+        const embed = this.getBasicEmbed()
+            .setTitle('Anulowano łączenie konta')
+            .setDescription('Operacja anulowana przez użytkownika. Jeśli potrzeba, prosimy spróbować ponownie.')
             .setThumbnail(this.configService.get<string>('images.logo-transparent'));
             
         return {
