@@ -240,7 +240,7 @@ export class AdminCommandsService {
     public async onAdminInsideAddUser(@Context() [Interaction]: SlashCommandContext, @Options() options: handleAdminInsideAddUserDto) {
         console.log(`[CommandsService] onAdminUpdateLeaderbord`);
 
-        this.manageMembersService.handleAdminAddMember(options);
+        this.manageMembersService.handleAdminAddMember(Interaction, options);
     }
 
 }

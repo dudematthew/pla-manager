@@ -1,12 +1,22 @@
-import { StringOption, UserOption } from "necord";
+import { GuildMember } from "discord.js";
+import { MemberOption, StringOption, UserOption } from "necord";
+
+const plaTeamToNameDictionary = {
+    plao: "PLA-O",
+    plac: "PLA-C",
+    play: "PLA-Y",
+    plap: "PLA-P",
+    plab: "PLA-B",
+    plag: "PLA-G",
+}
 
 class handleAdminInsideAddUserDto {
 
-    @UserOption({
+    @MemberOption({
         name: "użytkownik",
         description: "Użytkownik, którego chcesz dodać do drużyny",
     })
-    user: string;
+    member: GuildMember;
 
     @StringOption({
         name: "drużyna",
@@ -14,27 +24,27 @@ class handleAdminInsideAddUserDto {
         choices: [
             {
                 name: "PLA-O",
-                value: "plao"
+                value: "o"
             },
             {
                 name: "PLA-C",
-                value: "plac"
+                value: "c"
             },
             {
                 name: "PLA-Y",
-                value: "play"
+                value: "y"
             },
             {
                 name: "PLA-P",
-                value: "plap"
+                value: "p"
             },
             {
                 name: "PLA-B",
-                value: "plab"
+                value: "b"
             },
             {
                 name: "PLA-G",
-                value: "plag"
+                value: "g"
             }
         ]
     })
@@ -62,4 +72,4 @@ class handleAdminInsideAddUserDto {
     
 }
 
-export { handleAdminInsideAddUserDto };
+export { handleAdminInsideAddUserDto, plaTeamToNameDictionary };
