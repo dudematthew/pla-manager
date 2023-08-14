@@ -78,8 +78,8 @@ export class HtmlApiService {
         const templateHtml = this.TemplateToHtmlCode[templateName];
 
         // Return dummy image if environment is not production
-        // if (process.env.NODE_ENV !== 'production')
-        //     return `https://images-ext-2.discordapp.net/external/7PVOP6Wco5URuf-Z1lAWp47ndAXpAglnz-9fMowykxU/https/hcti.io/v1/image/95d66153-5fc0-4f1e-a37f-b2f1e0ab337d?width=670&height=670`;
+        if (process.env.NODE_ENV !== 'production')
+            return `https://images-ext-2.discordapp.net/external/7PVOP6Wco5URuf-Z1lAWp47ndAXpAglnz-9fMowykxU/https/hcti.io/v1/image/95d66153-5fc0-4f1e-a37f-b2f1e0ab337d?width=670&height=670`;
 
         console.log(`Code before replace (${typeof parameters}): ${templateHtml}`);
 
@@ -91,8 +91,8 @@ export class HtmlApiService {
             return cachedImage as string;
         }
 
-        // todo: return null if ratelimit is reached
         if (this.cache.get('html-api-ratelimit-reset')) {
+            this.logger.log('Rate limit still active, returning null as image url');
             return null;
         }
 
