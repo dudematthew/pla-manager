@@ -51,7 +51,7 @@ class handleAdminInsideAddUserDto {
     team: string;
 
     @StringOption({
-        name: "pozyzja",
+        name: "pozycja",
         description: "Pozycja, którą zajmuje użytkownik w drużynie",
         choices: [
             {
