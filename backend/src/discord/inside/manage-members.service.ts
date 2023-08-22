@@ -113,7 +113,7 @@ export class manageMembersService {
         }
 
         interaction.editReply({
-            content: `## :white_check_mark: Użytkownik ${member} został dodany do PLA Inside jako ${positionDisplayName} drużyny ${teamDisplayName}`,
+            content: `### :white_check_mark: Użytkownik ${member} został dodany do PLA Inside jako ${positionDisplayName} drużyny ${teamDisplayName}`,
         });
     }
 
@@ -171,14 +171,14 @@ export class manageMembersService {
         message2 = [
             ...message2,
             `Niektóre mogą czekać na nowych zawodników ale każda z nich próbuje swoich sił w osiąganiu coraz to wyższych osiągnięć w Apex Legends.`,
-            `Każda z tych drużyn posiada również własne logo w unikatowym kolorze, od tego właśnie powstaje nazwa! Niech te logo reprezentuje was podczas zdobywania osiągnięć!`,
+            `Każda z tych drużyn posiada również własne logo w unikatowym kolorze, od tego właśnie powstaje nazwa! Niech te logo reprezentuje Was podczas osiągania postępów!`,
             `# ${insideEmoji} Czym zajmuje się PLA Inside?`,
             `- Przede wszystkim staramy się stworzyć przyjazne grono znajomych które czerpie radość z rywalizacyjnego grania w Apex Legends`,
             `- Tworzymy środowisko w którym każdy członek jest w stanie przekazać pozostałym elementy które wyćwiczył, tym samym dążąc do nieustającego poprawiania umiejętności`,
             `- Organizujemy **wewnętrzne 3v3** które umożliwia sprawdzenie się w rywalizacji z innymi drużynami PLA Inside`,
             `- Organizujemy **cotygodniowe treningi** na których wymieniamy się wiedzą i doświadczeniem`,
             `- Uczestniczymy w **zewnętrznych turniejach** razem próbując pokazać się w rankingach i zdobyć nagrody`,
-            `### PLA Inside to miejsce w którym można znaleźć miejsce dla siebie a także się rozwijać.`,
+            `### W PLA Inside możesz znaleźć miejsce dla siebie a także się rozwijać.`,
         ]
 
         welcomeMessages.push({
