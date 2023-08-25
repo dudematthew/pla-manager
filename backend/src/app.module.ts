@@ -60,7 +60,6 @@ import { ApexAccountHistoryModule } from './database/entities/apex-account-histo
     UserModule,
     ApexAccountHistoryModule,
     TourneyModule,
-    MessageEntity,
   ],
   controllers: [
     AppController,

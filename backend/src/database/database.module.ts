@@ -21,6 +21,8 @@ import { MessageEntity } from "./entities/message/entities/message.entity";
 import { ApexAccountHistoryEntity } from "./entities/apex-account-history/entities/apex-account-history.entity";
 import { ApexSeasonModule } from './entities/apex-season/apex-season.module';
 import { ApexSeasonEntity } from "./entities/apex-season/entities/apex-season.entity";
+import { InsideTeamsModule } from './entities/inside-teams/inside-teams.module';
+import { InsideTeamEntity } from "./entities/inside-teams/entities/inside-team.entity";
 
 @Module({
     imports: [
@@ -47,6 +49,7 @@ import { ApexSeasonEntity } from "./entities/apex-season/entities/apex-season.en
                     EmojiEntity,
                     MessageEntity,
                     ApexSeasonEntity,
+                    InsideTeamEntity,
                 ],
                 synchronize: true,
                 autoLoadEntities: true,
@@ -56,6 +59,7 @@ import { ApexSeasonEntity } from "./entities/apex-season/entities/apex-season.en
         TypeOrmModule.forFeature([TypeORMSession]),
         forwardRef(() => DiscordModule),
         ApexSeasonModule,
+        InsideTeamsModule,
     ],
     providers: [
         TypeORMSession,
