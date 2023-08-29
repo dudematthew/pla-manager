@@ -18,6 +18,8 @@ import { AdminCreateRankingReportDto } from "./dtos/admin-create-ranking-report.
 import { handleAdminInsideAddUserDto } from "./dtos/handle-inside-add-user.dto";
 import { InsideService } from "../inside/inside.service";
 import { manageMembersService } from "../inside/manage-members.service";
+import { teamsCompositionService } from "../inside/teams-composition.service";
+import { handleAdminInsideCreateTeamBoardDto } from "./dtos/handle-inside-team-board.dto";
 
 export const AdminCommandsDecorator = createCommandGroupDecorator({
     name: 'admin',
@@ -38,6 +40,7 @@ export class AdminCommandsService {
         private readonly apexLeaderboardService: ApexLeaderboardService,
         private readonly apexRankingReportService: ApexRankingReportService,
         private readonly manageMembersService: manageMembersService,
+        private readonly teamsCompositionService: teamsCompositionService,
     ) {}
 
     @UseGuards(AdminGuard)
@@ -227,8 +230,32 @@ export class AdminCommandsService {
     })
     public async onAdminCreateRankingReport(@Context() [Interaction]: SlashCommandContext, @Options() options: AdminCreateRankingReportDto) {
         console.log(`[CommandsService] onAdminUpdateLeaderbord`);
-
+        
         await this.apexRankingReportService.handleAdminCreateRankingReport(Interaction, options);
+    }
+    
+    @UseGuards(AdminGuard)
+    @UseFilters(ForbiddenExceptionFilter)
+    @Subcommand({
+        name: 'inside-stwórz-tablicę-drużyny',
+        description: 'Stwórz tablicę danej drużyny PLA Inside',
+    })
+    public async onAdminInsideCreateTeamBoard(@Context() [Interaction]: SlashCommandContext, @Options() options: handleAdminInsideCreateTeamBoardDto) {
+        console.log(`[CommandsService] onAdminInsideCreateTeamBoard`);
+
+        await this.teamsCompositionService.handleAdminCreateInsideTeamBoard(Interaction, options)
+    }
+
+    @UseGuards(AdminGuard)
+    @UseFilters(ForbiddenExceptionFilter)
+    @Subcommand({
+        name: 'inside-zaktualizuj-tablice',
+        description: 'Zaktualizuj wszystkie tablice drużyn PLA Inside',
+    })
+    public async onAdminInsideUpdateTeamBoards(@Context() [Interaction]: SlashCommandContext) {
+        console.log(`[CommandsService] onAdminInsideUpdateTeamBoards`);
+
+        await this.teamsCompositionService.handleAdminUpdateInsideTeamBoards(Interaction);
     }
 
     @UseGuards(AdminGuard)

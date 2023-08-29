@@ -15,6 +15,15 @@ export class InsideTeamsService {
     private readonly roleService: RoleService,
   ) {}
 
+  async findAll(): Promise<InsideTeamEntity[]> {
+    return await this.insideTeamRepository.find({
+      relations: [
+        'role',
+        'role.emoji',
+      ]
+    });
+  }
+
   /**
    * Find a inside team by their ID
    * @param id The ID of the inside team
@@ -25,6 +34,7 @@ export class InsideTeamsService {
       where: { id },
       relations: [
         'role',
+        `role.emoji`,
       ],
     });
   }

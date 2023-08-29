@@ -197,6 +197,7 @@ export type Schema = {
     nested: {
       'emoji': Schema['emoji']['plain'] & Schema['emoji']['nested'];
       'roleGroup': Schema['role_group']['plain'] & Schema['role_group']['nested'];
+      'team': Schema['team']['plain'] & Schema['team']['nested'];
     };
     flat: {
       'emoji:id': number;
@@ -209,6 +210,13 @@ export type Schema = {
       'roleGroup:name': string;
       'roleGroup:created_at': string;
       'roleGroup:updated_at': string;
+      'team:id': number;
+      'team:name': string;
+      'team:created_at': string;
+      'team:updated_at': string;
+      'team:roleId': number;
+      'team:display_name': string;
+      'team:logo_url': string;
     };
   };
   'role_group': {
@@ -230,6 +238,40 @@ export type Schema = {
     };
     nested: {};
     flat: {};
+  };
+  'team': {
+    plain: {
+      'id': number;
+      'name': string;
+      'created_at': string;
+      'updated_at': string;
+      'roleId': number;
+      'display_name': string;
+      'logo_url': string;
+    };
+    nested: {
+      'role': Schema['role']['plain'] & Schema['role']['nested'];
+    };
+    flat: {
+      'role:id': number;
+      'role:discord_id': string;
+      'role:name': string;
+      'role:created_at': string;
+      'role:updated_at': string;
+      'role:priority': number;
+      'role:emojiId': number;
+      'role:roleGroupId': number;
+      'role:emoji:id': number;
+      'role:emoji:name': string;
+      'role:emoji:discord_id': string;
+      'role:emoji:created_at': string;
+      'role:emoji:updated_at': string;
+      'role:emoji:discord_name': string;
+      'role:roleGroup:id': number;
+      'role:roleGroup:name': string;
+      'role:roleGroup:created_at': string;
+      'role:roleGroup:updated_at': string;
+    };
   };
   'tourney': {
     plain: {

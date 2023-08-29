@@ -67,6 +67,16 @@ export class MessageService {
       });
     }
 
+    async findByNames(name: string): Promise<MessageEntity[]> {
+        return await this.messageRepository.find({
+          where: { name },
+          relations: [
+            'channel',
+            'user'
+        ],
+      });
+    }
+
     async findByUserId(userId: number): Promise<MessageEntity[]> {
         return await this.messageRepository.find({
             where: {
