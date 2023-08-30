@@ -207,7 +207,7 @@ export class ApexLeaderboardService {
         description.push(`Następna aktualizacja <t:${nextSynchronizationTimestamp}:R>`);
         description.push(`Zmiany pozycji liczone są od <t:${Math.floor(differenceDate.getTime() / 1000)}:f>`);
         description.push(`ㅤ`);
-        description.push(`:heavy_minus_sign:`.repeat(7));
+        description.push(`:heavy_minus_sign:`.repeat(4));
 
         const topAccount = topPlayers[0];
         const topDiscordMember = await this.discordService.getMemberById(topAccount.user.discordId);
@@ -308,7 +308,7 @@ export class ApexLeaderboardService {
             // Add a divider if it's not the last player
             if (index < topPlayers.length - 1 && index != 6 && index != 12) {
                 value += `\nㅤ\n`;
-                value += `:heavy_minus_sign:`.repeat(7);
+                value += `:heavy_minus_sign:`.repeat(4);
             } 
 
             if (index <= 1) {
