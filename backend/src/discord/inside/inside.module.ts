@@ -10,6 +10,8 @@ import { InsideTeamsModule } from 'src/database/entities/inside-teams/inside-tea
 import { MessageModule } from 'src/database/entities/message/message.module';
 import { ChannelModule } from 'src/database/entities/channel/channel.module';
 import { ApexAccountModule } from 'src/database/entities/apex-account/apex-account.module';
+import { TeamModule } from 'src/database/entities/tourney/entities/team/tourney-team.module';
+import { InsideLeaderboardService } from './inside-leaderboard.service';
 
 @Module({
   imports: [
@@ -20,16 +22,20 @@ import { ApexAccountModule } from 'src/database/entities/apex-account/apex-accou
     MessageModule,
     ChannelModule,
     ApexAccountModule,
+    InsideTeamsModule,
+    InsideModule,
   ],
   providers: [
     InsideService,
     manageMembersService,
     teamsCompositionService,
+    InsideLeaderboardService,
   ],
   exports: [
     InsideService,
     manageMembersService,
     teamsCompositionService,
+    InsideLeaderboardService,
   ],
 })
 export class InsideModule {}

@@ -20,6 +20,9 @@ import { InsideService } from "../inside/inside.service";
 import { manageMembersService } from "../inside/manage-members.service";
 import { teamsCompositionService } from "../inside/teams-composition.service";
 import { handleAdminInsideCreateTeamBoardDto } from "./dtos/handle-inside-team-board.dto";
+import { AdminCreateInsideLeaderboardDto } from "./dtos/admin-create-inside-leaderboard.dto";
+import { InsideTeamsService } from "src/database/entities/inside-teams/inside-teams.service";
+import { InsideLeaderboardService } from "../inside/inside-leaderboard.service";
 
 export const AdminCommandsDecorator = createCommandGroupDecorator({
     name: 'admin',
@@ -41,6 +44,7 @@ export class AdminCommandsService {
         private readonly apexRankingReportService: ApexRankingReportService,
         private readonly manageMembersService: manageMembersService,
         private readonly teamsCompositionService: teamsCompositionService,
+        private readonly insideLeaderboardService: InsideLeaderboardService,
     ) {}
 
     @UseGuards(AdminGuard)
@@ -208,6 +212,18 @@ export class AdminCommandsService {
         console.log(`[CommandsService] onAdminCreateApexLeaderboard`);
 
         await this.apexLeaderboardService.handleAdminCreateLeaderboard(Interaction, options);
+    }
+
+    @UseGuards(AdminGuard)
+    @UseFilters(ForbiddenExceptionFilter)
+    @Subcommand({
+        name: 'inside-stwórz-top',
+        description: 'Stwórz tablicę TOP graczy PLA Inside',
+    })
+    public async onAdminCreateInsideLeaderboard(@Context() [Interaction]: SlashCommandContext, @Options() options: AdminCreateInsideLeaderboardDto) {
+        console.log(`[CommandsService] onAdminCreateApexLeaderboard`);
+
+        await this.insideLeaderboardService.handleAdminCreateInsideLeaderboard(Interaction, options);
     }
 
     @UseGuards(AdminGuard)

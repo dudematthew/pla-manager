@@ -11,6 +11,7 @@ import { RoleService } from '../role/role.service';
 import { RoleEntity } from '../role/entities/role.entity';
 import { ApexAccountHistoryService } from '../apex-account-history/apex-account-history.service';
 import { PlainObjectToNewEntityTransformer } from 'typeorm/query-builder/transformer/PlainObjectToNewEntityTransformer.js';
+import { InsideTeamEntity } from '../inside-teams/entities/inside-team.entity';
 
 @Injectable()
 export class ApexAccountService {
@@ -365,4 +366,5 @@ export class ApexAccountService {
   public async countAll(): Promise<number> {
     return await this.apexAccountRepository.count();
   }
+
 }
