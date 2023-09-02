@@ -153,6 +153,10 @@ export class teamsCompositionService {
 
         const captainRole = await this.roleService.findByName('plainsidecaptain');
         const reserveRole = await this.roleService.findByName('plainsidereserve');
+        const recruiterRole = await this.roleService.findByName('plainsiderecruiter');
+        const adminRole = await this.roleService.findByName('admin');
+        const moderatorRole = await this.roleService.findByName('moderator');
+        const supportRole = await this.roleService.findByName('support');
         
         const teamMembers = await this.discordService.getUsersWithRole(team.role.discordId);
 
@@ -180,6 +184,10 @@ export class teamsCompositionService {
             for (const [key, teamMember] of teamMembers.entries()) {
                 const isCaptain = !!teamMember.roles.cache.has(captainRole.discordId);
                 const isReserve = !!teamMember.roles.cache.has(reserveRole.discordId);
+                const isRecruiter = !!teamMember.roles.cache.has(recruiterRole.discordId);
+                const isAdmin = !!teamMember.roles.cache.has(adminRole.discordId);
+                const isModerator = !!teamMember.roles.cache.has(moderatorRole.discordId);
+                const isSupport = !!teamMember.roles.cache.has(supportRole.discordId);
 
                 let memberText = ``;
 
@@ -187,15 +195,29 @@ export class teamsCompositionService {
 
                 console.info(`Apex account: `, apexAccount);
 
+                // Add rank emoji if user has apex account
                 if (!apexAccount) {
-                    memberText += `- ${disconnectedEmoji} `;
+                    memberText += `- ${disconnectedEmoji}`;
                 } else {
                     const rankEmoji = await this.emojiService.findByName(rankToRoleNameDictionary[apexAccount.rankName]);
 
-                    memberText += `- ${rankEmoji} `;
+                    memberText += `- ${rankEmoji}`;
                 }
 
-                memberText += `${teamMember}\n`;
+                // Add recruiter role if user is recruiter
+                if (isRecruiter) {
+                    memberText += recruiterRole.emoji.toString();
+                }
+
+                // Add staff role if user is staff
+                const isStaff = isAdmin || isModerator || isSupport;
+                if (isStaff) {
+                    const staffRole = isAdmin ? adminRole : isModerator ? moderatorRole : supportRole;
+
+                    memberText += staffRole.emoji.toString();
+                }
+
+                memberText += ` ${teamMember}\n`;
 
 
                 if (isCaptain) {
