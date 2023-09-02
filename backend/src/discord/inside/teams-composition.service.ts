@@ -53,6 +53,12 @@ export class teamsCompositionService {
 
         const teamBoardEmbed = await this.getInsideTeamBoardEmbed(dbTeam);
 
+        if (!teamBoardEmbed) {
+            console.error(`Couldn't create inside team board embed.`);
+            interaction.editReply(`## :x: Wystąpił błąd podczas tworzenia tablicy drużyny.`);
+            return;
+        }
+
         const message = await this.discordService.sendMessage(options.channel.id, ``, [teamBoardEmbed]);
 
         const dbMessage = this.messageService.create({
@@ -110,6 +116,12 @@ export class teamsCompositionService {
                 const board: MessageEntity = teamBoards[subKey];
 
                 const boardEmbed = boardEmbeds[insideTeam.name] ?? await this.getInsideTeamBoardEmbed(insideTeam);
+
+                if (!boardEmbed) {
+                    console.error(`Couldn't create inside team board embed.`);
+                    continue;
+                }
+
                 boardEmbeds[insideTeam.name] = boardEmbed;
 
                 const message = await this.discordService.getMessage(board.channel.discordId, board.discordId);
@@ -157,6 +169,18 @@ export class teamsCompositionService {
         const adminRole = await this.roleService.findByName('admin');
         const moderatorRole = await this.roleService.findByName('moderator');
         const supportRole = await this.roleService.findByName('support');
+
+        if ([
+            captainRole,
+            reserveRole,
+            recruiterRole,
+            adminRole,
+            moderatorRole,
+            supportRole
+        ].includes(null)) {
+            console.error(`Couldn't find one of the roles.`);
+            return null;
+        }
         
         const teamMembers = await this.discordService.getUsersWithRole(team.role.discordId);
 
