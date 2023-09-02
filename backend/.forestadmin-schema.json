@@ -1647,6 +1647,22 @@
         {
           "defaultValue": null,
           "enums": null,
+          "field": "color",
+          "integration": null,
+          "inverseOf": null,
+          "isFilterable": true,
+          "isPrimaryKey": false,
+          "isReadOnly": false,
+          "isRequired": true,
+          "isSortable": true,
+          "isVirtual": false,
+          "reference": null,
+          "type": "String",
+          "validations": [{"type": "is present", "message": "Field is required"}]
+        },
+        {
+          "defaultValue": null,
+          "enums": null,
           "field": "created_at",
           "integration": null,
           "inverseOf": null,
@@ -2218,6 +2234,6 @@
   "metadata": {
     "liana": "forest-nodejs-agent",
     "liana_version": "1.8.13",
-    "stack": {"engine": "nodejs", "engine_version": "18.12.1"}
+    "stack": {"engine": "nodejs", "engine_version": "19.1.0"}
   }
 }

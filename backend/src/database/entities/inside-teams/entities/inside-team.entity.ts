@@ -22,6 +22,9 @@ export class InsideTeamEntity extends BaseEntity {
     })
     logoUrl: string;
 
+    @Column()
+    color: string;
+
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 

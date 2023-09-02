@@ -10,6 +10,7 @@ import { MessageService } from "src/database/entities/message/message.service";
 import { InsideTeamEntity } from "src/database/entities/inside-teams/entities/inside-team.entity";
 import { ChannelService } from "src/database/entities/channel/channel.service";
 import { MessageEntity } from "src/database/entities/message/entities/message.entity";
+import { ApexAccountService } from "src/database/entities/apex-account/apex-account.service";
 
 @Injectable()
 export class teamsCompositionService {
@@ -22,6 +23,7 @@ export class teamsCompositionService {
         private readonly insideTeamsService: InsideTeamsService,
         private readonly messageService: MessageService,
         private readonly channelService: ChannelService,
+        private readonly apexAccountService: ApexAccountService,
     ) {}
 
     public async handleAdminCreateInsideTeamBoard (interaction: ChatInputCommandInteraction<CacheType>, options: handleAdminInsideCreateTeamBoardDto) {
@@ -97,6 +99,8 @@ export class teamsCompositionService {
 
         const insideTeams = await this.insideTeamsService.findAll();
 
+        const boardEmbeds = [];
+
         for (const key in insideTeams) {
             const insideTeam: InsideTeamEntity = insideTeams[key];
 
@@ -105,7 +109,8 @@ export class teamsCompositionService {
             for (const subKey in teamBoards) {
                 const board: MessageEntity = teamBoards[subKey];
 
-                const boardEmbed = await this.getInsideTeamBoardEmbed(insideTeam);
+                const boardEmbed = boardEmbeds[insideTeam.name] ?? await this.getInsideTeamBoardEmbed(insideTeam);
+                boardEmbeds[insideTeam.name] = boardEmbed;
 
                 const message = await this.discordService.getMessage(board.channel.discordId, board.discordId);
 
@@ -129,7 +134,7 @@ export class teamsCompositionService {
     private async getInsideTeamBoardEmbed (team: InsideTeamEntity) {
         const embed = new EmbedBuilder();
 
-        console.info(`Creating inside team board embed: `, team);
+        console.info(`Creating inside team board embed: `, team.name);
 
         // Todo: do it properly and make team.role.emoji available
         const teamEmoji = (await this.roleService.findById(team.role.id)).emoji;
@@ -151,6 +156,11 @@ export class teamsCompositionService {
         
         const teamMembers = await this.discordService.getUsersWithRole(team.role.discordId);
 
+        const disconnectedEmoji = await this.emojiService.findByName(`disconnected`);
+        const rankToRoleNameDictionary = this.apexAccountService.rankToRoleNameDictionary;
+        const rankToDisplayNameDictionary = this.apexAccountService.rankToDisplayNameDictionary;
+        const rankDivToRomanDictionary = this.apexAccountService.rankDivToRomanDictionary;
+
         if (teamMembers.size == 0) {
             description.push(`### :mag_right: Rekrutacja otwarta`)
         } else {
@@ -171,15 +181,32 @@ export class teamsCompositionService {
                 const isCaptain = !!teamMember.roles.cache.has(captainRole.discordId);
                 const isReserve = !!teamMember.roles.cache.has(reserveRole.discordId);
 
+                let memberText = ``;
+
+                const apexAccount = await this.apexAccountService.findByUserDiscordId(teamMember.id);
+
+                console.info(`Apex account: `, apexAccount);
+
+                if (!apexAccount) {
+                    memberText += `- ${disconnectedEmoji} `;
+                } else {
+                    const rankEmoji = await this.emojiService.findByName(rankToRoleNameDictionary[apexAccount.rankName]);
+
+                    memberText += `- ${rankEmoji} `;
+                }
+
+                memberText += `${teamMember}\n`;
+
+
                 if (isCaptain) {
-                    membersList.captain += `- ${teamMember} (<@&${captainRole.discordId}>)\n`;
+                    membersList.captain += memberText;
                 }
                 else if (isReserve) {
-                    membersList.reserve += `- ${teamMember} (<@&${reserveRole.discordId}>)\n`
+                    membersList.reserve += memberText;
                 }
                 else {
                     normalMemberCount++;
-                    membersList.members += `- ${teamMember}\n`
+                    membersList.members += memberText;
                 }
             }
 
@@ -200,6 +227,8 @@ export class teamsCompositionService {
         embed.setImage(team.logoUrl);
 
         embed.setTimestamp();
+
+        embed.setColor(`#${team.color}`);
 
         embed.setFooter({
             text: `Polskie Legendy Apex`,

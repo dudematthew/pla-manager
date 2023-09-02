@@ -9,6 +9,7 @@ import { teamsCompositionService } from './teams-composition.service';
 import { InsideTeamsModule } from 'src/database/entities/inside-teams/inside-teams.module';
 import { MessageModule } from 'src/database/entities/message/message.module';
 import { ChannelModule } from 'src/database/entities/channel/channel.module';
+import { ApexAccountModule } from 'src/database/entities/apex-account/apex-account.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { ChannelModule } from 'src/database/entities/channel/channel.module';
     InsideTeamsModule,
     MessageModule,
     ChannelModule,
+    ApexAccountModule,
   ],
   providers: [
     InsideService,

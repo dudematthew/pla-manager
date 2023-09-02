@@ -217,6 +217,7 @@ export type Schema = {
       'team:roleId': number;
       'team:display_name': string;
       'team:logo_url': string;
+      'team:color': string;
     };
   };
   'role_group': {
@@ -248,6 +249,7 @@ export type Schema = {
       'roleId': number;
       'display_name': string;
       'logo_url': string;
+      'color': string;
     };
     nested: {
       'role': Schema['role']['plain'] & Schema['role']['nested'];
