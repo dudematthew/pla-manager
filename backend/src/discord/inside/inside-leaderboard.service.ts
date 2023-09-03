@@ -45,7 +45,22 @@ export class InsideLeaderboardService {
 
         interaction.editReply(`${insideEmoji} Tworzenie tablicy wyników PLA Inside...`);
 
-        const leaderboardMessage = await this.getTeamLeaderboardMessage();
+        console.log(`Leaderboard message type: ${options.type}`);
+
+        let leaderboardMessage;
+
+        switch (options.type) {
+            case `team`:
+                leaderboardMessage = await this.getTeamLeaderboardMessage();
+                break;
+            case `member`:
+                leaderboardMessage = await this.getMemberLeaderboardMessage();
+                break;
+            default:
+                console.error(`Invalid leaderboard type provided`);
+                interaction.editReply(`## :x: Nieprawidłowy typ tablicy wyników.`);
+                return;
+        }
 
         if (!leaderboardMessage) {
             console.error(`Failed to create PLA Inside leaderboard message`);
@@ -57,6 +72,8 @@ export class InsideLeaderboardService {
             interaction.editReply(`## :x: Podany kanał nie jest kanałem tekstowym.`);
             return;
         }
+
+        console.log(`Sending leaderboard message to channel ${options.channel.id}`);
             
         const message = await options.channel.send(leaderboardMessage);
 
@@ -69,6 +86,40 @@ export class InsideLeaderboardService {
      * @returns 
      */
     public async getTeamLeaderboardMessage() {
+        const teamsData = this.getTeamsData();
+
+        const placementEmojis = {
+            1: await this.emojiService.findByName(`first`),
+            2: await this.emojiService.findByName(`second`),
+            3: await this.emojiService.findByName(`third`),
+        }
+
+        // Sort teams by summary score
+        const sortedTeams = Object.values(teamsData).sort((a, b) => {
+            return b.summaryScore - a.summaryScore;
+        });
+
+        const embed = await this.getBasicEmbed();
+        let leaderboardMessage = ``;
+
+        let i = 1;
+        for (const team of sortedTeams) {
+            let prefix = i === 1 ? `# ​` : i === 2 ? `## ​` : i === 3 ? `### ​` : `### ​`;
+            prefix += placementEmojis[i] ?? `#${i}`;
+
+            leaderboardMessage += prefix + ` ${team.emoji} **${team.team.displayName}** - ${team.summaryScore} LP\n`;
+            i++;
+        }
+
+        embed.setTitle(`TOP LP Drużyn PLA Inside`);
+        embed.setDescription(leaderboardMessage);
+
+        return {
+            embeds: [embed],
+        }
+    }
+
+    private async getTeamsData () {
         const teams = await this.insideTeamService.findAll();
         const teamsData = [];
 
@@ -101,24 +152,54 @@ export class InsideLeaderboardService {
             }
         }
 
-        // Sort teams by summary score
-        const sortedTeams = Object.values(teamsData).sort((a, b) => {
-            return b.summaryScore - a.summaryScore;
+        return teamsData;
+    }
+    
+    private async getMemberLeaderboardMessage() {
+        const teamsData = await this.getTeamsData();
+        const membersData = [];
+        const rankToRoleNameDictionary = this.apexAccountService.rankToRoleNameDictionary;
+
+        const placementEmojis = {
+            1: await this.emojiService.findByName(`first`),
+            2: await this.emojiService.findByName(`second`),
+            3: await this.emojiService.findByName(`third`),
+        }
+
+        // Get all members
+        for (const teamData of Object.values(teamsData)) {
+            for (const memberData of teamData.members) {
+                membersData.push(memberData);
+            }
+        }
+
+        console.info(`Members data:`, membersData);
+
+        // Sort members by rank score
+        const sortedMembers = membersData.sort((a, b) => {
+            return b.account.rankScore - a.account.rankScore;
         });
 
         const embed = await this.getBasicEmbed();
         let leaderboardMessage = ``;
 
         let i = 1;
-        for (const team of sortedTeams) {
-            const prefix = i === 1 ? `# ` : i === 2 ? `## ` : i === 3 ? `### ` : ``;
+        for (const member of sortedMembers) {
+            let prefix = i === 1 ? `# ​` : i === 2 ? `## ​` : i === 3 ? `### ​` : `### ​`;
+            prefix += placementEmojis[i] ?? `#${i}`;
 
-            leaderboardMessage += prefix + ` #${i} ${team.emoji} **${team.team.displayName}** - ${team.summaryScore} LP\n`;
+            const rankEmoji = await this.emojiService.findByName(rankToRoleNameDictionary[member.account.rankName]);
+
+            prefix += ` ${rankEmoji} `;
+
+            leaderboardMessage += prefix + `${member.member} - ${member.account.rankScore} LP\n`;
             i++;
         }
 
-        embed.setTitle(`TOP LP Drużyn PLA Inside`);
+        embed.setTitle(`TOP LP Graczy PLA Inside`);
         embed.setDescription(leaderboardMessage);
+
+        console.log(`Leaderboard message:`, leaderboardMessage, leaderboardMessage.length);
 
         return {
             embeds: [embed],
