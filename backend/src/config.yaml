@@ -35,7 +35,7 @@ role-names:
     captain: 'plainsidecaptain'
     team:
       prefix: 'plainsideteam'
-      teams: ['o', 'c', 'y', 'p', 'b', 'g']
+      teams: ['o', 'c', 'y', 'p', 'b', 'g', 'r']
   disconnected: 'disconnected'
 
 role-group-names:
