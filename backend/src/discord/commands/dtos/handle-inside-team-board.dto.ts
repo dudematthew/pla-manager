@@ -30,6 +30,10 @@ class handleAdminInsideCreateTeamBoardDto {
             {
                 name: "PLA-G",
                 value: "g"
+            },
+            {
+                name: "PLA-R",
+                value: "r"
             }
         ]
     })
