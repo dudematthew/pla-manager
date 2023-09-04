@@ -14,16 +14,24 @@ class AdminCreateInsideLeaderboardDto {
         description: 'Typ tablicy wyników',
         choices: [
             {
-                name: 'Drużyny',
-                value: 'team',
+                name: 'Drużyny LP',
+                value: 'lp-team',
             },
             {
-                name: 'Członkowie',
-                value: 'member',
+                name: 'Członkowie LP',
+                value: 'lp-member',
+            },
+            {
+                name: 'Drużyny Aktywność',
+                value: 'activity-team',
+            },
+            {
+                name: 'Członkowie Aktywność',
+                value: 'activity-member',
             }
         ]
     })
-    type: 'team' | 'member';
+    type: 'lp-team' | 'lp-member' | `activity-team` | `activity-member`;
 }
 
 export { AdminCreateInsideLeaderboardDto };

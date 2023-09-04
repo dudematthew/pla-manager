@@ -263,16 +263,26 @@ export class ApexAccountService {
       return null;
     }
 
+
     return await this.findByUserId(user.id);
   }
 
   async findByUserId(userId: number): Promise<ApexAccountEntity> {
     const user = await this.userService.findById(userId);
+
+    if (!user) {
+      return null;
+    }
+
   
     const initialApexAccount = await this.apexAccountRepository
       .createQueryBuilder('apexAccount')
       .innerJoinAndSelect('apexAccount.user', 'user', 'user.id = :userId', {userId})
       .getOne();
+
+    if (!initialApexAccount) {
+      return null;
+    }
 
     return this.findById(initialApexAccount.id);
   }

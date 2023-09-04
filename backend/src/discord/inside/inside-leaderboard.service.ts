@@ -22,6 +22,8 @@ import {
 import { handleAdminInsideCreateTeamBoardDto } from "../commands/dtos/handle-inside-team-board.dto";
 import { AdminCreateInsideLeaderboardDto } from "../commands/dtos/admin-create-inside-leaderboard.dto";
 import { ConfigService } from "@nestjs/config";
+import { MessageService } from "src/database/entities/message/message.service";
+import { ChannelService } from "src/database/entities/channel/channel.service";
 
 @Injectable()
 export class InsideLeaderboardService {
@@ -31,6 +33,8 @@ export class InsideLeaderboardService {
         private readonly apexAccountService: ApexAccountService,
         private readonly discordService: DiscordService,
         private readonly configService: ConfigService,
+        private readonly messageService: MessageService,
+        private readonly channelService: ChannelService,
     ) {}
 
     public async handleAdminCreateInsideLeaderboard(interaction: ChatInputCommandInteraction<CacheType>, options: AdminCreateInsideLeaderboardDto) {
@@ -41,6 +45,21 @@ export class InsideLeaderboardService {
         // Set channel to current channel if not provided
         options.channel = options.channel ?? interaction.channel;
 
+        if (options.channel.type !== ChannelType.GuildText) {
+            console.error(`Provided channel is not text based`);
+            interaction.editReply(`## :x: Podany kanał nie jest kanałem tekstowym.`);
+            return;
+        }
+
+        // Check if channel is registered in database
+        const dbChannel = await this.channelService.findByDiscordId(options.channel.id);
+
+        if (!dbChannel) {
+            console.error(`Channel ${options.channel.id} is not registered in database`);
+            interaction.editReply(`## :x: Kanał ${options.channel} nie jest zarejestrowany w bazie danych.`);
+            return;
+        }
+
         const insideEmoji = await this.emojiService.findByName(`plainside`);
 
         interaction.editReply(`${insideEmoji} Tworzenie tablicy wyników PLA Inside...`);
@@ -50,15 +69,15 @@ export class InsideLeaderboardService {
         let leaderboardMessage;
 
         switch (options.type) {
-            case `team`:
+            case `lp-team`:
                 leaderboardMessage = await this.getTeamLeaderboardMessage();
                 break;
-            case `member`:
+            case `lp-member`:
                 leaderboardMessage = await this.getMemberLeaderboardMessage();
                 break;
             default:
-                console.error(`Invalid leaderboard type provided`);
-                interaction.editReply(`## :x: Nieprawidłowy typ tablicy wyników.`);
+                console.error(`Invalid leaderboard type provided: ${options.type}`);
+                interaction.editReply(`## :x: Ten typ tablicy wyników nie jest jeszcze obsługiwany.`);
                 return;
         }
 
@@ -67,15 +86,37 @@ export class InsideLeaderboardService {
             return interaction.editReply(`Nie udało się utworzyć tablicy wyników PLA Inside.`);
         }
 
-        if (options.channel.type !== ChannelType.GuildText) {
-            console.error(`Provided channel is not text based`);
-            interaction.editReply(`## :x: Podany kanał nie jest kanałem tekstowym.`);
-            return;
-        }
-
         console.log(`Sending leaderboard message to channel ${options.channel.id}`);
             
         const message = await options.channel.send(leaderboardMessage);
+
+        if (!message) {
+            console.error(`Failed to send leaderboard message`);
+            interaction.editReply(`## :x: Nie udało się wysłać tablicy wyników PLA Inside.`);
+            return;
+        }
+
+        // Check if message is already registered in database
+        const existingMessage = await this.messageService.findByDiscordId(message.id);
+
+        // If message exist, replace it
+        if (existingMessage) {
+            console.log(`Message ${message.id} already exist in database, replacing...`);
+            await this.messageService.delete(existingMessage.id);
+        }
+
+        // Save message to database
+        const savedMessage = await this.messageService.create({
+            discordId: message.id,
+            name: `insideleaderboard-${options.type}`,
+            channelId: dbChannel.id,
+        });
+
+        if (!savedMessage) {
+            console.error(`Failed to save leaderboard message to database`);
+            interaction.editReply(`## :x: Nie udało się zapisać tablicy wyników PLA Inside do bazy danych.`);
+            return;
+        }
 
         interaction.editReply(`### :white_check_mark: Tablica wyników PLA Inside została utworzona: ${message.url}`);
     }
