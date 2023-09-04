@@ -6,6 +6,7 @@ import { DiscordService } from "../discord.service";
 import { EmojiService } from "src/database/entities/emoji/emoji.service";
 import { RoleEntity } from "src/database/entities/role/entities/role.entity";
 import { ConfigService } from "@nestjs/config";
+import { teamsCompositionService } from "./teams-composition.service";
 
 @Injectable()
 export class manageMembersService {
@@ -15,6 +16,7 @@ export class manageMembersService {
         private readonly discordService: DiscordService,
         private readonly emojiService: EmojiService,
         private readonly configService: ConfigService,
+        private readonly teamsCompositionService: teamsCompositionService,
     ) {}
 
     public async handleAdminAddMember (interaction: ChatInputCommandInteraction<CacheType>, options: handleAdminInsideAddUserDto) {
@@ -111,6 +113,13 @@ export class manageMembersService {
         for (const message of welcomeMessages) {
             await member.send(message);
         }
+
+        // Update team boards
+        interaction.editReply({
+            content: `### Aktualizowanie tablic informacyjnych PLA Inside...`
+        });
+
+        await this.teamsCompositionService.updateInsideTeamBoards();
 
         interaction.editReply({
             content: `### :white_check_mark: Użytkownik ${member} został dodany do PLA Inside jako ${positionDisplayName} drużyny ${teamDisplayName}`,

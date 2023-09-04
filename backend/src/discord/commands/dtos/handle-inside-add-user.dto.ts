@@ -8,6 +8,7 @@ const plaTeamToNameDictionary = {
     plap: "PLA-P",
     plab: "PLA-B",
     plag: "PLA-G",
+    plar: "PLA-R",
 }
 
 class handleAdminInsideAddUserDto {
@@ -45,6 +46,10 @@ class handleAdminInsideAddUserDto {
             {
                 name: "PLA-G",
                 value: "g"
+            },
+            {
+                name: "PLA-R",
+                value: "r"
             }
         ]
     })
