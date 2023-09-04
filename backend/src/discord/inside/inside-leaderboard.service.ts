@@ -127,7 +127,7 @@ export class InsideLeaderboardService {
      * @returns 
      */
     public async getTeamLeaderboardMessage() {
-        const teamsData = this.getTeamsData();
+        const teamsData = await this.getTeamsData();
 
         const placementEmojis = {
             1: await this.emojiService.findByName(`first`),
