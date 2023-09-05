@@ -5,6 +5,7 @@ import { DatabaseService } from "src/database/database.service";
 import { ApexSyncService } from "src/discord/apex-connect/apex-sync.service";
 import { ApexLeaderboardService } from "src/discord/apex-statistics/apex-leaderboard.service";
 import { DiscordService } from "src/discord/discord.service";
+import { InsideLeaderboardService } from "src/discord/inside/inside-leaderboard.service";
 import { teamsCompositionService } from "src/discord/inside/teams-composition.service";
 
 @Injectable()
@@ -20,6 +21,7 @@ export class CronService {
         @Inject(forwardRef(() => ApexLeaderboardService))
         private readonly apexLeaderboardService: ApexLeaderboardService,
         private readonly teamsCompositionService: teamsCompositionService,
+        private readonly insideLeaderboardService: InsideLeaderboardService,
     ) {
         this.init();
     }
@@ -81,6 +83,9 @@ export class CronService {
 
         // Update the inside team boards
         await this.teamsCompositionService.updateInsideTeamBoards();
+
+        // Update the inside leaderboards
+        await this.insideLeaderboardService.updateInsideLeaderboards();
     }
     // Schedule a cron job to run every 5 hours
     @Cron('0 0 */5 * * *', {
