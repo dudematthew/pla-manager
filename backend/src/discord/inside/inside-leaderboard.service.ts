@@ -24,6 +24,7 @@ import { AdminCreateInsideLeaderboardDto } from "../commands/dtos/admin-create-i
 import { ConfigService } from "@nestjs/config";
 import { MessageService } from "src/database/entities/message/message.service";
 import { ChannelService } from "src/database/entities/channel/channel.service";
+import { RoleService } from "src/database/entities/role/role.service";
 
 @Injectable()
 export class InsideLeaderboardService {
@@ -35,7 +36,9 @@ export class InsideLeaderboardService {
         private readonly configService: ConfigService,
         private readonly messageService: MessageService,
         private readonly channelService: ChannelService,
+        private readonly roleService: RoleService,
     ) {}
+
 
     public async handleAdminCreateInsideLeaderboard(interaction: ChatInputCommandInteraction<CacheType>, options: AdminCreateInsideLeaderboardDto) {
         await interaction.deferReply({
@@ -121,12 +124,92 @@ export class InsideLeaderboardService {
         interaction.editReply(`### :white_check_mark: Tablica wyników PLA Inside została utworzona: ${message.url}`);
     }
 
+    public async handleAdminUpdateInsideLeaderboards(interaction: ChatInputCommandInteraction<CacheType>) {
+        await interaction.deferReply({
+            ephemeral: true
+        });
+
+        const insideEmoji = await this.emojiService.findByName(`plainside`);
+
+        let progressMessage = `## ${insideEmoji} Aktualizacja tablic wyników PLA Inside...`
+
+        interaction.editReply(progressMessage);
+
+        const leaderboardTypes = {
+            'lp-team': `Drużynowa LP`,
+            'lp-member': `Graczy LP`,
+        }
+
+        for (const [key, type] of Object.entries(leaderboardTypes)) {
+            console.log(`Updating leaderboard ${type}`);
+            progressMessage += `\n### - Aktualizacja tablicy: ${type}`;
+            interaction.editReply(progressMessage);
+            const success = await this.updateInsideLeaderboards(key);
+
+            if (!success) {
+                progressMessage += ` (:x: Niepowodzenie)`;
+                interaction.editReply(progressMessage);
+            }
+            else {
+                progressMessage += ` (:white_check_mark: Sukces)`;
+                interaction.editReply(progressMessage);
+            }
+        }
+
+        progressMessage += `\n### ${insideEmoji} Aktualizacja tablicy wyników PLA Inside zakończona.`;
+        interaction.editReply(progressMessage);
+    }
+
+    public async updateInsideLeaderboards(type?: string) {
+        console.log(`Starting to update inside leaderboards`);
+        const dbMessage = await this.messageService.findByName(`insideleaderboard-${type}`);
+
+        if (!dbMessage) {
+            console.error(`Message ${type} not found in database`);
+            return false;
+        }
+
+        const message = await this.discordService.getMessage(dbMessage.channel.discordId, dbMessage.discordId);
+
+        if (!message) {
+            console.error(`Message ${type} not found in discord, deleting...`);
+            this.messageService.delete(dbMessage.id);
+            return false;
+        }
+
+        let newMessage;
+
+        switch (type) {
+            case `lp-team`:
+                newMessage = await this.getTeamLeaderboardMessage();
+                break;
+            case `lp-member`:
+                newMessage = await this.getMemberLeaderboardMessage();
+                break;
+            default:
+                console.error(`Invalid leaderboard type provided: ${type}`);
+                return false;
+        }
+
+        if (!newMessage) {
+            console.error(`Failed to update message ${type}`);
+            return false;
+        }
+
+        console.log(`Updating message ${type} with id ${message.id} and channel ${message.channel.id}`);
+
+        await message.edit(newMessage);
+
+        return true;
+    }
+
     /**
      * Get team leaderboard message
      * @warning May return null if something went wrong
      * @returns 
      */
     public async getTeamLeaderboardMessage() {
+        console.log(`Starting to get team leaderboard message`);
         const teamsData = await this.getTeamsData();
 
         const placementEmojis = {
@@ -154,6 +237,10 @@ export class InsideLeaderboardService {
 
         embed.setTitle(`TOP LP Drużyn PLA Inside`);
         embed.setDescription(leaderboardMessage);
+        embed.setFooter({
+            text: `Polskie Legendy Apex • Gracze rezerwowi nie są uwzględniani w sumie LP`,
+            iconURL: this.configService.get<string>('images.logo-transparent'),
+        })
 
         return {
             embeds: [embed],
@@ -165,9 +252,15 @@ export class InsideLeaderboardService {
         const teamsData = [];
 
         for (const team of teams) {
-            console.log(`Team inside ${team.name}:`, team.role);
             const teamRole = await this.discordService.getRoleById(team.role.discordId);
             const teamMembers = await this.discordService.getUsersWithRole(teamRole.id);
+            const reserveRole = await this.roleService.findByName(this.configService.get<string>('role-names.pla-inside.reserve'));
+            const reserveMembers = await this.discordService.getUsersWithRole(reserveRole.discordId);
+
+            // Filter out reserve members
+            for (const [key, member] of reserveMembers) {
+                teamMembers.delete(key);
+            }
 
             teamsData[team.name] = {
                 team,
@@ -197,8 +290,10 @@ export class InsideLeaderboardService {
     }
     
     private async getMemberLeaderboardMessage() {
-        const teamsData = await this.getTeamsData();
+        console.log(`Starting to get member leaderboard message`);
         const membersData = [];
+        const dbRole = await this.roleService.findByName(this.configService.get<string>('role-names.pla-inside.main'));
+        const members = await this.discordService.getUsersWithRole(dbRole.discordId);
         const rankToRoleNameDictionary = this.apexAccountService.rankToRoleNameDictionary;
 
         const placementEmojis = {
@@ -207,10 +302,18 @@ export class InsideLeaderboardService {
             3: await this.emojiService.findByName(`third`),
         }
 
-        // Get all members
-        for (const teamData of Object.values(teamsData)) {
-            for (const memberData of teamData.members) {
-                membersData.push(memberData);
+        // Get all members data 
+        for (const [key, member] of members) {
+            const account = await this.apexAccountService.findByUserDiscordId(member.id);
+
+            if (account) {
+                membersData.push({
+                    member,
+                    account,
+                });
+            }
+            else {
+                console.log(`Account not found for user ${member.nickname}`);
             }
         }
 
@@ -220,6 +323,9 @@ export class InsideLeaderboardService {
         const sortedMembers = membersData.sort((a, b) => {
             return b.account.rankScore - a.account.rankScore;
         });
+
+        // Dump to console sorted members
+        console.info(`Sorted members:`, sortedMembers);
 
         const embed = await this.getBasicEmbed();
         let leaderboardMessage = ``;
@@ -240,7 +346,7 @@ export class InsideLeaderboardService {
         embed.setTitle(`TOP LP Graczy PLA Inside`);
         embed.setDescription(leaderboardMessage);
 
-        console.log(`Leaderboard message:`, leaderboardMessage, leaderboardMessage.length);
+        console.log(`Leaderboard message:`, leaderboardMessage);
 
         return {
             embeds: [embed],

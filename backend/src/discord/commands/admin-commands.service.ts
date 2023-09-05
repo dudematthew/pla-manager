@@ -229,6 +229,18 @@ export class AdminCommandsService {
     @UseGuards(AdminGuard)
     @UseFilters(ForbiddenExceptionFilter)
     @Subcommand({
+        name: 'inside-zaktualizuj-top',
+        description: 'Zaktualizuj tablicę TOP graczy PLA Inside',
+    })
+    public async onAdminUpdateInsideLeaderboards(@Context() [Interaction]: SlashCommandContext) {
+        console.log(`[CommandsService] onAdminCreateApexLeaderboard`);
+
+        await this.insideLeaderboardService.handleAdminUpdateInsideLeaderboards(Interaction);
+    }
+
+    @UseGuards(AdminGuard)
+    @UseFilters(ForbiddenExceptionFilter)
+    @Subcommand({
         name: 'zaktualizuj-tablicę-wyników',
         description: 'Zaktualizuj tablicę TOP 20 graczy Apex Legends na serwerze',
     })
