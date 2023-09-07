@@ -133,7 +133,7 @@ export class ApexAccountService {
     user = await this.userService.findById(user.id);
 
     // Create data object
-    let data = {
+    const data = {
         user,
         name: playerData.global.name,
         uid: playerData.global.uid.toString(),
@@ -152,9 +152,6 @@ export class ApexAccountService {
         brKDR: parseInt(playerData.total?.kd?.value ?? null) ?? null,
         lastLegendPlayed: playerData.realtime?.selectedLegend ?? null,
     };
-
-    // This line will go through the data object and replace NaN with 0:
-    data = this.sanitizeData(data);
 
     let profile = null;
 
@@ -186,20 +183,6 @@ export class ApexAccountService {
 
     // return updated user
     return user;
-  }
-
-  private sanitizeData(obj: any): any {
-    Object.keys(obj).forEach(key => {
-      if (typeof obj[key] === 'object' && obj[key] !== null) {
-        this.sanitizeData(obj[key]);
-      } else {
-        if(isNaN(obj[key])){
-          console.warn(`Detected NaN in property ${key}, setting to 0.`)
-          obj[key] = 0;
-        }
-      }
-    });
-    return obj;
   }
 
   async update(id: number, properties: UpdateApexAccountDto): Promise<ApexAccountEntity> {
