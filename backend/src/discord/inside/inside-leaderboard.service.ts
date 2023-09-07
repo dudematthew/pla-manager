@@ -346,7 +346,7 @@ export class InsideLeaderboardService {
 
             prefix += ` ${rankEmoji} `;
 
-            const embedNumber = Math.floor(i / 5);
+            const embedNumber = Math.floor(i / 6);
 
             if (!leaderboardMessages[embedNumber]) {
                 leaderboardMessages[embedNumber] = ``;
