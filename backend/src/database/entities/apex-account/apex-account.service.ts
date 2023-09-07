@@ -153,6 +153,14 @@ export class ApexAccountService {
         lastLegendPlayed: playerData.realtime?.selectedLegend ?? null,
     };
 
+    // Detect if data contains NaN
+    const containsNaN = Object.values(data).some((value) => isNaN(value));
+    if (containsNaN) {
+        console.info("Data contains NaN: ", data);
+        return null;
+    }
+
+
     let profile = null;
 
     // Check if account with given UID already exists
