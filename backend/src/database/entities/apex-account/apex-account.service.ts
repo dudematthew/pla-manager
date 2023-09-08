@@ -153,11 +153,11 @@ export class ApexAccountService {
         lastLegendPlayed: playerData.realtime?.selectedLegend ?? null,
     };
 
-    // Detect if data contains NaN
-    const containsNaN = Object.values(data).some((value) => isNaN(value));
-    if (containsNaN) {
-        console.info("Data contains NaN: ", data);
-        return null;
+    // Detect if uid is null
+    const isNull = data.uid === null || data.uid === undefined || data.uid === '';
+    if(isNull) {
+      console.error("UID is null");
+      return null;
     }
 
 
