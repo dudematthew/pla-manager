@@ -160,7 +160,7 @@ export class InsideLeaderboardService {
         interaction.editReply(progressMessage);
     }
 
-    public async updateInsideLeaderboards(type?: string) {
+    public async updateInsideLeaderboards(type: string) {
         console.log(`Starting to update inside leaderboards`);
         const dbMessage = await this.messageService.findByName(`insideleaderboard-${type}`);
 

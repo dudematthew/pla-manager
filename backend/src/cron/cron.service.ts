@@ -85,7 +85,9 @@ export class CronService {
         await this.teamsCompositionService.updateInsideTeamBoards();
 
         // Update the inside leaderboards
-        await this.insideLeaderboardService.updateInsideLeaderboards();
+        ['lp-team', 'lp-member'].forEach(async (type) => {
+            await this.insideLeaderboardService.updateInsideLeaderboards(type);
+        });
     }
     // Schedule a cron job to run every 5 hours
     @Cron('0 0 */5 * * *', {
