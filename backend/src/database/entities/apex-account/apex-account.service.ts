@@ -153,6 +153,14 @@ export class ApexAccountService {
         lastLegendPlayed: playerData.realtime?.selectedLegend ?? null,
     };
 
+    // Detect if uid is null
+    const isNull = data.uid === null || data.uid === undefined || data.uid === '';
+    if(isNull) {
+      console.error("UID is null");
+      return null;
+    }
+
+
     let profile = null;
 
     // Check if account with given UID already exists

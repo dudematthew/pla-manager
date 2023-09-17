@@ -100,10 +100,10 @@ export class InsideLeaderboardService {
         }
 
         // Check if message is already registered in database
-        const existingMessage = await this.messageService.findByDiscordId(message.id);
+        const existingMessage = await this.messageService.findByName(`insideleaderboard-${options.type}`);
 
         // If message exist, replace it
-        if (existingMessage) {
+        if (!!existingMessage) {
             console.log(`Message ${message.id} already exist in database, replacing...`);
             await this.messageService.delete(existingMessage.id);
         }
@@ -119,6 +119,8 @@ export class InsideLeaderboardService {
             console.error(`Failed to save leaderboard message to database`);
             interaction.editReply(`## :x: Nie udało się zapisać tablicy wyników PLA Inside do bazy danych.`);
             return;
+        } else {
+            console.log(`Leaderboard message saved to database:`, savedMessage);
         }
 
         interaction.editReply(`### :white_check_mark: Tablica wyników PLA Inside została utworzona: ${message.url}`);
@@ -292,6 +294,7 @@ export class InsideLeaderboardService {
     private async getMemberLeaderboardMessage() {
         console.log(`Starting to get member leaderboard message`);
         const membersData = [];
+        const embeds = [];
         const dbRole = await this.roleService.findByName(this.configService.get<string>('role-names.pla-inside.main'));
         const members = await this.discordService.getUsersWithRole(dbRole.discordId);
         const rankToRoleNameDictionary = this.apexAccountService.rankToRoleNameDictionary;
@@ -315,6 +318,11 @@ export class InsideLeaderboardService {
             else {
                 console.log(`Account not found for user ${member.nickname}`);
             }
+
+            // Finish on ten members
+            if (membersData.length >= 10) {
+                break;
+            }
         }
 
         console.info(`Members data:`, membersData);
@@ -327,8 +335,7 @@ export class InsideLeaderboardService {
         // Dump to console sorted members
         console.info(`Sorted members:`, sortedMembers);
 
-        const embed = await this.getBasicEmbed();
-        let leaderboardMessage = ``;
+        let leaderboardMessages = [];
 
         let i = 1;
         for (const member of sortedMembers) {
@@ -339,17 +346,53 @@ export class InsideLeaderboardService {
 
             prefix += ` ${rankEmoji} `;
 
-            leaderboardMessage += prefix + `${member.member} - ${member.account.rankScore} LP\n`;
+            const embedNumber = Math.floor(i / 6);
+
+            if (!leaderboardMessages[embedNumber]) {
+                leaderboardMessages[embedNumber] = ``;
+            }
+
+            leaderboardMessages[embedNumber] += prefix + `${member.member} - ${member.account.rankScore} LP\n`;
             i++;
         }
 
-        embed.setTitle(`TOP LP Graczy PLA Inside`);
-        embed.setDescription(leaderboardMessage);
+        await Promise.all(leaderboardMessages.map(async (message, key) => {
 
-        console.log(`Leaderboard message:`, leaderboardMessage);
+            console.log(`Message ${key} with ${message.length}: '${message}'`);
+
+            // Check how many chars message has in one line
+            const lines = message.split('\n');
+            // Check last char
+            const lastLineLength = lines[lines.length - 1].length;
+            // Calculate how many spaces we need to fill
+            message += `ㅤ`.repeat(40 - lastLineLength);
+
+            console.log(`Message ${key} with ${message.length} after spaces: '${message}'`);
+
+            // if message is first 
+            if (key == 0) {
+                const embed = await this.getBasicTopEmbed();
+                embed.setTitle(`TOP LP Graczy PLA Inside`);
+                embed.setDescription(message);
+                embeds.push(embed);
+            }
+            // if message is last
+            else if (key == leaderboardMessages.length - 1) {
+                const embed = await this.getBasicFooterEmbed();
+                embed.setDescription(message);
+                embeds.push(embed);
+            }
+            else {
+                const embed = await this.getEmptyEmbed();
+                embed.setDescription(message);
+
+                embeds.push(embed);
+            }
+        }));
+
 
         return {
-            embeds: [embed],
+            embeds,
         }
     }
 
@@ -365,7 +408,39 @@ export class InsideLeaderboardService {
         embed.setAuthor({
             name: `PLA Inside`,
             iconURL: this.configService.get<string>('images.pla-inside-logo'),
-        })
+        });
+
+        return embed;
+    }
+
+    private async getBasicTopEmbed (): Promise<EmbedBuilder> {
+        const embed = new EmbedBuilder();
+
+        embed.setColor(this.configService.get('theme.color-primary'));
+        embed.setAuthor({
+            name: `TOP LP Graczy PLA Inside`,
+            iconURL: this.configService.get<string>('images.pla-inside-logo'),
+        });
+        return embed;
+    }
+
+    private async getBasicFooterEmbed (): Promise<EmbedBuilder> {
+        const embed = new EmbedBuilder();
+
+        embed.setColor(this.configService.get('theme.color-primary'));
+        embed.setFooter({
+            text: `Polskie Legendy Apex`,
+            iconURL: this.configService.get<string>('images.logo-transparent'),
+        });
+        embed.setTimestamp();
+
+        return embed;
+    }
+
+    private async getEmptyEmbed (): Promise<EmbedBuilder> {
+        const embed = new EmbedBuilder();
+
+        embed.setColor(this.configService.get('theme.color-primary'));
 
         return embed;
     }
