@@ -73,7 +73,7 @@ export class CronService {
     }
 
     // Schedule a cron job to run every 12 hours
-    @Cron('0 0 */12 * * *', {
+    @Cron('0 0 0,12 * * *', {
         name: 'updateConnectedAccounts',
     }) // At 00:00:00am every day
     public async updateConnectedAccounts () {

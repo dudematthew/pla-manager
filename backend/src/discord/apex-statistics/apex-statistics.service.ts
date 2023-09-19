@@ -184,6 +184,11 @@ export class ApexStatisticsService {
         console.info(`Rank emoji: ${rankEmoji} for ${statistics?.global?.rank.rankName}`); 
         const plaEmoji = await this.emojiService.findByName('pla');
         const serverRank = ((user?.apexAccount ?? null) != null) ? await this.apexAccountService.getServerRankByAccountId(user.apexAccount.id): null;
+        const lastMidnightDate = new Date();
+        // Set time to 00:03:00am
+        lastMidnightDate.setHours(0, 3, 0, 0);
+        const lastMidnightStats = ((user?.apexAccount ?? null) != null) ? (await this.apexAccountHistoryService.getHistoryClosestTo(apexAccount, lastMidnightDate)) : null;
+        const scoreGainSinceMidnight = lastMidnightStats ? (statistics?.global?.rank.rankScore - lastMidnightStats.rankScore) : null;
         const rankDisplayName = rankToDisplayNameDictionary[statistics?.global?.rank.rankName];
         // ----------------------------------------------------------------------
 
@@ -290,9 +295,12 @@ export class ApexStatisticsService {
 
         if(serverRank)
             description.push(`${plaEmoji} TOP **${serverRank}** na serwerze **PLA**`);
-
+        
         description.push(`**:chart_with_upwards_trend: ${statistics?.global?.rank.rankScore}** LP`);
         
+        if (scoreGainSinceMidnight != null)
+            description.push(`**:calendar: ${scoreGainSinceMidnight}** LP dzisiaj`);
+
         description.push('ㅤ');
         // ----------------------------------------------------------------------
 
