@@ -134,6 +134,86 @@ export type Schema = {
     nested: {};
     flat: {};
   };
+  'inside_league_match': {
+    plain: {
+      'id': number;
+      'created_at': string;
+      'updated_at': string;
+      'seasonId': number;
+    };
+    nested: {
+      'season': Schema['inside_league_season']['plain'] & Schema['inside_league_season']['nested'];
+    };
+    flat: {
+      'season:id': number;
+      'season:name': string;
+      'season:background_image': string;
+      'season:created_at': string;
+      'season:updated_at': string;
+    };
+  };
+  'inside_league_match_score': {
+    plain: {
+      'id': number;
+      'score': number;
+      'created_at': string;
+      'updated_at': string;
+      'teamId': number;
+      'matchId': number;
+    };
+    nested: {
+      'team': Schema['team']['plain'] & Schema['team']['nested'];
+      'match': Schema['inside_league_match']['plain'] & Schema['inside_league_match']['nested'];
+    };
+    flat: {
+      'team:id': number;
+      'team:name': string;
+      'team:created_at': string;
+      'team:updated_at': string;
+      'team:roleId': number;
+      'team:display_name': string;
+      'team:logo_url': string;
+      'team:color': string;
+      'team:role:id': number;
+      'team:role:discord_id': string;
+      'team:role:name': string;
+      'team:role:created_at': string;
+      'team:role:updated_at': string;
+      'team:role:priority': number;
+      'team:role:emojiId': number;
+      'team:role:roleGroupId': number;
+      'team:role:emoji:id': number;
+      'team:role:emoji:name': string;
+      'team:role:emoji:discord_id': string;
+      'team:role:emoji:created_at': string;
+      'team:role:emoji:updated_at': string;
+      'team:role:emoji:discord_name': string;
+      'team:role:roleGroup:id': number;
+      'team:role:roleGroup:name': string;
+      'team:role:roleGroup:created_at': string;
+      'team:role:roleGroup:updated_at': string;
+      'match:id': number;
+      'match:created_at': string;
+      'match:updated_at': string;
+      'match:seasonId': number;
+      'match:season:id': number;
+      'match:season:name': string;
+      'match:season:background_image': string;
+      'match:season:created_at': string;
+      'match:season:updated_at': string;
+    };
+  };
+  'inside_league_season': {
+    plain: {
+      'id': number;
+      'name': string;
+      'background_image': string;
+      'created_at': string;
+      'updated_at': string;
+    };
+    nested: {};
+    flat: {};
+  };
   'message': {
     plain: {
       'id': number;

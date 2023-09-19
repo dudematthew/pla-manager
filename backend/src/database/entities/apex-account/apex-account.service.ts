@@ -168,7 +168,7 @@ export class ApexAccountService {
 
     if(existingAccount) {
         // Update existing profile
-        console.log("Updating existing profile");
+        console.log("Updating existing profile: ", existingAccount.id);
         try {
           profile = await this.update(existingAccount.id, data);
         } catch (e) {
@@ -200,24 +200,33 @@ export class ApexAccountService {
 
   async update(id: number, properties: UpdateApexAccountDto): Promise<ApexAccountEntity> {
     const account = await this.findById(id);
-
+  
     if(!account) {
       return null;
     }
-
+  
     try {
-        Object.assign(account, properties);
-
-        const modifiedAccountEntity = await this.apexAccountRepository.save(account);
-
-        // Create new history chunk
-        await this.apexAccountHistoryService.create(modifiedAccountEntity);
-
-        return modifiedAccountEntity;
+      console.log('Updating account with ID:', id);
+      console.log('Received properties:', properties);
+  
+      Object.assign(account, properties);
+  
+      console.log('Account after assignment:', account);
+  
+      const modifiedAccountEntity = await this.apexAccountRepository.save(account);
+  
+      console.log('Modified account entity:', modifiedAccountEntity);
+  
+      // Create new history chunk
+      await this.apexAccountHistoryService.create(modifiedAccountEntity);
+  
+      return modifiedAccountEntity;
     } catch (error) {
-        throw new InternalServerErrorException(error);
+      console.error('Error while updating account:', error);
+      throw new InternalServerErrorException(error);
     }
   }
+  
 
   async remove (id: number): Promise<ApexAccountEntity> {
     const account = await this.findById(id);
