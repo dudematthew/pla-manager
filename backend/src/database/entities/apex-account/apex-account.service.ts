@@ -169,7 +169,12 @@ export class ApexAccountService {
     if(existingAccount) {
         // Update existing profile
         console.log("Updating existing profile");
-        profile = await this.update(existingAccount.id, data);
+        try {
+          profile = await this.update(existingAccount.id, data);
+        } catch (e) {
+          console.error(`Failed to update profile: ${profile.name}:`, profile);
+          console.error(e);
+        }
         console.log(`Updated profile: ${profile.name}`);
     } else {
         // Create new profile
