@@ -149,7 +149,7 @@ export class ApexAccountService {
         brTotalWins: playerData.total?.specialEvent_wins?.value ?? null,
         brTotalDamage: playerData.total?.specialEvent_damage?.value ?? null,
         brTotalGamesPlayed: null, // Doesn't exist in API
-        brKDR: parseInt(playerData.total?.kd?.value ?? null) ?? null,
+        brKDR: !isNaN(Number(playerData.total?.kd?.value)) ? parseInt(playerData.total?.kd?.value) : null,
         lastLegendPlayed: playerData.realtime?.selectedLegend ?? null,
     };
 
@@ -169,13 +169,7 @@ export class ApexAccountService {
     if(existingAccount) {
         // Update existing profile
         console.log("Updating existing profile: ", existingAccount.id);
-        try {
-          profile = await this.update(existingAccount.id, data);
-        } catch (e) {
-          console.error(`Failed to update profile: ${profile.name}:`, profile);
-          console.error(e);
-        }
-        console.log(`Updated profile: ${profile.name}`);
+        profile = await this.update(existingAccount.id, data);
     } else {
         // Create new profile
         console.log(`Creating new profile: ${data.name}`);
@@ -207,11 +201,8 @@ export class ApexAccountService {
   
     try {
       console.log('Updating account with ID:', id);
-      console.log('Received properties:', properties);
   
       Object.assign(account, properties);
-  
-      console.log('Account after assignment:', account);
   
       const modifiedAccountEntity = await this.apexAccountRepository.save(account);
   
