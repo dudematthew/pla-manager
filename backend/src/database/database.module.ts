@@ -23,6 +23,8 @@ import { ApexSeasonModule } from './entities/apex-season/apex-season.module';
 import { ApexSeasonEntity } from "./entities/apex-season/entities/apex-season.entity";
 import { InsideTeamsModule } from './entities/inside-teams/inside-teams.module';
 import { InsideTeamEntity } from "./entities/inside-teams/entities/inside-team.entity";
+import { CommunityEventModule } from './entities/community-event/community-event.module';
+import { CommunityEventEntity } from "./entities/community-event/entities/community-event.entity";
 
 @Module({
     imports: [
@@ -50,6 +52,7 @@ import { InsideTeamEntity } from "./entities/inside-teams/entities/inside-team.e
                     MessageEntity,
                     ApexSeasonEntity,
                     InsideTeamEntity,
+                    CommunityEventEntity,
                 ],
                 synchronize: true,
                 autoLoadEntities: true,
@@ -60,6 +63,7 @@ import { InsideTeamEntity } from "./entities/inside-teams/entities/inside-team.e
         forwardRef(() => DiscordModule),
         ApexSeasonModule,
         InsideTeamsModule,
+        CommunityEventModule,
     ],
     providers: [
         TypeORMSession,

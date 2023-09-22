@@ -18,6 +18,7 @@ import { ApexAccountModule } from "src/database/entities/apex-account/apex-accou
 import { DatabaseModule } from "src/database/database.module";
 import { IntroduceModule } from './introduce/introduce.module';
 import { ApexStatisticsModule } from './apex-statistics/apex-statistics.module';
+import { CommunityEventsModule } from './community-events/community-events.module';
 
 @Module({
     imports: [
@@ -54,6 +55,7 @@ import { ApexStatisticsModule } from './apex-statistics/apex-statistics.module';
         ApexAccountModule,
         IntroduceModule,
         ApexStatisticsModule,
+        CommunityEventsModule,
     ],
     controllers: [],
     providers: [

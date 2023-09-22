@@ -1,6 +1,7 @@
 import { BaseEntity, Column, CreateDateColumn, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { ApexAccountEntity } from "../apex-account/entities/apex-account.entity";
 import { MessageEntity } from "../message/entities/message.entity";
+import { CommunityEventEntity } from "../community-event/entities/community-event.entity";
 
 @Entity({
     name: 'user',
@@ -31,4 +32,7 @@ export class UserEntity extends BaseEntity {
     @OneToOne(() => ApexAccountEntity, apexAccount => apexAccount.user)
     @JoinColumn()
     apexAccount: ApexAccountEntity;
+
+    @OneToMany(() => CommunityEventEntity, communityEvent => communityEvent.user)
+    communityEvents: CommunityEventEntity[];
 }
