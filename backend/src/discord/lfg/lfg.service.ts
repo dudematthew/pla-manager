@@ -107,6 +107,16 @@ export class LfgService {
             'sparingi',
             'sparingach',
         ],
+        communityevents: [
+            'customy',
+            'customki',
+            'customach',
+            'custom',
+            'customów',
+            'customkach',
+            'customkami',
+            'customami',
+        ]
     }
 
     /**
@@ -124,6 +134,19 @@ export class LfgService {
         unranked: 'https://i.imgur.com/Ur6XZwa.png',
         disconnected: 'https://i.imgur.com/rwWetJw.png',
     };
+
+    private roleEmojis = {
+        bronze: 'bronze',
+        silver: 'silver',
+        gold: 'gold',
+        platinum: 'platinum',
+        diamond: 'diamond',
+        master: 'master',
+        predator: 'predator',
+        pubs: 'pubs',
+        '1v1': '1v1',
+        communityevents: 'customs',
+    }
 
     /**
      * The role relations that are used in the lfg messages
@@ -357,7 +380,7 @@ export class LfgService {
         .setTimestamp();
         
         embed.setTitle('Tworzenie posta LFG')
-        embed.setDescription(`Twoja wiadomość zawiera znaki kluczowe. Aby anulować proces kliknij przycisk poniżej.`)
+        embed.setDescription(`Twoja wiadomość zawiera znaki kluczowe. Wejdź na dowolny kanał głosowy aby został oznaczony. Aby anulować proces kliknij przycisk poniżej.`)
         embed.setThumbnail(this.configService.get<string>('images.loading'));
 
         const confirmButton = new ButtonBuilder()
@@ -442,7 +465,7 @@ export class LfgService {
 
     private canMentionRole(rankRole: string, mentionedRole: string): boolean {
 
-        if(mentionedRole === 'pubs' || mentionedRole === '1v1')
+        if(mentionedRole === 'pubs' || mentionedRole === '1v1' || mentionedRole === 'communityevents')
             return true;
 
         const availableRoleNamesToMention = this.roleRelations[rankRole];
@@ -533,6 +556,11 @@ export class LfgService {
 
             try {
                 console.log(`Getting emoji for role: `, role, role.emoji, role.emoji.discordName);
+
+                // There is an option to use custom emojis for roles
+                // But for now we will use the default ones
+                // this.roleEmojis[role.name.toLowerCase()]
+
                 emoji = await this.emojiService.getDiscordEmojiByName(role.emoji.discordName);
 
                 if(!emoji) {
