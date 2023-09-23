@@ -1,9 +1,15 @@
 import { Module } from '@nestjs/common';
 import { CommunityEventService } from './community-event.service';
-import { CommunityEventController } from './community-event.controller';
+import { CommunityEventEntity } from './entities/community-event.entity';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({
-  controllers: [CommunityEventController],
-  providers: [CommunityEventService]
+  imports: [
+    TypeOrmModule.forFeature([CommunityEventEntity]),
+  ],
+  providers: [
+    CommunityEventService
+  ],
+  exports: [CommunityEventService],
 })
 export class CommunityEventModule {}

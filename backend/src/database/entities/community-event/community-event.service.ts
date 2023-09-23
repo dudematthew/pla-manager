@@ -1,26 +1,91 @@
 import { Injectable } from '@nestjs/common';
 import { CreateCommunityEventDto } from './dto/create-community-event.dto';
 import { UpdateCommunityEventDto } from './dto/update-community-event.dto';
+import { CommunityEventEntity } from './entities/community-event.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { UserEntity } from '../user/user.entity';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class CommunityEventService {
-  create(createCommunityEventDto: CreateCommunityEventDto) {
-    return 'This action adds a new communityEvent';
+  
+  constructor(
+    @InjectRepository(CommunityEventEntity)
+    private readonly communityEventRepository: Repository<CommunityEventEntity>,
+  ) {}
+
+  async create(createCommunityEventDto: CreateCommunityEventDto, user: UserEntity) {
+    const communityEvent = this.communityEventRepository.create({
+      ...createCommunityEventDto,
+      user,
+    });
+
+    await this.communityEventRepository.save(communityEvent);
+
+    return communityEvent;
   }
 
-  findAll() {
-    return `This action returns all communityEvent`;
+  async update(id: number, updateCommunityEventDto: UpdateCommunityEventDto): Promise<CommunityEventEntity | null> {
+    const communityEvent = await this.communityEventRepository.findOneBy({
+      id,
+    });
+
+    if (!communityEvent) {
+      return null;
+    }
+
+    return await this.communityEventRepository.save({
+      ...communityEvent,
+      ...updateCommunityEventDto,
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} communityEvent`;
+  async findAll(): Promise<CommunityEventEntity[]> {
+    return await this.communityEventRepository.find({
+      relations: ['user'],
+    });
   }
 
-  update(id: number, updateCommunityEventDto: UpdateCommunityEventDto) {
-    return `This action updates a #${id} communityEvent`;
+  async findOneById(id: number): Promise<CommunityEventEntity | null> {
+    return await this.communityEventRepository.findOne({
+      where: {
+        id,
+      },
+      relations: ['user'],
+    })
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} communityEvent`;
+  async findOneByUserId(userId: number): Promise<CommunityEventEntity | null> {
+    return await this.communityEventRepository.findOne({
+      where: {
+        user: {
+          id: userId,
+        },
+      },
+      relations: ['user'],
+    })
   }
+
+  async remove(id: number): Promise<void> {
+    await this.communityEventRepository.delete({
+      id,
+    });
+  }
+
+  async setApproveState(id: number, approveState: "pending" | "approved" | "rejected"): Promise<CommunityEventEntity | null> {
+    const communityEvent = await this.communityEventRepository.findOneBy({
+      id,
+    });
+
+    if (!communityEvent) {
+      return null;
+    }
+
+    return await this.communityEventRepository.save({
+      ...communityEvent,
+      approveState,
+    });
+  }
+
 }

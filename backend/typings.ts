@@ -134,6 +134,7 @@ export type Schema = {
       'created_at': string;
       'updated_at': string;
       'userId': number;
+      'color': string;
     };
     nested: {
       'user': Schema['user']['plain'] & Schema['user']['nested'];

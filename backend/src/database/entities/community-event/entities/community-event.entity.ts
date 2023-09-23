@@ -33,6 +33,9 @@ export class CommunityEventEntity extends BaseEntity {
     })
     approveState: "pending" | "approved" | "rejected";
 
+    @Column()
+    color: string;
+
     @ManyToOne(() => UserEntity, user => user.communityEvents)
     user: UserEntity;
 

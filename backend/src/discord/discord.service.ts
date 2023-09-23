@@ -89,6 +89,12 @@ export class DiscordService {
     return await this.client.application.commands.fetch();
   }
 
+  /**
+   * Get application command by name and subname
+   * @param name 
+   * @param subName 
+   * @returns Command or subcommand - best to interpret as ApplicationCommand
+   */
   public async getApplicationCommand(name: string, subName?: string) {
     const commands = await this.getApplicationCommands();
 
