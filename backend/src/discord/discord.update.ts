@@ -65,4 +65,13 @@ export class DiscordUpdate {
         this.logger.verbose(`Member added: ${member.user.username}`);
         this.discordListeners.handleGuildMemberAdd(member);
     }
+
+    @On('interactionCreate')
+    public onInteractionCreate(@Context() [interaction]: ContextOf<'interactionCreate'>) {
+        // Check if this is a button interaction
+        if (interaction.isButton()) {
+            this.logger.verbose(`Button interaction: ${interaction.customId}`);
+            this.discordListeners.handleButtonInteraction(interaction);
+        }
+    }
 }

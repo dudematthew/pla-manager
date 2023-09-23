@@ -38,6 +38,7 @@ import { CommunityEventEntity } from "./entities/community-event/entities/commun
                 username: configService.get('DB_USER', 'root'),
                 password: configService.get('DB_PASS', ''),
                 database: configService.get('DB_NAME', 'pla_manager'),
+                charset: "utf8mb4",
                 entities: [
                     UserEntity,
                     ChannelEntity,

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ActionRowBuilder, ApplicationCommand, ApplicationCommandSubCommand, Attachment, ButtonBuilder, ButtonStyle, CacheType, ChatInputCommandInteraction, ColorResolvable, EmbedBuilder, User } from 'discord.js';
+import { ActionRowBuilder, ApplicationCommand, ApplicationCommandSubCommand, Attachment, ButtonBuilder, ButtonStyle, CacheType, ChatInputCommandInteraction, ColorResolvable, EmbedBuilder, GuildMember, User } from 'discord.js';
 import { handleCommunityEventCreateDiscordCommandDto } from '../commands/dtos/handle-community-events-create-discord-command';
 import { CommunityEventService } from 'src/database/entities/community-event/community-event.service';
 import DateInterpreter from 'src/misc/date-interpreter';
@@ -8,16 +8,19 @@ import { DiscordService } from '../discord.service';
 import { UserService } from 'src/database/entities/user/user.service';
 import { RoleService } from 'src/database/entities/role/role.service';
 import { ChannelService } from 'src/database/entities/channel/channel.service';
+import { ButtonData } from '../discord.listeners';
+import { CommunityEventEntity } from 'src/database/entities/community-event/entities/community-event.entity';
 
 // Create type of event
-class eventType {
+class EventType {
     title: string;
     description: string;
+    user: GuildMember;
+    approveState?: "pending" | "approved" | "rejected";
     startDate?: Date;
     endDate?: Date;
     color?: `#${string}`;
-    image?: Attachment;
-    user: User;
+    imageUrl?: string;
 }
 
 @Injectable()
@@ -68,6 +71,14 @@ export class CommunityEventsService {
             return;
         }
 
+        // Check if endDate exists when startDate doesn't
+        if (!startDate && endDate) {
+            await interaction.editReply({
+                content: `## :x: Data zakończenia nie może być podana bez daty rozpoczęcia!`,
+            });
+            return;
+        }
+
         // Check if startDate is not in the past
         if (options.startDate && !startDate && startDate.getTime() < Date.now()) {
             await interaction.editReply({
@@ -100,14 +111,15 @@ export class CommunityEventsService {
             return;
         }
 
-        const eventData: eventType = {
+        const eventData: EventType = {
             title: options.title,
             description: options.description,
             startDate: startDate,
             endDate: endDate,
+            approveState: 'pending',
+            user: interaction.member as GuildMember,
             color: options?.color,
-            image: options?.image,
-            user: interaction.user,
+            imageUrl: options?.image?.url,
         }
         
         const eventEmbed = await this.getEventEmbed(eventData);
@@ -115,25 +127,25 @@ export class CommunityEventsService {
         const acceptButton = new ButtonBuilder()
             .setStyle(ButtonStyle.Success)
             .setLabel('Utwórz wydarzenie')
-            .setCustomId('apex-event-create-accept')
+            .setCustomId('community-event-create-accept')
             .setEmoji('✅');
 
         const cancelButton = new ButtonBuilder()
             .setStyle(ButtonStyle.Danger)
             .setLabel('Nie, zmień dane')
-            .setCustomId('apex-event-create-cancel')
+            .setCustomId('community-event-create-cancel')
             .setEmoji('✖');
 
         const row = new ActionRowBuilder()
             .addComponents(acceptButton, cancelButton);
 
         await interaction.editReply({
-            content: `Czy wszystko się zgadza?`,
+            content: `### Czy wszystko się zgadza?`,
             embeds: [eventEmbed],
             components: [row as any],
         });
 
-        console.info(`Image URL: ${eventData.image?.url}`);
+        console.info(`Image URL: ${eventData.imageUrl}`);
 
         const collectorFilter = i => i.user.id == interaction.user.id;
         
@@ -148,7 +160,7 @@ export class CommunityEventsService {
         
         confirmation.deferUpdate();
 
-        if (confirmation.customId == 'apex-event-create-cancel') {
+        if (confirmation.customId == 'community-event-create-cancel') {
             await interaction.editReply(await this.getCancelMessage());
             return;
         }
@@ -164,19 +176,32 @@ export class CommunityEventsService {
         }
 
         // Create event
-        const communityEvent = await this.communityEventService.create({
-            name: eventData.title,
-            description: eventData.description,
-            startDate: eventData.startDate ?? undefined,
-            endDate: eventData.endDate ?? undefined,
-            color: eventData.color ?? undefined,
-            imageUrl: eventData.image?.url ?? undefined,
-            approveState: 'pending',
-        }, user);
+        let communityEvent: CommunityEventEntity;
+        try {
+            communityEvent = await this.communityEventService.create({
+                name: eventData.title,
+                description: eventData.description,
+                startDate: eventData.startDate ?? null,
+                endDate: eventData.endDate ?? null,
+                color: eventData.color ?? undefined,
+                imageUrl: eventData.imageUrl?? undefined,
+                approveState: 'pending',
+            }, user);
+        } catch (e) {
+            await interaction.editReply({
+                content: `## :x: Wystąpił błąd podczas tworzenia wydarzenia!\nSpróbuj ponownie, jednak nie używaj emoji jeśli są zawarte w tytule lub opisie wydarzenia. Jeśli to pomoże koniecznie daj znać administracji. Jeśli nie, spróbuj ponownie później.`,
+                embeds: [],
+                components: [],
+            });
+            console.error(e);
+            return;
+        }
 
         if (!communityEvent) {
             await interaction.editReply({
                 content: `## :x: Wystąpił błąd podczas tworzenia wydarzenia!`,
+                embeds: [],
+                components: [],
             });
             return;
         }
@@ -188,6 +213,8 @@ export class CommunityEventsService {
         if (!reportsChannel || !communityEventsChannel) {
             await interaction.editReply({
                 content: `## :x: Wystąpił błąd podczas tworzenia wydarzenia!`,
+                embeds: [],
+                components: [],
             });
             console.error('Reports channel or community events channel not found!');
             return;
@@ -198,7 +225,74 @@ export class CommunityEventsService {
         await interaction.editReply(await this.getSuccessMessage());
     }
 
-    private async getEventEmbed(eventData: eventType) {
+    public async handleCommunityEventAcceptButton(buttonData: ButtonData) {
+        console.log('handleCommunityEventAcceptButton');
+
+        const eventId = parseInt(buttonData.id.split(':')[1]);
+        const communityEvent = await this.communityEventService.findById(eventId);
+
+        if (!communityEvent) {
+            this.discordService.sendPrivateMessage(buttonData.user.id, `### :x: Wystąpił błąd podczas zatwierdzania wydarzenia\nWydarzenie nie zostało znalezione w bazie danych!`);
+            return;
+        }
+
+        await this.communityEventService.update(eventId, {
+            ...communityEvent,
+            approveState: 'approved',
+            color: communityEvent.color as `#${string}`,
+        });
+
+        const eventData: EventType = {
+            title: communityEvent.name,
+            description: communityEvent.description,
+            startDate: communityEvent.startDate,
+            endDate: communityEvent.endDate,
+            user: buttonData.user,
+            approveState: 'approved',
+            imageUrl: communityEvent.imageUrl ?? undefined,
+            color: communityEvent.color as `#${string}`,
+        };
+
+        const eventEmbed = await this.getEventEmbed(eventData);
+
+        const approveMessage = await this.getApproveMessage(eventId, eventData);
+
+        buttonData.message.edit(approveMessage);
+
+        const communityEventsChannel = await this.channelService.findByName('communityevents');
+
+        if (!communityEventsChannel) {
+            console.error('Community events channel not found!');
+            this.discordService.sendPrivateMessage(buttonData.user.id, `### :x: Wystąpił błąd podczas zatwierdzania wydarzenia\nNie znaleziono kanału wydarzeń społeczności!`);
+            return;
+        }
+
+        let components = [];
+
+        if (eventData.startDate) {
+            const remindButton = new ButtonBuilder()
+                .setStyle(ButtonStyle.Primary)
+                .setLabel('Powiadom o rozpoczęciu')
+                .setCustomId(`community-event-remind:${communityEvent.id}`)
+                .setEmoji('🔔');
+                
+            components.push(new ActionRowBuilder()
+                .addComponents(remindButton) as any);
+        }
+
+        eventEmbed.setFooter({
+            text: `Polskie Legendy Apex • Chcesz utworzyć własne wydarzenie? Użyj komendy /wydarzenie stwórz`,
+            iconURL: this.configService.get<string>('images.logo-transparent')
+        });
+
+        const communityEventsRole = await this.roleService.findByName('communityevents');
+
+        await this.discordService.sendMessage(communityEventsChannel.discordId, `${communityEventsRole}`, [eventEmbed], components);
+
+        await this.discordService.sendPrivateMessage(buttonData.user.id, `### :white_check_mark: Wydarzenie zostało zatwierdzone!`);
+    }
+
+    private async getEventEmbed(eventData: EventType) {
         const embed = this.getBaseEmbed();
 
         const startTimestamp = eventData.startDate ? `<t:${Math.floor(eventData.startDate.getTime() / 1000)}:F>` : null;
@@ -207,12 +301,13 @@ export class CommunityEventsService {
 
         const description = [];
 
-        description.push(`Wydarzenie użytkownika ${eventData.user}`);
-        description.push(`# ${eventData.title}`);
+        description.push(`${eventData.user} zaprasza na swoje wydarzenie!`);
+        description.push(`## ${eventData.title}`);
         description.push(``);
         description.push(eventData.description);
 
         embed.setDescription(description.join('\n'));
+        embed.setThumbnail(eventData.user.displayAvatarURL() ?? eventData.user.user.displayAvatarURL());
 
         if (startTimestamp) {
             embed.addFields([
@@ -232,8 +327,8 @@ export class CommunityEventsService {
             ]);
         }
 
-        if (eventData.image) {
-            embed.setImage(eventData.image.url);
+        if (eventData?.imageUrl) {
+            embed.setImage(eventData.imageUrl);
         }
 
         if (eventData.color) {
@@ -248,51 +343,103 @@ export class CommunityEventsService {
      * @param eventId 
      * @param eventData 
      */
-    private async getApproveMessage(eventId: number, eventData: eventType) {
-        const eventCommand = await this.discordService.getApplicationCommand('wydarzenie') as ApplicationCommand;
+    private async getApproveMessage(eventId: number, eventData: EventType) {
         const adminRole = await this.roleService.findByName('admin');
         const moderatorRole = await this.roleService.findByName('moderator');
         
+        let approveStateText = '';
+        switch (eventData.approveState) {
+            case 'approved':
+                approveStateText = 'Zatwierdzone :white_check_mark:';
+                break;
+            case 'rejected':
+                approveStateText = 'Odrzucone :x:\n**Powód:** *...*';
+                break;
+            case 'pending':
+                approveStateText = 'Oczekuje na zatwierdzenie :hourglass_flowing_sand:\n*Czy tytuł i opis są wystarczająco informatywne? Czy dane mają sens? Czy treści nie są niepoprawne?*';
+        }
+        
         const description = [];
 
-        description.push(`Wydarzenie użytkownika ${eventData.user} oczekuje na zatwierdzenie.`);
-        description.push(`Tytuł: \`${eventData.title}\``);
+        description.push(`Wydarzenie nr. **${eventId}** użytkownika ${eventData.user}.`);
         description.push(``);
-        description.push(`Opis: \`${eventData.description}\``);
+        description.push(`**Tytuł:** \`${eventData.title}\``);
         description.push(``);
-        description.push(`Data rozpoczęcia: \`${eventData.startDate ? `<t:${Math.floor(eventData.startDate.getTime() / 1000)}:F>` : 'Nie podano'}\``);
-        description.push(`Data zakończenia: \`${eventData.endDate ? `<t:${Math.floor(eventData.endDate.getTime() / 1000)}:F>` : 'Nie podano'}\``);
+        description.push(`**Opis:** \`${eventData.description}\``);
         description.push(``);
-        description.push(`Kolor: \`${eventData.color ?? 'Nie podano'}\``);
+        description.push(`**Data rozpoczęcia:** ${eventData.startDate ? `<t:${Math.floor(eventData.startDate.getTime() / 1000)}:F>` : 'Nie podano'}`);
+        description.push(`**Data zakończenia:** ${eventData.endDate ? `<t:${Math.floor(eventData.endDate.getTime() / 1000)}:F>` : 'Nie podano'}`);
+        description.push(``);
+        description.push(`**Kolor:** \`${eventData.color ?? 'Nie podano'}\``);
+        description.push(``);
+        description.push(`**Grafika:** ${eventData?.imageUrl ? `[Kliknij tutaj](${eventData?.imageUrl})` : 'Nie podano'}`);
+        description.push(``);
+        description.push(`### Status: ${approveStateText}`);
 
 
         const embed = this.getBaseEmbed()
             .setTitle('Wydarzenie do zatwierdzenia')
             .setDescription(description.join('\n'))
             .setThumbnail(this.configService.get<string>('images.logo-transparent'))
+            
+        if (eventData?.imageUrl)
+            embed.setImage(eventData?.imageUrl ?? undefined);
 
-        if (eventData.image?.url)
-            embed.setImage(eventData.image?.url ?? undefined);
+        const components = [];
 
-        const acceptButton = new ButtonBuilder()
-            .setStyle(ButtonStyle.Success)
-            .setLabel('Zatwierdź')
-            .setCustomId(`community-event-approve:${eventId}`)
-            .setEmoji('✅');
+        if (eventData.approveState == 'pending') {
+    
+            const acceptButton = new ButtonBuilder()
+                .setStyle(ButtonStyle.Success)
+                .setLabel('Zatwierdź')
+                .setCustomId(`community-event-approve:${eventId}`)
+                .setEmoji('✅');
+    
+            const rejectButton = new ButtonBuilder()
+                .setStyle(ButtonStyle.Danger)
+                .setLabel('Odrzuć')
+                .setCustomId(`community-event-reject:${eventId}`)
+                .setEmoji('✖');
+    
+            const row = new ActionRowBuilder()
+                .addComponents(acceptButton, rejectButton);
 
-        const rejectButton = new ButtonBuilder()
-            .setStyle(ButtonStyle.Danger)
-            .setLabel('Odrzuć')
-            .setCustomId(`community-event-reject:${eventId}`)
-            .setEmoji('✖');
+            components.push(row as any);
+        } 
+        else if (eventData.approveState == 'approved') {
+            // If event has start date allow canceling it
+            if (eventData.startDate && eventData.startDate.getTime() > Date.now()) {
+                const cancelButton = new ButtonBuilder()
+                    .setStyle(ButtonStyle.Secondary)
+                    .setLabel('Anuluj Powiadomienie')
+                    .setCustomId(`community-event-cancel:${eventId}`)
+                    .setEmoji('❌');
+        
+                const row = new ActionRowBuilder()
+                    .addComponents(cancelButton);
+    
+                components.push(row as any);
+            }
+        }
+        else if (eventData.approveState == 'rejected') {
+            const acceptButton = new ButtonBuilder()
+                .setStyle(ButtonStyle.Success)
+                .setLabel('Zatwierdź')
+                .setCustomId(`community-event-approve:${eventId}`)
+                .setEmoji('✅');
+            
+            const row = new ActionRowBuilder()
+                .addComponents(acceptButton);
 
-        const row = new ActionRowBuilder()
-            .addComponents(acceptButton, rejectButton);
+            components.push(row as any);
+        }
+        
+        const content = (eventData.approveState == 'pending') ? `${moderatorRole} ${adminRole}` : ``;
 
         return {
-            content: `${moderatorRole} ${adminRole}`,
+            content,
             embeds: [embed],
-            components: [row as any],
+            components,
         }
     }
 
@@ -343,9 +490,11 @@ export class CommunityEventsService {
     }
 
     public async getSuccessMessage() {
+        const communityEventsChannel = await this.channelService.findByName('communityevents');
+
         const embed = this.getBaseEmbed()
             .setTitle('Wydarzenie przesłane do weryfikacji')
-            .setDescription(`Wydarzenie zostało przesłane do weryfikacji. Po sprawdzeniu przez moderatora zostanie opublikowane.`)
+            .setDescription(`Po sprawdzeniu przez moderację zostanie opublikowane na kanale ${communityEventsChannel}.`)
             .setThumbnail(this.configService.get<string>('images.success'));
 
         return {

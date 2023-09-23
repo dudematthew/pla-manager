@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { LfgService } from "./lfg/lfg.service";
-import { Message, User, Channel, ChannelType, Typing, PartialUser, GuildMember } from "discord.js";
+import { Message, User, Channel, ChannelType, Typing, PartialUser, GuildMember, Interaction, ButtonInteraction, CacheType } from "discord.js";
 import { ChannelService } from "src/database/entities/channel/channel.service";
 import { ChannelEntity } from "src/database/entities/channel/channel.entity";
 import { Logger } from "@nestjs/common";
@@ -8,6 +8,8 @@ import { ConfigService } from "@nestjs/config";
 import { ApexConnectService } from "./apex-connect/apex-connect.service";
 import { IntroduceService } from "./introduce/introduce.service";
 import { UserService } from "src/database/entities/user/user.service";
+import { ContextOf } from "necord";
+import { CommunityEventsService } from "./community-events/community-events.service";
 
 interface MessageCreateListener {
     channelPattern: string;
@@ -29,10 +31,25 @@ interface GuildMemberEnteredListener {
     callback: (member: MemberData) => void;
 }
 
+interface ButtonListener {
+    idPattern: string;
+    channelType: ChannelType[];
+    channelPattern: string;
+    userPattern: string;
+    callback: (button: ButtonData) => void;
+}
+
 export interface MessageData {
     channel: Channel;
     message: Message;
     user: User
+}
+
+export interface ButtonData {
+    id: string;
+    user: GuildMember;
+    message: Message;
+    channel: Channel;
 }
 
 export interface TypingData {
@@ -64,6 +81,8 @@ export default class DiscordListeners {
 
     private readonly guildMemberAddListeners: GuildMemberEnteredListener[];
 
+    private readonly buttonListeners: ButtonListener[];
+
     /**
      * The logger instance
      */
@@ -76,6 +95,7 @@ export default class DiscordListeners {
         private readonly apexConnectService: ApexConnectService,
         private readonly introduceService: IntroduceService,
         private readonly userService: UserService,
+        private readonly communityEventsService: CommunityEventsService,
     ) {
         this.wcmatch = require('wildcard-match');
         
@@ -167,6 +187,31 @@ export default class DiscordListeners {
                 channelType: [],
                 callback: (typingData: TypingData) => {
                     this.introduceService.handleIntroduceTyping(typingData);
+                }
+            }
+        ]
+
+        /**
+         * The button listeners - these are the listeners that should be
+         * activated when a user clicks a button.
+         * 
+         * Available patterns:
+         * id: The pattern to match against the button id
+         * channelPattern: The pattern to match against the channel name or database name
+         * channelType: The channel type to match against
+         * userPattern: The pattern to match the user name against
+         * 
+         * @var ButtonListener[]
+         */
+        this.buttonListeners = [
+            // The communityEvent accept button listener
+            {
+                idPattern: 'community-event-approve**',
+                channelPattern: `reports`,
+                userPattern: '**',
+                channelType: [],
+                callback: (buttonData: ButtonData) => {
+                    this.communityEventsService.handleCommunityEventAcceptButton(buttonData);
                 }
             }
         ]
@@ -295,6 +340,7 @@ export default class DiscordListeners {
 
         // Check if message matches any of the listeners
         for(const listener of this.messageCreateListeners) {
+
             // Check if channel type matches pattern ------------------------------
             if (listener.channelType.length != 0 && message.channel.type in listener.channelType) {
                 // console.log('Channel type ' + messageData.channel.type + ' does not match pattern: ' + listener.channelType);
@@ -322,6 +368,7 @@ export default class DiscordListeners {
                     continue;
                 }
             } 
+
             // If channel id matches pattern
             else if (!this.matchPattern(messageData.channel.id, this.escapeSpecialCharacters(listener.channelPattern))) {
                 // console.log('Channel id does not match pattern: ' + listener.channelPattern);
@@ -370,6 +417,73 @@ export default class DiscordListeners {
             try {
                 this.logger.log('Calling callback: ' + callback.name);
                 callback(memberData);
+            } catch (e) {
+                this.logger.error(e);
+            }
+        });
+    }
+
+    public async handleButtonInteraction(interaction: ButtonInteraction<CacheType>) {
+        const buttonData: ButtonData = {
+            id: interaction.customId,
+            user: interaction.member as GuildMember,
+            message: interaction.message,
+            channel: interaction.channel,
+        }
+
+        let callbacks: ((button: ButtonData) => void)[] = [];
+
+        // Check if button matches any of the listeners
+        for(const listener of this.buttonListeners) {
+
+            console.log('Checking listener: ' + listener.idPattern);
+
+            // Check if button id matches pattern ------------------------------
+            if (!this.matchPattern(buttonData.id, this.escapeSpecialCharacters(listener.idPattern))) {
+                console.log(`Button id ${buttonData.id} does not match pattern: ` + listener.idPattern);
+                continue;
+            }
+            
+            // Check if channel type matches pattern ------------------------------
+            if (listener.channelType.length != 0 && buttonData.channel.type in listener.channelType) {
+                console.log('Channel type ' + buttonData.channel.type + ' does not match pattern: ' + listener.channelType);
+                continue;
+            }
+
+            // Check if user matches pattern ------------------------------
+            if (!this.matchPattern(buttonData.user.id, this.escapeSpecialCharacters(listener.userPattern))) {
+                console.log('User does not match pattern: ' + listener.userPattern);
+                continue;
+            }
+
+            // Check if channel matches database channel ------------------------------
+            let dbChannel: ChannelEntity = await this.channelService.findByName(listener.channelPattern);
+
+            // If channel is in database
+            if (dbChannel) {
+                if (dbChannel.discordId !== buttonData.channel.id) {
+                    console.log('Channel id does not match pattern: ' + listener.channelPattern);
+                    continue;
+                }
+            } 
+
+            // If channel id matches pattern
+            else if (!this.matchPattern(buttonData.channel.id, this.escapeSpecialCharacters(listener.channelPattern))) {
+                console.log('Channel id does not match pattern: ' + listener.channelPattern);
+                continue;
+            }
+
+            console.log('Matched listener: ' + listener.idPattern);
+
+            // If all patterns match, add callback to callbacks
+            callbacks.push(listener.callback);
+        }
+
+        // Call all callbacks
+        callbacks.forEach((callback: (button: ButtonData) => void) => {
+            try {
+                this.logger.log('Calling callback: ' + callback.name);
+                callback(buttonData);
             } catch (e) {
                 this.logger.error(e);
             }

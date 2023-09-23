@@ -23,13 +23,27 @@ export default class DateInterpreter {
     return result;
   }
 
+  private parseHour(input: string): number | null {
+    const hourMatch = input.match(/(\d{1,2})/);
+    if (hourMatch) {
+      const hour = parseInt(hourMatch[1], 10);
+      if (!isNaN(hour) && hour >= 0 && hour <= 23) {
+        return hour;
+      }
+    }
+    return null;
+  }
+
   private parseTime(input: string): [number, number] | null {
-    const timeMatch = input.match(/(\d{1,2})(?::(\d{2}))?(?:\sam)?/);
+    const timeMatch = input.match(/o\s(\d{1,2}):(\d{2})/);
     if (timeMatch) {
-      const hours = parseInt(timeMatch[1], 10);
-      const minutes = timeMatch[2] ? parseInt(timeMatch[2], 10) : 0;
-      if (!isNaN(hours) && !isNaN(minutes) && hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {
-        return [hours, minutes];
+      const hour = parseInt(timeMatch[1], 10);
+      const minute = parseInt(timeMatch[2], 10);
+      if (
+        !isNaN(hour) && hour >= 0 && hour <= 23 &&
+        !isNaN(minute) && minute >= 0 && minute <= 59
+      ) {
+        return [hour, minute];
       }
     }
     return null;
@@ -58,119 +72,78 @@ export default class DateInterpreter {
     return null;
   }
 
-  private parseDayAndTime(input: string, targetDay: Date): Date | null {
-    const timeMatch = input.match(/(\d{1,2}):(\d{2})/);
-    if (timeMatch) {
-      const hours = parseInt(timeMatch[1], 10);
-      const minutes = parseInt(timeMatch[2], 10);
-      if (!isNaN(hours) && !isNaN(minutes) && hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {
-        const targetTime = new Date(targetDay);
-        targetTime.setHours(hours, minutes);
-        return targetTime;
-      }
-    }
-    return null;
-  }
-
   public parse(input: string): Date | null {
     const lowerInput = input.toLowerCase();
-
+  
     if (lowerInput.includes('dzisiaj')) {
       if (lowerInput.includes('za')) {
         const hoursToAdd = parseInt((lowerInput.match(/\d+/) || ['0'])[0], 10);
         if (!isNaN(hoursToAdd)) {
           return this.addHours(this.now, hoursToAdd);
         }
-      } else if (lowerInput.includes('o')) {
-        const timeMatch = lowerInput.match(/\d+:\d+/);
-        if (timeMatch) {
-          const [hours, minutes] = timeMatch[0].split(':').map(Number);
-          if (!isNaN(hours) && !isNaN(minutes)) {
-            const todayWithTime = new Date(this.now);
-            todayWithTime.setHours(hours);
-            todayWithTime.setMinutes(minutes);
-            return todayWithTime;
-          }
-        }
-      } else if (lowerInput.includes('wieczorem')) {
-        const eveningTime = new Date(this.now);
-        eveningTime.setHours(19, 0);
-        return eveningTime;
+      } else {
+        return this.now;
       }
-      const noonTime = new Date(this.now);
-      noonTime.setHours(12, 0);
-      return noonTime;
     }
-
+  
     if (lowerInput.includes('jutro')) {
-      if (lowerInput.includes('rano')) {
-        const tomorrowMorning = new Date(this.addDays(this.now, 1));
-        tomorrowMorning.setHours(8, 0);
-        return tomorrowMorning;
+      if (lowerInput.includes('o')) {
+        const timeMatch = this.parseTime(lowerInput);
+        if (timeMatch) {
+          const [hour, minute] = timeMatch;
+          const tomorrow = this.addDays(this.now, 1);
+          return new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), hour, minute);
+        }
+      } else {
+        const tomorrow = this.addDays(this.now, 1);
+        return new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate());
       }
-      const tomorrowNoon = new Date(this.addDays(this.now, 1));
-      tomorrowNoon.setHours(12, 0);
-      return tomorrowNoon;
     }
-
+  
     if (lowerInput.includes('pojutrze')) {
-      const dayAfterTomorrow = new Date(this.addDays(this.now, 2));
-      dayAfterTomorrow.setHours(12, 0);
-      return dayAfterTomorrow;
-    }
-
-    const dayOfWeekIndex = this.parseDayOfWeek(lowerInput);
-    if (dayOfWeekIndex !== null) {
-      const targetDay = this.addDays(this.now, (dayOfWeekIndex - this.now.getDay() + 7) % 7);
-
-      // Sprawdź, czy istnieje określona godzina
-      const timeMatch = lowerInput.match(/(\d{1,2}):(\d{2})/);
-      if (timeMatch) {
-        const hours = parseInt(timeMatch[1], 10);
-        const minutes = parseInt(timeMatch[2], 10);
-        if (!isNaN(hours) && !isNaN(minutes) && hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {
-          const targetTime = new Date(targetDay);
-          targetTime.setHours(hours, minutes);
-          return targetTime;
+      if (lowerInput.includes('o')) {
+        const timeMatch = this.parseTime(lowerInput);
+        if (timeMatch) {
+          const [hour, minute] = timeMatch;
+          const dayAfterTomorrow = this.addDays(this.now, 2);
+          return new Date(dayAfterTomorrow.getFullYear(), dayAfterTomorrow.getMonth(), dayAfterTomorrow.getDate(), hour, minute);
         }
+      } else {
+        const dayAfterTomorrow = this.addDays(this.now, 2);
+        return new Date(dayAfterTomorrow.getFullYear(), dayAfterTomorrow.getMonth(), dayAfterTomorrow.getDate());
       }
-
-      // Jeśli godzina nie jest określona, zwróć datę zgodną z dniem tygodnia
-      return targetDay;
     }
-
-    if (lowerInput.includes('za')) {
-      if (lowerInput.includes('minut')) {
-        const minutesToAdd = parseInt((lowerInput.match(/\d+/) || ['0'])[0], 10);
-        if (!isNaN(minutesToAdd)) {
-          return this.addMinutes(this.now, minutesToAdd);
+  
+    const dayOfWeek = this.parseDayOfWeek(lowerInput);
+    if (dayOfWeek !== null) {
+      if (lowerInput.includes('o')) {
+        const timeMatch = this.parseTime(lowerInput);
+        if (timeMatch) {
+          const [hour, minute] = timeMatch;
+          const day = (dayOfWeek - this.now.getDay() + 7) % 7;
+          const targetDate = this.addDays(this.now, day);
+          return new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), hour, minute);
         }
-      } else if (lowerInput.includes('godzin')) {
-        const hoursToAdd = parseInt((lowerInput.match(/\d+/) || ['0'])[0], 10);
-        if (!isNaN(hoursToAdd)) {
-          return this.addHours(this.now, hoursToAdd);
+      } else {
+        const day = (dayOfWeek - this.now.getDay() + 7) % 7;
+        const targetDate = this.addDays(this.now, day);
+        return new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+      }
+    }
+  
+    const simpleDate = this.parseSimpleDate(lowerInput);
+    if (simpleDate !== null) {
+      if (lowerInput.includes('o')) {
+        const timeMatch = this.parseTime(lowerInput);
+        if (timeMatch) {
+          const [hour, minute] = timeMatch;
+          return new Date(simpleDate.getFullYear(), simpleDate.getMonth(), simpleDate.getDate(), hour, minute);
         }
+      } else {
+        return simpleDate;
       }
     }
-
-    const timeMatch = lowerInput.match(/o\s(\d{1,2})/);
-    if (timeMatch) {
-      const time = this.parseTime(`o ${timeMatch[1]}`);
-      if (time) {
-        const [hours, minutes] = time;
-        const targetTime = new Date(this.now);
-        targetTime.setHours(hours, minutes);
-        return targetTime;
-      }
-    }
-
-    if (lowerInput.match(/^\d{1,2}\.\d{1,2}(\.\d{2}|\.\d{4})?(\s\d{1,2}:\d{2})?$/)) {
-      const parsedDate = this.parseSimpleDate(lowerInput);
-      if (parsedDate) {
-        return parsedDate;
-      }
-    }
-
+  
     return null;
   }
 }

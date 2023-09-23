@@ -47,7 +47,7 @@ export class CommunityEventService {
     });
   }
 
-  async findOneById(id: number): Promise<CommunityEventEntity | null> {
+  async findById(id: number): Promise<CommunityEventEntity | null> {
     return await this.communityEventRepository.findOne({
       where: {
         id,
@@ -56,7 +56,7 @@ export class CommunityEventService {
     })
   }
 
-  async findOneByUserId(userId: number): Promise<CommunityEventEntity | null> {
+  async findByUserId(userId: number): Promise<CommunityEventEntity | null> {
     return await this.communityEventRepository.findOne({
       where: {
         user: {

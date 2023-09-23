@@ -5,7 +5,7 @@ class handleCommunityEventCreateDiscordCommandDto {
 
     @StringOption({
         name: 'tytuł',
-        description: 'Tytuł twojego wydarzenia',
+        description: 'Tytuł twojego wydarzenia - Nie używaj emoji spoza serwera!',
         required: true,
         max_length: 40,
     })
@@ -13,7 +13,7 @@ class handleCommunityEventCreateDiscordCommandDto {
 
     @StringOption({
         name: 'opis',
-        description: 'Opis twojego wydarzenia - Nie używaj customowych emoji',
+        description: 'Opis twojego wydarzenia - Nie używaj emoji spoza serwera!',
         required: true,
         max_length: 200,
     })

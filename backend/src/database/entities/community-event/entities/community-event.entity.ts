@@ -9,19 +9,34 @@ export class CommunityEventEntity extends BaseEntity {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column()
+    @Column({
+        charset: "utf8mb4",
+        collation: "utf8mb4_unicode_ci",
+    })
     name: string;
 
-    @Column()
+    @Column({
+        charset: "utf8mb4",
+        collation: "utf8mb4_unicode_ci",
+    })
     description: string;
 
-    @Column({ name: "start_date" })
+    @Column({
+        name: "start_date",
+        nullable: true,
+    })
     startDate: Date;
 
-    @Column({ name: "end_date" })
+    @Column({
+        name: "end_date",
+        nullable: true,
+    })
     endDate: Date;
 
-    @Column({ name: "image_url" })
+    @Column({
+        name: "image_url",
+        nullable: true,
+    })
     imageUrl: string;
 
     @Column({
@@ -33,7 +48,9 @@ export class CommunityEventEntity extends BaseEntity {
     })
     approveState: "pending" | "approved" | "rejected";
 
-    @Column()
+    @Column({
+        nullable: true,
+    })
     color: string;
 
     @ManyToOne(() => UserEntity, user => user.communityEvents)
