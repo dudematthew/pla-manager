@@ -23,8 +23,9 @@ import { ApexSeasonModule } from './entities/apex-season/apex-season.module';
 import { ApexSeasonEntity } from "./entities/apex-season/entities/apex-season.entity";
 import { InsideTeamsModule } from './entities/inside-teams/inside-teams.module';
 import { InsideTeamEntity } from "./entities/inside-teams/entities/inside-team.entity";
-import { InsideLeagueMatchModule } from './entities/inside-league-match/inside-league-match.module';
-import { InsideLeagueSeasonModule } from './entities/inside-league-season/inside-league-season.module';
+import { InsideLeagueSeasonEntity } from "./entities/inside-league/entities/inside-league-season.entity";
+import { InsideLeagueMatchEntity } from "./entities/inside-league/entities/inside-league-match.entity";
+import { InsideLeagueMatchScoreEntity } from "./entities/inside-league/entities/inside-league-match-score.entity";
 
 @Module({
     imports: [
@@ -52,6 +53,9 @@ import { InsideLeagueSeasonModule } from './entities/inside-league-season/inside
                     MessageEntity,
                     ApexSeasonEntity,
                     InsideTeamEntity,
+                    InsideLeagueSeasonEntity,
+                    InsideLeagueMatchEntity,
+                    InsideLeagueMatchScoreEntity,
                 ],
                 synchronize: true,
                 autoLoadEntities: true,
@@ -62,8 +66,6 @@ import { InsideLeagueSeasonModule } from './entities/inside-league-season/inside
         forwardRef(() => DiscordModule),
         ApexSeasonModule,
         InsideTeamsModule,
-        InsideLeagueMatchModule,
-        InsideLeagueSeasonModule,
     ],
     providers: [
         TypeORMSession,

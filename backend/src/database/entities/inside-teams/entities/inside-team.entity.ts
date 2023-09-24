@@ -1,7 +1,7 @@
 import { BaseEntity, Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { RoleEntity } from "../../role/entities/role.entity";
-import { InsideLeagueSeasonEntity } from "../../inside-league-season/entities/inside-league-season.entity";
-import { InsideLeagueMatchEntity } from "../../inside-league-match/entities/inside-league-match.entity";
+import { InsideLeagueSeasonEntity } from "../../inside-league/entities/inside-league-season.entity";
+import { InsideLeagueMatchEntity } from "../../inside-league/entities/inside-league-match.entity";
 
 @Entity({
     name: 'team'
@@ -36,16 +36,4 @@ export class InsideTeamEntity extends BaseEntity {
     @OneToOne(() => RoleEntity)
     @JoinColumn()
     role: RoleEntity;
-
-    @OneToMany(() => InsideLeagueSeasonEntity, season => season.winner)
-    @Column({
-        name: 'inside_league_wins'
-    })
-    insideLeagueWins: InsideLeagueSeasonEntity[];
-
-    @OneToMany(() => InsideLeagueMatchEntity, match => match.opponents)
-    @Column({
-        name: 'inside_league_matches'
-    })
-    insideLeagueMatches: InsideLeagueMatchEntity[];
 }
