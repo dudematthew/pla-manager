@@ -351,10 +351,11 @@ export class CommunityEventsService {
 
 
         // Create cron expression based on event start date
-        this.cronService.scheduleCronJob(`community-event-reminder-${communityEvent.id}`, communityEvent.startDate, () => {
-            console.info(`Running cron job for community event ${communityEvent.id}`);
-            this.remindUsersAboutEvent(communityEvent.id);
-        });
+        if (communityEvent.startDate)
+            this.cronService.scheduleCronJob(`community-event-reminder-${communityEvent.id}`, communityEvent.startDate, () => {
+                console.info(`Running cron job for community event ${communityEvent.id}`);
+                this.remindUsersAboutEvent(communityEvent.id);
+            });
 
         // this.discordService.sendPrivateMessage(buttonData.user.id, `### :white_check_mark: Wydarzenie zostało zatwierdzone!`);
         buttonData.interaction.editReply({

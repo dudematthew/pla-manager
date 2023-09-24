@@ -42,11 +42,11 @@ export class CronService {
         cronExpression: string | Date,
         callback: () => void
     ): CronJob {
-        const cronJob = new CronJob(cronExpression, callback, undefined, undefined, this.timeZone);
+        const cronJob = new CronJob(cronExpression, callback, undefined, false, this.timeZone);
 
         this.schedulerRegistry.addCronJob(name, cronJob);
 
-        cronJob.start();
+        // cronJob.start();
 
         this.logger.log(`Scheduled cron job '${name}' with expression '${cronExpression} to run at '${cronJob.nextDates()}'`);
         

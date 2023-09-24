@@ -82,6 +82,10 @@ export default class DateInterpreter {
   }
 
   public parse(input: string): Date | null {
+    if (input === null || input === undefined) {
+      return null;
+    }
+
     const lowerInput = input.toLowerCase();
   
     console.log("Input:", input);
