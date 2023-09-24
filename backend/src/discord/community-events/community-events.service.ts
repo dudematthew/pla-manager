@@ -188,6 +188,16 @@ export class CommunityEventsService {
         
         confirmation.deferUpdate();
 
+        await interaction.editReply({
+            components: [],
+            embeds: [
+                this.getBaseEmbed()
+                    .setTitle(`:hourglass_flowing_sand: Przetwarzanie...`)
+                    .setDescription(`### Proszę czekać, trwa przetwarzanie wydarzenia...`)
+                    .setThumbnail(this.configService.get<string>('images.loading'))
+            ]
+        })
+
         if (confirmation.customId == 'community-event-create-cancel') {
             await interaction.editReply(await this.getCancelMessage());
             return;
@@ -256,13 +266,19 @@ export class CommunityEventsService {
     public async handleCommunityEventAcceptButton(buttonData: ButtonData) {
         console.log('handleCommunityEventAcceptButton');
 
-        buttonData.interaction.deferUpdate();
+        buttonData.interaction.reply({
+            content: `### :hourglass_flowing_sand: Przetwarzanie...`,
+            ephemeral: true,
+        });
 
         const eventId = parseInt(buttonData.id.split(':')[1]);
         const communityEvent = await this.communityEventService.findById(eventId);
 
         if (!communityEvent) {
-            this.discordService.sendPrivateMessage(buttonData.user.id, `### :x: Wystąpił błąd podczas zatwierdzania wydarzenia\nWydarzenie nie zostało znalezione w bazie danych!`);
+            // this.discordService.sendPrivateMessage(buttonData.user.id, `### :x: Wystąpił błąd podczas zatwierdzania wydarzenia\nWydarzenie nie zostało znalezione w bazie danych!`);
+            buttonData.interaction.editReply({
+                content: `### :x: Wystąpił błąd podczas zatwierdzania wydarzenia\nWydarzenie nie zostało znalezione w bazie danych!`,
+            });
             return;
         }
 
@@ -298,13 +314,16 @@ export class CommunityEventsService {
 
         if (!communityEventsChannel) {
             console.error('Community events channel not found!');
-            this.discordService.sendPrivateMessage(buttonData.user.id, `### :x: Wystąpił błąd podczas zatwierdzania wydarzenia\nNie znaleziono kanału wydarzeń społeczności!`);
+            // this.discordService.sendPrivateMessage(buttonData.user.id, `### :x: Wystąpił błąd podczas zatwierdzania wydarzenia\nNie znaleziono kanału wydarzeń społeczności!`);
+            buttonData.interaction.editReply({
+                content: `### :x: Wystąpił błąd podczas zatwierdzania wydarzenia\nNie znaleziono kanału wydarzeń społeczności!`,
+            });
             return;
         }
 
         let components = [];
 
-        if (eventData.startDate) {
+        if (eventData.startDate && eventData.startDate.getTime() > Date.now()) {
             const remindButton = new ButtonBuilder()
                 .setStyle(ButtonStyle.Primary)
                 .setLabel('Powiadom o rozpoczęciu')
@@ -331,7 +350,10 @@ export class CommunityEventsService {
             this.remindUsersAboutEvent(communityEvent.id);
         });
 
-        this.discordService.sendPrivateMessage(buttonData.user.id, `### :white_check_mark: Wydarzenie zostało zatwierdzone!`);
+        // this.discordService.sendPrivateMessage(buttonData.user.id, `### :white_check_mark: Wydarzenie zostało zatwierdzone!`);
+        buttonData.interaction.editReply({
+            content: `### :white_check_mark: Wydarzenie zostało zatwierdzone!`,
+        });
 
         if (!isReaccepted)
             this.discordService.sendPrivateMessage(communityEvent.user.discordId, `## :white_check_mark: Twoje wydarzenie o tytule *${communityEvent.name}* zostało zatwierdzone!\nMożesz je znaleźć tutaj: ${communityEventMessage.url}. Pamiętaj aby się pojawić i nie zawieść swoich fanów!`);
@@ -356,7 +378,10 @@ export class CommunityEventsService {
         const communityEvent = await this.communityEventService.findById(eventId);
 
         if (!communityEvent) {
-            this.discordService.sendPrivateMessage(buttonData.user.id, `### :x: Wystąpił błąd podczas odrzucania wydarzenia\nWydarzenie nie zostało znalezione w bazie danych!`);
+            // this.discordService.sendPrivateMessage(buttonData.user.id, `### :x: Wystąpił błąd podczas odrzucania wydarzenia\nWydarzenie nie zostało znalezione w bazie danych!`);
+            buttonData.interaction.reply({
+                content: `### :x: Wystąpił błąd podczas odrzucania wydarzenia\nWydarzenie nie zostało znalezione w bazie danych!`,
+            })
             return;
         }
 
@@ -387,11 +412,19 @@ export class CommunityEventsService {
             communityEventRejectReason = await buttonData.interaction.awaitModalSubmit({ filter: collectorFilter, time: 60000 });
         } catch (e) {
             communityEventRejectReason.deferUpdate();
-            this.discordService.sendPrivateMessage(buttonData.user.id, `### :x: Nie podano powodu odrzucenia wydarzenia w wyznaczonym czasie!`);
+            // this.discordService.sendPrivateMessage(buttonData.user.id, `### :x: Nie podano powodu odrzucenia wydarzenia w wyznaczonym czasie!`);
+            buttonData.interaction.reply({
+                content: `### :x: Nie podano powodu odrzucenia wydarzenia w wyznaczonym czasie!`,
+            })
             return;
         }
 
-        communityEventRejectReason.deferUpdate();
+        // communityEventRejectReason.deferUpdate();
+        
+        communityEventRejectReason.reply({
+            content: `### :hourglass_flowing_sand: Przetwarzanie...`,
+            ephemeral: true,
+        })
 
         console.info(communityEventRejectReason.fields, communityEventRejectReason.fields.fields['community-event-reject-reason']);
         console.log(typeof communityEventRejectReason.fields) 
@@ -423,7 +456,10 @@ export class CommunityEventsService {
 
         buttonData.message.edit(approveMessage);
 
-        this.discordService.sendPrivateMessage(buttonData.user.id, `### :white_check_mark: Wydarzenie nr. ${communityEvent.id} zostało odrzucone!`);
+        // this.discordService.sendPrivateMessage(buttonData.user.id, `### :white_check_mark: Wydarzenie nr. ${communityEvent.id} zostało odrzucone!`);
+        communityEventRejectReason.editReply({
+            content: `### :white_check_mark: Wydarzenie nr. ${communityEvent.id} zostało odrzucone!`,
+        });
 
         this.discordService.sendPrivateMessage(communityEvent.user.discordId, `## :x: Przepraszamy ale Twoje wydarzenie o tytule *${communityEvent.name}* zostało odrzucone!\n**Powód:** *${reason}*\nMamy nadzieję, że uda Ci się w przyszłości!`);
         
@@ -510,23 +546,35 @@ export class CommunityEventsService {
     public async handleCommunityEventSwitchRemindersButton(buttonData: ButtonData) {
         console.log('handleCommunityEventSwitchRemindersButton');
 
-        buttonData.interaction.deferUpdate();
+        buttonData.interaction.reply({
+            content: `### :hourglass_flowing_sand: Przetwarzanie...`,
+            ephemeral: true,
+        });
 
         const eventId = parseInt(buttonData.id.split(':')[1]);
         let communityEvent = await this.communityEventService.findById(eventId);
 
         if (!communityEvent) {
-            this.discordService.sendPrivateMessage(buttonData.user.id, `### :x: Wystąpił błąd podczas edycji wydarzenia\nWydarzenie nie zostało znalezione w bazie danych!`);
+            // this.discordService.sendPrivateMessage(buttonData.user.id, `### :x: Wystąpił błąd podczas edycji wydarzenia\nWydarzenie nie zostało znalezione w bazie danych!`);
+            buttonData.interaction.editReply({
+                content: `### :x: Wystąpił błąd podczas edycji wydarzenia\nWydarzenie nie zostało znalezione w bazie danych!`,
+            });
             return;
         }
 
         if (!communityEvent.startDate) {
-            this.discordService.sendPrivateMessage(buttonData.user.id, `### :x: Wystąpił błąd podczas edycji wydarzenia\nWydarzenie nie posiada daty rozpoczęcia!`);
+            // this.discordService.sendPrivateMessage(buttonData.user.id, `### :x: Wystąpił błąd podczas edycji wydarzenia\nWydarzenie nie posiada daty rozpoczęcia!`);
+            buttonData.interaction.editReply({
+                content: `### :x: Wystąpił błąd podczas edycji wydarzenia\nWydarzenie nie posiada daty rozpoczęcia!`,
+            });
             return;
         }
 
         if (communityEvent.startDate.getTime() < Date.now()) {
-            this.discordService.sendPrivateMessage(buttonData.user.id, `### :x: Nie można zmienić opcji - wydarzenie już się rozpoczęło!`);
+            // this.discordService.sendPrivateMessage(buttonData.user.id, `### :x: Nie można zmienić opcji - wydarzenie już się rozpoczęło!`);
+            buttonData.interaction.editReply({
+                content: `### :x: Nie można zmienić opcji - wydarzenie już się rozpoczęło!`,
+            });
             return;
         }
 
@@ -570,15 +618,24 @@ export class CommunityEventsService {
         });
 
         if (!communityEvent) {
-            this.discordService.sendPrivateMessage(buttonData.user.id, `### :x: Wystąpił błąd podczas edycji wydarzenia\nSkontaktuj się z administracją.`);
+            // this.discordService.sendPrivateMessage(buttonData.user.id, `### :x: Wystąpił błąd podczas edycji wydarzenia\nSkontaktuj się z administracją.`);
+            buttonData.interaction.editReply({
+                content: `### :x: Wystąpił błąd podczas edycji wydarzenia\nSkontaktuj się z administracją.`,
+            });
             return;
         }
 
         if (communityEvent.reminder) {
-            this.discordService.sendPrivateMessage(buttonData.user.id, `### :white_check_mark: Przypomnienia o wydarzeniu ${communityEvent.id} zostały włączone.`);
+            // this.discordService.sendPrivateMessage(buttonData.user.id, `### :white_check_mark: Przypomnienia o wydarzeniu ${communityEvent.id} zostały włączone.`);
+            buttonData.interaction.editReply({
+                content: `### :white_check_mark: Przypomnienia o wydarzeniu ${communityEvent.id} zostały włączone.`,
+            });
             return;
         } else {
-            this.discordService.sendPrivateMessage(buttonData.user.id, `### :white_check_mark: Przypomnienia o wydarzeniu ${communityEvent.id} zostały wyłączone.`);
+            // this.discordService.sendPrivateMessage(buttonData.user.id, `### :white_check_mark: Przypomnienia o wydarzeniu ${communityEvent.id} zostały wyłączone.`);
+            buttonData.interaction.editReply({
+                content: `### :white_check_mark: Przypomnienia o wydarzeniu ${communityEvent.id} zostały wyłączone.`,
+            });
             return;
         }
     }

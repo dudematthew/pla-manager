@@ -21,14 +21,14 @@ class handleCommunityEventCreateDiscordCommandDto {
 
     @StringOption({
         name: 'data-rozpoczęcia',
-        description: 'Własnymi słowami - kiedy rozpoczyna się wydarzenie?',
+        description: 'Kiedy rozpoczyna się wydarzenie? (DD.MM GG:MM) / (GG:MM)',
         required: false,
     })
     startDate: string;
 
     @StringOption({
         name: 'data-zakończenia',
-        description: 'Własnymi słowami - kiedy kończy się wydarzenie?',
+        description: 'Kiedy kończy się wydarzenie? (DD.MM GG:MM) / (GG:MM)',
         required: false,
     })
     endDate: string;
