@@ -59,6 +59,7 @@ export class CommunityEventsService {
                 console.info(`Running cron job for community event ${communityEvent.id}`);
                 this.remindUsersAboutEvent(communityEvent.id);
             });
+            console.log(`Scheduled cron job for community event ${communityEvent.id}`);
         });
     }
 
@@ -325,8 +326,7 @@ export class CommunityEventsService {
 
 
         // Create cron expression based on event start date
-        const cronExpression = communityEvent.startDate ? `${communityEvent.startDate.getMinutes()} ${communityEvent.startDate.getHours()} ${communityEvent.startDate.getDate()} ${communityEvent.startDate.getMonth() + 1} *` : null;
-        this.cronService.scheduleCronJob(`community-event-reminder-${communityEvent.id}`, cronExpression, () => {
+        this.cronService.scheduleCronJob(`community-event-reminder-${communityEvent.id}`, communityEvent.startDate, () => {
             console.info(`Running cron job for community event ${communityEvent.id}`);
             this.remindUsersAboutEvent(communityEvent.id);
         });
@@ -337,6 +337,16 @@ export class CommunityEventsService {
             this.discordService.sendPrivateMessage(communityEvent.user.discordId, `## :white_check_mark: Twoje wydarzenie o tytule *${communityEvent.name}* zostało zatwierdzone!\nMożesz je znaleźć tutaj: ${communityEventMessage.url}. Pamiętaj aby się pojawić i nie zawieść swoich fanów!`);
         else
             this.discordService.sendPrivateMessage(communityEvent.user.discordId, `## :white_check_mark: Po dokładniejszej analizie twoje wydarzenie o tytule *${communityEvent.name}* zostało jednak zatwierdzone przez moderację!\nMożesz je znaleźć tutaj: ${communityEventMessage.url}. Pamiętaj aby się pojawić i nie zawieść swoich fanów!`);
+    }
+    
+    public dateToCronExpression(date: Date): string {
+        const minute = date.getMinutes();
+        const hour = date.getHours();
+        const dayOfMonth = date.getDate();
+        const month = date.getMonth() + 1; // JavaScript months are 0-based
+        const dayOfWeek = date.getDay(); // JavaScript days of week are 0-based
+      
+        return `${minute} ${hour} ${dayOfMonth} ${month} ${dayOfWeek}`;
     }
 
     public async handleCommunityEventRejectButton(buttonData: ButtonData) {
@@ -493,7 +503,85 @@ export class CommunityEventsService {
         }
     }
 
-    public async handleCommunityEventSwitchRemindersButton(buttonData: ButtonData) {}
+    /**
+     * Handle admin turning off/on ability to send reminders about event
+     * @param buttonData all data about button interaction
+     */
+    public async handleCommunityEventSwitchRemindersButton(buttonData: ButtonData) {
+        console.log('handleCommunityEventSwitchRemindersButton');
+
+        buttonData.interaction.deferUpdate();
+
+        const eventId = parseInt(buttonData.id.split(':')[1]);
+        let communityEvent = await this.communityEventService.findById(eventId);
+
+        if (!communityEvent) {
+            this.discordService.sendPrivateMessage(buttonData.user.id, `### :x: Wystąpił błąd podczas edycji wydarzenia\nWydarzenie nie zostało znalezione w bazie danych!`);
+            return;
+        }
+
+        if (!communityEvent.startDate) {
+            this.discordService.sendPrivateMessage(buttonData.user.id, `### :x: Wystąpił błąd podczas edycji wydarzenia\nWydarzenie nie posiada daty rozpoczęcia!`);
+            return;
+        }
+
+        if (communityEvent.startDate.getTime() < Date.now()) {
+            this.discordService.sendPrivateMessage(buttonData.user.id, `### :x: Nie można zmienić opcji - wydarzenie już się rozpoczęło!`);
+            return;
+        }
+
+        communityEvent = await this.communityEventService.update(eventId, {
+            ...communityEvent,
+            reminder: !communityEvent.reminder,
+            color: communityEvent.color as `#${string}`,
+        });
+
+        let components = [];
+
+        // If event has start date allow canceling it
+        if (communityEvent.startDate && communityEvent.startDate.getTime() > Date.now()) {
+            let row = new ActionRowBuilder();
+
+            if (communityEvent.reminder) {
+                const cancelButton = new ButtonBuilder()
+                .setStyle(ButtonStyle.Secondary)
+                .setLabel('Wyłącz Powiadomienia')
+                .setCustomId(`community-event-switch-remind:${eventId}`)
+                .setEmoji('❌');
+    
+                row.addComponents(cancelButton);
+
+            }
+            else {
+                const remindButton = new ButtonBuilder()
+                    .setStyle(ButtonStyle.Primary)
+                    .setLabel('Włącz Powiadomienia')
+                    .setCustomId(`community-event-switch-remind:${eventId}`)
+                    .setEmoji('🔔');
+    
+                row.addComponents(remindButton);
+            }
+
+            components.push(row as any);
+        }
+
+        buttonData.message.edit({
+            components,
+        });
+
+        if (!communityEvent) {
+            this.discordService.sendPrivateMessage(buttonData.user.id, `### :x: Wystąpił błąd podczas edycji wydarzenia\nSkontaktuj się z administracją.`);
+            return;
+        }
+
+        if (communityEvent.reminder) {
+            this.discordService.sendPrivateMessage(buttonData.user.id, `### :white_check_mark: Przypomnienia o wydarzeniu ${communityEvent.id} zostały włączone.`);
+            return;
+        } else {
+            this.discordService.sendPrivateMessage(buttonData.user.id, `### :white_check_mark: Przypomnienia o wydarzeniu ${communityEvent.id} zostały wyłączone.`);
+            return;
+        }
+    }
 
     private async getEventEmbed(eventData: EventType) {
         const embed = this.getBaseEmbed();

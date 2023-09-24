@@ -26,6 +26,7 @@ export class CronService {
         private readonly insideLeaderboardService: InsideLeaderboardService,
     ) {
         this.init();
+        this.logger.verbose(`CronService initialized. Timezone: ${console.log(Intl.DateTimeFormat().resolvedOptions().timeZone)}`)
     }
 
     private async init () {
@@ -38,7 +39,7 @@ export class CronService {
 
     public scheduleCronJob(
         name: string,
-        cronExpression: string,
+        cronExpression: string | Date,
         callback: () => void
     ): CronJob {
         const cronJob = new CronJob(cronExpression, callback, undefined, undefined, this.timeZone);
