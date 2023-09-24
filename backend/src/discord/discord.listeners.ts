@@ -472,19 +472,19 @@ export default class DiscordListeners {
 
             // Check if button id matches pattern ------------------------------
             if (!this.matchPattern(buttonData.id, this.escapeSpecialCharacters(listener.idPattern))) {
-                console.log(`Button id ${buttonData.id} does not match pattern: ` + listener.idPattern);
+                // console.log(`Button id ${buttonData.id} does not match pattern: ` + listener.idPattern);
                 continue;
             }
             
             // Check if channel type matches pattern ------------------------------
             if (listener.channelType.length != 0 && buttonData.channel.type in listener.channelType) {
-                console.log('Channel type ' + buttonData.channel.type + ' does not match pattern: ' + listener.channelType);
+                // console.log('Channel type ' + buttonData.channel.type + ' does not match pattern: ' + listener.channelType);
                 continue;
             }
 
             // Check if user matches pattern ------------------------------
             if (!this.matchPattern(buttonData.user.id, this.escapeSpecialCharacters(listener.userPattern))) {
-                console.log('User does not match pattern: ' + listener.userPattern);
+                // console.log('User does not match pattern: ' + listener.userPattern);
                 continue;
             }
 
@@ -494,14 +494,14 @@ export default class DiscordListeners {
             // If channel is in database
             if (dbChannel) {
                 if (dbChannel.discordId !== buttonData.channel.id) {
-                    console.log('Channel id does not match pattern: ' + listener.channelPattern);
+                    // console.log('Channel id does not match pattern: ' + listener.channelPattern);
                     continue;
                 }
             } 
 
             // If channel id matches pattern
             else if (!this.matchPattern(buttonData.channel.id, this.escapeSpecialCharacters(listener.channelPattern))) {
-                console.log('Channel id does not match pattern: ' + listener.channelPattern);
+                // console.log('Channel id does not match pattern: ' + listener.channelPattern);
                 continue;
             }
 

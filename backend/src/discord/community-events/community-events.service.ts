@@ -53,13 +53,11 @@ export class CommunityEventsService {
                 return;
             }
 
-            const cronExpression = `${communityEvent.startDate.getMinutes()} ${communityEvent.startDate.getHours()} ${communityEvent.startDate.getDate()} ${communityEvent.startDate.getMonth() + 1} *`;
-            console.log(`Scheduling cron job for community event ${communityEvent.id} with expression ${cronExpression}`);
-            this.cronService.scheduleCronJob(`community-event-reminder-${communityEvent.id}`, cronExpression, () => {
+            console.log(`Scheduling cron job for event ${communityEvent.id} at ${communityEvent.startDate}`)
+            this.cronService.scheduleCronJob(`community-event-reminder-${communityEvent.id}`, communityEvent.startDate, () => {
                 console.info(`Running cron job for community event ${communityEvent.id}`);
                 this.remindUsersAboutEvent(communityEvent.id);
             });
-            console.log(`Scheduled cron job for community event ${communityEvent.id}`);
         });
     }
 
@@ -83,7 +81,7 @@ export class CommunityEventsService {
     
         // Check if startDate is not null
         if (!startDate && options.startDate) {
-            console.info(`startDate: ${startDate}, options.startDate: ${options.startDate}`);
+            // console.info(`startDate: ${startDate}, options.startDate: ${options.startDate}`);
             await interaction.editReply({
                 content: `## :x: Niepoprawna data rozpoczęcia!`,
             });
@@ -92,7 +90,7 @@ export class CommunityEventsService {
 
         // Check if endDate is not null
         if (!endDate && options.endDate) {
-            console.info(`endDate: ${endDate}, options.endDate: ${options.endDate}`);
+            // console.info(`endDate: ${endDate}, options.endDate: ${options.endDate}`);
             await interaction.editReply({
                 content: `## :x: Niepoprawna data rozpoczęcia!`,
             });
@@ -172,8 +170,6 @@ export class CommunityEventsService {
             embeds: [eventEmbed],
             components: [row as any],
         });
-
-        console.info(`Image URL: ${eventData.imageUrl}`);
 
         const collectorFilter = i => i.user.id == interaction.user.id;
         
@@ -426,8 +422,6 @@ export class CommunityEventsService {
             ephemeral: true,
         })
 
-        console.info(communityEventRejectReason.fields, communityEventRejectReason.fields.fields['community-event-reject-reason']);
-        console.log(typeof communityEventRejectReason.fields) 
         const reason = communityEventRejectReason.fields.getTextInputValue('community-event-reject-reason');
 
         await this.communityEventService.update(eventId, {
