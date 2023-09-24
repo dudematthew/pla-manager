@@ -84,6 +84,7 @@
     "rxjs": "^7.0.0",
     "scheduler": "^0.23.0",
     "sleep-await": "^1.0.2",
+    "ts-luxon": "^4.4.0",
     "tslib": "^2.5.0",
     "typeorm": "^0.3.15",
     "wildcard-match": "^5.1.2",
