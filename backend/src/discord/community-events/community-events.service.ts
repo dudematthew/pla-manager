@@ -230,6 +230,8 @@ export class CommunityEventsService {
     public async handleCommunityEventAcceptButton(buttonData: ButtonData) {
         console.log('handleCommunityEventAcceptButton');
 
+        buttonData.interaction.deferUpdate();
+
         const eventId = parseInt(buttonData.id.split(':')[1]);
         const communityEvent = await this.communityEventService.findById(eventId);
 
