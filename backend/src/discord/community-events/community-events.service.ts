@@ -497,6 +497,14 @@ export class CommunityEventsService {
             return;
         }
 
+        // If user is creator of event, don't allow him to remind himself
+        if (communityEvent.user.discordId == buttonData.user.id) {
+            buttonData.interaction.editReply({
+                content: `### :x: Spokojnie i tak Ci przypomnimy o twoim wydarzeniu!`,
+            })
+            return;
+        }
+
         if (!communityEvent.reminder) {
             buttonData.interaction.editReply({
                 content: `### :x: Przepraszamy, ale administracja odmówiła wysyłania przypomnień o tym wydarzeniu!`,
