@@ -18,7 +18,7 @@ class EventType {
     user: GuildMember;
     approveState?: "pending" | "approved" | "rejected";
     rejectReason?: string;
-    rejectedBy?: GuildMember;
+    decisionBy?: GuildMember;
     startDate?: Date;
     endDate?: Date;
     color?: `#${string}`;
@@ -253,6 +253,7 @@ export class CommunityEventsService {
             endDate: communityEvent.endDate,
             user: buttonData.user,
             approveState: 'approved',
+            decisionBy: buttonData.user,
             imageUrl: communityEvent.imageUrl ?? undefined,
             color: communityEvent.color as `#${string}`,
         };
@@ -358,7 +359,7 @@ export class CommunityEventsService {
             startDate: communityEvent.startDate,
             endDate: communityEvent.endDate,
             user: author,
-            rejectedBy: buttonData.user,
+            decisionBy: buttonData.user,
             approveState: 'rejected',
             imageUrl: communityEvent.imageUrl ?? undefined,
             color: communityEvent.color as `#${string}`,
@@ -434,10 +435,10 @@ export class CommunityEventsService {
         let approveStateText = '';
         switch (eventData.approveState) {
             case 'approved':
-                approveStateText = 'Zatwierdzone :white_check_mark:';
+                approveStateText = `Zatwierdzone :white_check_mark:\n**Zatwierdzone przez:** ${eventData?.decisionBy}`;
                 break;
             case 'rejected':
-                approveStateText = `Odrzucone :x:\n**Powód:** *${eventData?.rejectReason ?? `brak`}*\n**Odrzucone przez:** ${eventData?.rejectedBy}`;
+                approveStateText = `Odrzucone :x:\n**Powód:** *${eventData?.rejectReason ?? `brak`}*\n**Odrzucone przez:** ${eventData?.decisionBy}`;
                 break;
             case 'pending':
                 approveStateText = 'Oczekuje na zatwierdzenie :hourglass_flowing_sand:\n*Czy tytuł i opis są wystarczająco informatywne? Czy dane mają sens? Czy treści nie są niepoprawne?*';
