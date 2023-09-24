@@ -1,4 +1,4 @@
-import { BaseEntity, Column, CreateDateColumn, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { BaseEntity, Column, CreateDateColumn, Entity, JoinColumn, ManyToMany, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { ApexAccountEntity } from "../apex-account/entities/apex-account.entity";
 import { MessageEntity } from "../message/entities/message.entity";
 import { CommunityEventEntity } from "../community-event/entities/community-event.entity";
@@ -35,4 +35,7 @@ export class UserEntity extends BaseEntity {
 
     @OneToMany(() => CommunityEventEntity, communityEvent => communityEvent.user)
     communityEvents: CommunityEventEntity[];
+
+    @ManyToMany(() => CommunityEventEntity, communityEvent => communityEvent.reminders)
+    communityEventReminders: CommunityEventEntity[];
 }

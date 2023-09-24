@@ -1,4 +1,4 @@
-import { BaseEntity, Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { BaseEntity, Column, CreateDateColumn, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { UserEntity } from "../../user/user.entity";
 
 @Entity({
@@ -49,12 +49,21 @@ export class CommunityEventEntity extends BaseEntity {
     approveState: "pending" | "approved" | "rejected";
 
     @Column({
+        default: false,
+    })
+    reminder: boolean;
+
+    @Column({
         nullable: true,
     })
     color: string;
 
     @ManyToOne(() => UserEntity, user => user.communityEvents)
     user: UserEntity;
+
+    @ManyToMany(() => UserEntity, user => user.communityEventReminders)
+    @JoinTable()
+    reminders: UserEntity[];
 
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;

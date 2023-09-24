@@ -13,6 +13,8 @@ export class CronService {
 
     private readonly logger = new Logger(CronService.name);
 
+    private readonly timeZone = 'Europe/Warsaw';
+
     constructor (
         private readonly databaseService: DatabaseService,
         @Inject(forwardRef(() => ApexSyncService))
@@ -39,7 +41,7 @@ export class CronService {
         cronExpression: string,
         callback: () => void
     ): CronJob {
-        const cronJob = new CronJob(cronExpression, callback);
+        const cronJob = new CronJob(cronExpression, callback, undefined, undefined, this.timeZone);
 
         this.schedulerRegistry.addCronJob(name, cronJob);
 
@@ -55,6 +57,7 @@ export class CronService {
     // TODO: Change this to run every 6 hours
     @Cron('0 0 * * * *', {
         name: 'updateConnectedRoles',
+        timeZone: 'Europe/Warsaw',
     }) // At 00:00:00am every day
     public async updateConnectedRoles () {
         this.logger.log('updateConnectedRoles started working...');
@@ -65,6 +68,7 @@ export class CronService {
     // Schedule a cron job to run every 24 hours
     @Cron('0 0 0 * * *', {
         name: 'updateConnectedChannels',
+        timeZone: 'Europe/Warsaw',
     }) // At 00:00:00am every day
     public async backupDatabase () {
         this.logger.log('backupDatabase started working...');
@@ -75,6 +79,7 @@ export class CronService {
     // Schedule a cron job to run every 12 hours
     @Cron('0 0 0,12 * * *', {
         name: 'updateConnectedAccounts',
+        timeZone: 'Europe/Warsaw',
     }) // At 00:00:00am every day
     public async updateConnectedAccounts () {
         this.logger.log('updateConnectedAccounts started working...');
@@ -92,6 +97,7 @@ export class CronService {
     // Schedule a cron job to run every 5 hours
     @Cron('0 0 */5 * * *', {
         name: 'updateLeaderboard',
+        timeZone: 'Europe/Warsaw',
     })
     public async updateLeaderboard () {
         this.logger.log('updateLeaderboard started working...');

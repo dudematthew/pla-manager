@@ -224,6 +224,26 @@ export default class DiscordListeners {
                 callback: (buttonData: ButtonData) => {
                     this.communityEventsService.handleCommunityEventRejectButton(buttonData);
                 }
+            },
+            // The communityEvent user reminder button listener
+            {
+                idPattern: 'community-event-remind**',
+                channelPattern: `communityevents`,
+                userPattern: '**',
+                channelType: [],
+                callback: (buttonData: ButtonData) => {
+                    this.communityEventsService.handleCommunityEventReminderButton(buttonData);
+                }
+            },
+            // The communityEvent switch reminders button listener
+            {
+                idPattern: 'community-event-switch-remind**',
+                channelPattern: `reports`,
+                userPattern: '**',
+                channelType: [],
+                callback: (buttonData: ButtonData) => {
+                    this.communityEventsService.handleCommunityEventSwitchRemindersButton(buttonData);
+                }
             }
         ]
 

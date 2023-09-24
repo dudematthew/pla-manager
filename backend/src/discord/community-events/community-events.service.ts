@@ -10,6 +10,7 @@ import { RoleService } from 'src/database/entities/role/role.service';
 import { ChannelService } from 'src/database/entities/channel/channel.service';
 import { ButtonData } from '../discord.listeners';
 import { CommunityEventEntity } from 'src/database/entities/community-event/entities/community-event.entity';
+import { CronService } from 'src/cron/cron.service';
 
 // Create type of event
 class EventType {
@@ -35,7 +36,31 @@ export class CommunityEventsService {
         private readonly userService: UserService,
         private readonly roleService: RoleService,
         private readonly channelService: ChannelService,
-    ) {}
+        private readonly cronService: CronService,
+    ) {
+        this.init();
+    }
+
+    private async init() {
+        await this.discordService.isReady();
+
+        // Schedule all events on start of the bot
+        const communityEvents = await this.communityEventService.getAllWithReminders();
+
+        communityEvents.forEach(communityEvent => {
+            if (!communityEvent.startDate) {
+                console.error(`Event with id ${communityEvent.id} doesn't have start date!`);
+                return;
+            }
+
+            const cronExpression = `${communityEvent.startDate.getMinutes()} ${communityEvent.startDate.getHours()} ${communityEvent.startDate.getDate()} ${communityEvent.startDate.getMonth() + 1} *`;
+            console.log(`Scheduling cron job for community event ${communityEvent.id} with expression ${cronExpression}`);
+            this.cronService.scheduleCronJob(`community-event-reminder-${communityEvent.id}`, cronExpression, () => {
+                console.info(`Running cron job for community event ${communityEvent.id}`);
+                this.remindUsersAboutEvent(communityEvent.id);
+            });
+        });
+    }
 
     public async handleCommunityEventCreateDiscordCommand(interaction: ChatInputCommandInteraction<CacheType>, options: handleCommunityEventCreateDiscordCommandDto) {
         console.log('handleCommunityEventCreateDiscordCommand');
@@ -240,10 +265,14 @@ export class CommunityEventsService {
             return;
         }
 
+        // Check if event is not already rejected
+        const isReaccepted = communityEvent.approveState == 'rejected';
+
         await this.communityEventService.update(eventId, {
             ...communityEvent,
             approveState: 'approved',
             color: communityEvent.color as `#${string}`,
+            reminder: communityEvent.startDate ? true : false,
         });
 
         const eventData: EventType = {
@@ -292,9 +321,22 @@ export class CommunityEventsService {
 
         const communityEventsRole = await this.roleService.findByName('communityevents');
 
-        await this.discordService.sendMessage(communityEventsChannel.discordId, `${communityEventsRole}`, [eventEmbed], components);
+        const communityEventMessage = await this.discordService.sendMessage(communityEventsChannel.discordId, `${communityEventsRole}`, [eventEmbed], components);
 
-        await this.discordService.sendPrivateMessage(buttonData.user.id, `### :white_check_mark: Wydarzenie zostało zatwierdzone!`);
+
+        // Create cron expression based on event start date
+        const cronExpression = communityEvent.startDate ? `${communityEvent.startDate.getMinutes()} ${communityEvent.startDate.getHours()} ${communityEvent.startDate.getDate()} ${communityEvent.startDate.getMonth() + 1} *` : null;
+        this.cronService.scheduleCronJob(`community-event-reminder-${communityEvent.id}`, cronExpression, () => {
+            console.info(`Running cron job for community event ${communityEvent.id}`);
+            this.remindUsersAboutEvent(communityEvent.id);
+        });
+
+        this.discordService.sendPrivateMessage(buttonData.user.id, `### :white_check_mark: Wydarzenie zostało zatwierdzone!`);
+
+        if (!isReaccepted)
+            this.discordService.sendPrivateMessage(communityEvent.user.discordId, `## :white_check_mark: Twoje wydarzenie o tytule *${communityEvent.name}* zostało zatwierdzone!\nMożesz je znaleźć tutaj: ${communityEventMessage.url}. Pamiętaj aby się pojawić i nie zawieść swoich fanów!`);
+        else
+            this.discordService.sendPrivateMessage(communityEvent.user.discordId, `## :white_check_mark: Po dokładniejszej analizie twoje wydarzenie o tytule *${communityEvent.name}* zostało jednak zatwierdzone przez moderację!\nMożesz je znaleźć tutaj: ${communityEventMessage.url}. Pamiętaj aby się pojawić i nie zawieść swoich fanów!`);
     }
 
     public async handleCommunityEventRejectButton(buttonData: ButtonData) {
@@ -371,11 +413,87 @@ export class CommunityEventsService {
 
         buttonData.message.edit(approveMessage);
 
-        this.discordService.sendPrivateMessage(buttonData.user.id, `### :white_check_mark: Wydarzenie zostało odrzucone!`);
+        this.discordService.sendPrivateMessage(buttonData.user.id, `### :white_check_mark: Wydarzenie nr. ${communityEvent.id} zostało odrzucone!`);
 
-        this.discordService.sendPrivateMessage(communityEvent.user.discordId, `## :x: Przepraszamy ale Twoje wydarzenie o tytule **${communityEvent.name}** zostało odrzucone!\n**Powód:** *${reason}*\nMamy nadzieję, że twoje następne wydarzenie zostanie zatwierdzone!`);
+        this.discordService.sendPrivateMessage(communityEvent.user.discordId, `## :x: Przepraszamy ale Twoje wydarzenie o tytule *${communityEvent.name}* zostało odrzucone!\n**Powód:** *${reason}*\nMamy nadzieję, że uda Ci się w przyszłości!`);
         
     }
+
+    public async handleCommunityEventReminderButton(buttonData: ButtonData) {
+        console.log('handleCommunityEventReminderButton');
+
+        buttonData.interaction.reply({
+            content: `### :hourglass_flowing_sand: Przetwarzanie...`,
+            ephemeral: true,
+        });
+
+        const eventId = parseInt(buttonData.id.split(':')[1]);
+        let communityEvent = await this.communityEventService.findById(eventId);
+
+        if (!communityEvent) {
+            buttonData.interaction.editReply({
+                content: `### :x: Wystąpił błąd podczas przypominania o wydarzeniu\nWydarzenie nie zostało znalezione w bazie danych!`,
+            })
+            return;
+        }
+
+        if (!communityEvent.startDate) {
+            buttonData.interaction.editReply({
+                content: `### :x: Wystąpił błąd podczas przypominania o wydarzeniu\nWydarzenie nie posiada daty rozpoczęcia!`,
+            });
+            return;
+        }
+
+        if (communityEvent.startDate.getTime() < Date.now()) {
+            buttonData.interaction.editReply({
+                content: `### :x: Nie ma o czym przypominać! Wydarzenie już się rozpoczęło!`,
+            });
+            return;
+        }
+
+        if (!communityEvent.reminder) {
+            buttonData.interaction.editReply({
+                content: `### :x: Przepraszamy, ale administracja odmówiła wysyłania przypomnień o tym wydarzeniu!`,
+            });
+            return;
+        }
+
+        let user = await this.userService.findByDiscordId(buttonData.user.id);
+
+        // If user doesn't exist, create one
+        if (!user) {
+            user = await this.userService.create({
+                discordId: buttonData.user.id,
+            });
+        }
+
+        const isAlreadyReminded = communityEvent.reminders.find(reminder => reminder.id == user.id);
+
+        communityEvent = await this.communityEventService.setReminderForUser(eventId, user.id, !isAlreadyReminded);
+
+        if (!communityEvent) {
+            buttonData.interaction.editReply({
+                content: `### :x: Wystąpił błąd podczas przypominania o wydarzeniu\nSkontaktuj się z administracją.`,
+            })
+            return;
+        }
+
+        const discordTimestamp = `<t:${Math.floor(communityEvent.startDate.getTime() / 1000)}:R>`;
+
+        if (isAlreadyReminded) {
+            buttonData.interaction.editReply({
+                content: `### :white_check_mark: Nie zostaniesz powiadomiony o tym wydarzeniu.`,
+            })
+            return;
+        } else {
+            buttonData.interaction.editReply({
+                content: `### :white_check_mark: Przypomnimy Ci o rozpoczęciu wydarzenia za ${discordTimestamp}.`,
+            })
+            return;
+        }
+    }
+
+    public async handleCommunityEventSwitchRemindersButton(buttonData: ButtonData) {}
 
     private async getEventEmbed(eventData: EventType) {
         const embed = this.getBaseEmbed();
@@ -397,7 +515,7 @@ export class CommunityEventsService {
         if (startTimestamp) {
             embed.addFields([
                 {
-                    name: 'Data rozpoczęcia',
+                    name: 'Rozpocznie się',
                     value: startTimestamp,
                 }
             ]);
@@ -406,7 +524,7 @@ export class CommunityEventsService {
         if (endTimestamp) {
             embed.addFields([
                 {
-                    name: 'Data zakończenia',
+                    name: 'Zakończy się',
                     value: endTimestamp,
                 }
             ]);
@@ -421,6 +539,60 @@ export class CommunityEventsService {
         }
 
         return embed;
+    }
+
+    private async remindUsersAboutEvent(eventId: number) {
+        const communityEvent = await this.communityEventService.findById(eventId);
+
+        if (!communityEvent) {
+            console.error(`Event with id ${eventId} not found!`);
+            return;
+        }
+
+        if (!communityEvent.startDate) {
+            console.error(`Event with id ${eventId} doesn't have start date!`);
+            return;
+        }
+
+        const communityEventsChannel = await this.channelService.findByName('communityevents');
+
+        if (!communityEventsChannel) {
+            console.error('Community events channel not found!');
+            return;
+        }
+
+        const eventEmbed = await this.getEventEmbed({
+            title: communityEvent.name,
+            description: communityEvent.description,
+            startDate: communityEvent.startDate,
+            endDate: communityEvent.endDate,
+            user: await this.discordService.getMemberById(communityEvent.user.discordId),
+            approveState: 'approved',
+            color: communityEvent.color as `#${string}`,
+            imageUrl: communityEvent.imageUrl ?? undefined,
+        });
+
+        eventEmbed.setFooter({
+            text: `Polskie Legendy Apex • Chcesz utworzyć własne wydarzenie? Użyj komendy /wydarzenie stwórz`,
+            iconURL: this.configService.get<string>('images.logo-transparent')
+        });
+
+        const components = [];
+
+        const remindButton = new ButtonBuilder()
+            .setStyle(ButtonStyle.Primary)
+            .setLabel('Powiadom o rozpoczęciu')
+            .setCustomId(`community-event-remind:${communityEvent.id}`)
+            .setEmoji('🔔');
+        
+        components.push(new ActionRowBuilder()
+            .addComponents(remindButton) as any);
+
+        this.discordService.sendPrivateMessage(communityEvent.user.discordId, `## :bell: Twoje wydarzenie o tytule *${communityEvent.name}* rozpoczyna się!\nPamiętaj aby się pojawić!`, [eventEmbed]);
+
+        communityEvent.reminders.forEach(async reminder => {
+            this.discordService.sendPrivateMessage(reminder.discordId, `## :bell: Wydarzenie *${communityEvent.name}* właśnie się rozpoczyna! Organizator na pewno czeka na Ciebie!`, [eventEmbed]);
+        });
     }
 
     /**
@@ -496,8 +668,8 @@ export class CommunityEventsService {
             if (eventData.startDate && eventData.startDate.getTime() > Date.now()) {
                 const cancelButton = new ButtonBuilder()
                     .setStyle(ButtonStyle.Secondary)
-                    .setLabel('Anuluj Powiadomienie')
-                    .setCustomId(`community-event-cancel:${eventId}`)
+                    .setLabel('Wyłącz Powiadomienia')
+                    .setCustomId(`community-event-switch-remind:${eventId}`)
                     .setEmoji('❌');
         
                 const row = new ActionRowBuilder()
