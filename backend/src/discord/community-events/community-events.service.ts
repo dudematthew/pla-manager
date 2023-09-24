@@ -288,12 +288,22 @@ export class CommunityEventsService {
             reminder: communityEvent.startDate ? true : false,
         });
 
+        const author = await this.discordService.getMemberById(communityEvent.user.discordId);
+
+        if(!author) {
+            // this.discordService.sendPrivateMessage(buttonData.user.id, `### :x: Wystąpił błąd podczas zatwierdzania wydarzenia\nNie znaleziono autora wydarzenia!`);
+            buttonData.interaction.editReply({
+                content: `### :x: Wystąpił błąd podczas zatwierdzania wydarzenia\nNie znaleziono autora wydarzenia!`,
+            });
+            return;
+        }
+
         const eventData: EventType = {
             title: communityEvent.name,
             description: communityEvent.description,
             startDate: communityEvent.startDate,
             endDate: communityEvent.endDate,
-            user: buttonData.user,
+            user: author,
             approveState: 'approved',
             decisionBy: buttonData.user,
             imageUrl: communityEvent.imageUrl ?? undefined,
@@ -357,15 +367,15 @@ export class CommunityEventsService {
             this.discordService.sendPrivateMessage(communityEvent.user.discordId, `## :white_check_mark: Po dokładniejszej analizie twoje wydarzenie o tytule *${communityEvent.name}* zostało jednak zatwierdzone przez moderację!\nMożesz je znaleźć tutaj: ${communityEventMessage.url}. Pamiętaj aby się pojawić i nie zawieść swoich fanów!`);
     }
     
-    public dateToCronExpression(date: Date): string {
-        const minute = date.getMinutes();
-        const hour = date.getHours();
-        const dayOfMonth = date.getDate();
-        const month = date.getMonth() + 1; // JavaScript months are 0-based
-        const dayOfWeek = date.getDay(); // JavaScript days of week are 0-based
+    // public dateToCronExpression(date: Date): string {
+    //     const minute = date.getMinutes();
+    //     const hour = date.getHours();
+    //     const dayOfMonth = date.getDate();
+    //     const month = date.getMonth() + 1; // JavaScript months are 0-based
+    //     const dayOfWeek = date.getDay(); // JavaScript days of week are 0-based
       
-        return `${minute} ${hour} ${dayOfMonth} ${month} ${dayOfWeek}`;
-    }
+    //     return `${minute} ${hour} ${dayOfMonth} ${month} ${dayOfWeek}`;
+    // }
 
     public async handleCommunityEventRejectButton(buttonData: ButtonData) {
         console.log('handleCommunityEventRejectButton');
