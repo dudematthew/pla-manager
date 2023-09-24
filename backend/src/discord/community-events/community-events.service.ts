@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ActionRowBuilder, ApplicationCommand, ApplicationCommandSubCommand, Attachment, ButtonBuilder, ButtonStyle, CacheType, ChatInputCommandInteraction, ColorResolvable, EmbedBuilder, GuildMember, User } from 'discord.js';
+import { ActionRowBuilder, ApplicationCommand, ApplicationCommandSubCommand, Attachment, ButtonBuilder, ButtonStyle, CacheType, ChatInputCommandInteraction, ColorResolvable, EmbedBuilder, GuildMember, ModalActionRowComponent, ModalActionRowComponentBuilder, ModalBuilder, ModalSubmitInteraction, TextInputBuilder, TextInputStyle, User } from 'discord.js';
 import { handleCommunityEventCreateDiscordCommandDto } from '../commands/dtos/handle-community-events-create-discord-command';
 import { CommunityEventService } from 'src/database/entities/community-event/community-event.service';
 import DateInterpreter from 'src/misc/date-interpreter';
@@ -17,6 +17,8 @@ class EventType {
     description: string;
     user: GuildMember;
     approveState?: "pending" | "approved" | "rejected";
+    rejectReason?: string;
+    rejectedBy?: GuildMember;
     startDate?: Date;
     endDate?: Date;
     color?: `#${string}`;
@@ -292,6 +294,86 @@ export class CommunityEventsService {
         await this.discordService.sendPrivateMessage(buttonData.user.id, `### :white_check_mark: Wydarzenie zostało zatwierdzone!`);
     }
 
+    public async handleCommunityEventRejectButton(buttonData: ButtonData) {
+        console.log('handleCommunityEventRejectButton');
+
+        const eventId = parseInt(buttonData.id.split(':')[1]);
+        const communityEvent = await this.communityEventService.findById(eventId);
+
+        if (!communityEvent) {
+            this.discordService.sendPrivateMessage(buttonData.user.id, `### :x: Wystąpił błąd podczas odrzucania wydarzenia\nWydarzenie nie zostało znalezione w bazie danych!`);
+            return;
+        }
+
+        const modal = new ModalBuilder()
+            .setTitle('Odrzucanie wydarzenia')
+            .setCustomId('community-event-reject-reason')
+
+        const reasonInput = new TextInputBuilder()
+            .setCustomId('community-event-reject-reason')
+            .setPlaceholder('Podaj powód odrzucenia wydarzenia')
+            .setMinLength(3)
+            .setStyle(TextInputStyle.Paragraph)
+            .setLabel('Zostanie on wysłany do autora wydarzenia.')
+            .setRequired(true);
+
+        const actionRow = new ActionRowBuilder<ModalActionRowComponentBuilder>()
+            .addComponents(reasonInput);
+
+        modal.addComponents(actionRow);
+
+        await buttonData.interaction.showModal(modal);
+
+        const collectorFilter = i => i.user.id == buttonData.user.id;
+
+        let communityEventRejectReason: ModalSubmitInteraction<CacheType>;
+
+        try {
+            communityEventRejectReason = await buttonData.interaction.awaitModalSubmit({ filter: collectorFilter, time: 60000 });
+        } catch (e) {
+            communityEventRejectReason.deferUpdate();
+            this.discordService.sendPrivateMessage(buttonData.user.id, `### :x: Nie podano powodu odrzucenia wydarzenia w wyznaczonym czasie!`);
+            return;
+        }
+
+        communityEventRejectReason.deferUpdate();
+
+        console.info(communityEventRejectReason.fields, communityEventRejectReason.fields.fields['community-event-reject-reason']);
+        console.log(typeof communityEventRejectReason.fields) 
+        const reason = communityEventRejectReason.fields.getTextInputValue('community-event-reject-reason');
+
+        await this.communityEventService.update(eventId, {
+            ...communityEvent,
+            approveState: 'rejected',
+            color: communityEvent.color as `#${string}`,
+        });
+
+        const author = await this.discordService.getMemberById(communityEvent.user.discordId);
+
+        const eventData: EventType = {
+            title: communityEvent.name,
+            description: communityEvent.description,
+            startDate: communityEvent.startDate,
+            endDate: communityEvent.endDate,
+            user: author,
+            rejectedBy: buttonData.user,
+            approveState: 'rejected',
+            imageUrl: communityEvent.imageUrl ?? undefined,
+            color: communityEvent.color as `#${string}`,
+            rejectReason: reason,
+        };
+
+        const approveMessage = await this.getApproveMessage(eventId, eventData);
+
+
+        buttonData.message.edit(approveMessage);
+
+        this.discordService.sendPrivateMessage(buttonData.user.id, `### :white_check_mark: Wydarzenie zostało odrzucone!`);
+
+        this.discordService.sendPrivateMessage(communityEvent.user.discordId, `## :x: Przepraszamy ale Twoje wydarzenie o tytule **${communityEvent.name}** zostało odrzucone!\n**Powód:** *${reason}*\nMamy nadzieję, że twoje następne wydarzenie zostanie zatwierdzone!`);
+        
+    }
+
     private async getEventEmbed(eventData: EventType) {
         const embed = this.getBaseEmbed();
 
@@ -353,7 +435,7 @@ export class CommunityEventsService {
                 approveStateText = 'Zatwierdzone :white_check_mark:';
                 break;
             case 'rejected':
-                approveStateText = 'Odrzucone :x:\n**Powód:** *...*';
+                approveStateText = `Odrzucone :x:\n**Powód:** *${eventData?.rejectReason ?? `brak`}*\n**Odrzucone przez:** ${eventData?.rejectedBy}`;
                 break;
             case 'pending':
                 approveStateText = 'Oczekuje na zatwierdzenie :hourglass_flowing_sand:\n*Czy tytuł i opis są wystarczająco informatywne? Czy dane mają sens? Czy treści nie są niepoprawne?*';
@@ -367,12 +449,12 @@ export class CommunityEventsService {
         description.push(``);
         description.push(`**Opis:** \`${eventData.description}\``);
         description.push(``);
-        description.push(`**Data rozpoczęcia:** ${eventData.startDate ? `<t:${Math.floor(eventData.startDate.getTime() / 1000)}:F>` : 'Nie podano'}`);
-        description.push(`**Data zakończenia:** ${eventData.endDate ? `<t:${Math.floor(eventData.endDate.getTime() / 1000)}:F>` : 'Nie podano'}`);
+        description.push(`**Data rozpoczęcia:** ${eventData.startDate ? `<t:${Math.floor(eventData.startDate.getTime() / 1000)}:F>` : '\`Nie podano\`'}`);
+        description.push(`**Data zakończenia:** ${eventData.endDate ? `<t:${Math.floor(eventData.endDate.getTime() / 1000)}:F>` : '\`Nie podano\`'}`);
         description.push(``);
         description.push(`**Kolor:** \`${eventData.color ?? 'Nie podano'}\``);
         description.push(``);
-        description.push(`**Grafika:** ${eventData?.imageUrl ? `[Kliknij tutaj](${eventData?.imageUrl})` : 'Nie podano'}`);
+        description.push(`**Grafika:** ${eventData?.imageUrl ? `[Kliknij tutaj](${eventData?.imageUrl})` : '\`Nie podano\`'}`);
         description.push(``);
         description.push(`### Status: ${approveStateText}`);
 
@@ -424,7 +506,7 @@ export class CommunityEventsService {
         else if (eventData.approveState == 'rejected') {
             const acceptButton = new ButtonBuilder()
                 .setStyle(ButtonStyle.Success)
-                .setLabel('Zatwierdź')
+                .setLabel('Jednak zatwierdź')
                 .setCustomId(`community-event-approve:${eventId}`)
                 .setEmoji('✅');
             

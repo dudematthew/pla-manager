@@ -50,6 +50,7 @@ export interface ButtonData {
     user: GuildMember;
     message: Message;
     channel: Channel;
+    interaction: ButtonInteraction<CacheType>;
 }
 
 export interface TypingData {
@@ -212,6 +213,16 @@ export default class DiscordListeners {
                 channelType: [],
                 callback: (buttonData: ButtonData) => {
                     this.communityEventsService.handleCommunityEventAcceptButton(buttonData);
+                }
+            },
+            // The communityEvent reject button listener
+            {
+                idPattern: 'community-event-reject**',
+                channelPattern: `reports`,
+                userPattern: '**',
+                channelType: [],
+                callback: (buttonData: ButtonData) => {
+                    this.communityEventsService.handleCommunityEventRejectButton(buttonData);
                 }
             }
         ]
@@ -429,6 +440,7 @@ export default class DiscordListeners {
             user: interaction.member as GuildMember,
             message: interaction.message,
             channel: interaction.channel,
+            interaction,
         }
 
         let callbacks: ((button: ButtonData) => void)[] = [];
