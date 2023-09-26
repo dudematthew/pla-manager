@@ -171,7 +171,7 @@ export class GiveawayService {
         description.push('');
         description.push('## Aby dołączyć do konkursu, musisz spełnić następujące warunki:');
         description.push('1. Musisz obserwować kanał [snakebitebettyx](https://www.twitch.tv/snakebitebettyx) na Twitchu. Jeśli podane konto Twitch nie należy do Ciebie, nie otrzymasz nagrody.');
-        description.push(`2. Musisz mieć połączone konto Apex Legends - Możesz to zrobić na kanale ${connectChannel} wpisując komendę */apex połącz*`);
+        description.push(`2. Musisz mieć połączone konto Apex Legends - Możesz to zrobić na kanale ${connectChannel} wpisując komendę */połącz*`);
         description.push('');
         description.push('### Po spełnieniu warunków, kliknij przycisk poniżej aby dołączyć do konkursu!');
         description.push('Życzymy powodzenia!');
