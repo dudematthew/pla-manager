@@ -25,6 +25,9 @@ export class CronService {
         private readonly teamsCompositionService: teamsCompositionService,
         private readonly insideLeaderboardService: InsideLeaderboardService,
     ) {
+        // ! Set timezone to Europe/Warsaw
+        process.env.TZ = this.timeZone;
+
         this.init();
         this.logger.verbose(`CronService initialized. Timezone: ${console.log(Intl.DateTimeFormat().resolvedOptions().timeZone)}`)
     }
@@ -46,7 +49,7 @@ export class CronService {
 
         this.schedulerRegistry.addCronJob(name, cronJob);
 
-        // cronJob.start();
+        cronJob.start();
 
         this.logger.log(`Scheduled cron job '${name}' with expression '${cronExpression} to run at '${cronJob.nextDates()}'`);
         
