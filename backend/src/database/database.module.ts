@@ -25,6 +25,8 @@ import { InsideTeamsModule } from './entities/inside-teams/inside-teams.module';
 import { InsideTeamEntity } from "./entities/inside-teams/entities/inside-team.entity";
 import { CommunityEventModule } from './entities/community-event/community-event.module';
 import { CommunityEventEntity } from "./entities/community-event/entities/community-event.entity";
+import { GiveawayMemberModule } from './entities/giveaway-member/giveaway-member.module';
+import { GiveawayMemberEntity } from "./entities/giveaway-member/entities/giveaway-member.entity";
 
 @Module({
     imports: [
@@ -54,6 +56,7 @@ import { CommunityEventEntity } from "./entities/community-event/entities/commun
                     ApexSeasonEntity,
                     InsideTeamEntity,
                     CommunityEventEntity,
+                    GiveawayMemberEntity,
                 ],
                 synchronize: true,
                 autoLoadEntities: true,
@@ -65,6 +68,7 @@ import { CommunityEventEntity } from "./entities/community-event/entities/commun
         ApexSeasonModule,
         InsideTeamsModule,
         CommunityEventModule,
+        GiveawayMemberModule,
     ],
     providers: [
         TypeORMSession,

@@ -28,6 +28,11 @@ export class DiscordUpdate {
         user.send('Bot is ready!');
     }
 
+    @On('debug')
+    public onDebug(@Context() [message]: ContextOf<'debug'>) {
+        this.logger.debug(message);
+    }
+
     /**
      * Fires when the client encounters an error.
      */

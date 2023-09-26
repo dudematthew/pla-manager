@@ -19,9 +19,6 @@ export class GiveawayCommandService {
         private readonly giveawayService: GiveawayService
     ) {}
 
-     /**
-     * Create community event
-     */
     @Subcommand({
         name: 'dołącz',
         description: 'Dołącz do aktualnego konkursu Polskich Legend Apex',
@@ -29,13 +26,12 @@ export class GiveawayCommandService {
     public async onGiveawayJoin(@Context() [Interaction]: SlashCommandContext, @Options() options: handleGivewayJoinCommandDto) {
         console.log('onGiveawayJoin');
 
-        Interaction.reply({
-            content: '## :x: Przepraszamy, ale aktualnie nie żaden konkurs nie jest aktywny.',
-            ephemeral: true,
-        });
+        // interaction.reply({
+        //     content: '## :x: Przepraszamy, ale aktualnie nie żaden konkurs nie jest aktywny.',
+        //     ephemeral: true,
+        // });
+        // return;
 
         this.giveawayService.handleGiveawayJoinDiscordCommand(Interaction, options);
-
-        // this.communityEventsService.handleCommunityEventCreateDiscordCommand(Interaction, options);
     }
 }

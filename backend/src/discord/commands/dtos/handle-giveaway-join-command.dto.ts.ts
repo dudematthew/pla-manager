@@ -6,6 +6,7 @@ class handleGivewayJoinCommandDto {
     @StringOption({
         name: 'nick-twitch',
         description: 'Nick na twitchu, który zafollowował kanał snakebitebettyx',
+        required: true,
     })
     twitchNick: string;
 }

@@ -33,6 +33,10 @@ export type Schema = {
       'user:created_at': string;
       'user:updated_at': string;
       'user:apexAccountId': number;
+      'user:giveaway_member:id': number;
+      'user:giveaway_member:twitch_id': string;
+      'user:giveaway_member:twitch_nick': string;
+      'user:giveaway_member:user_id': number;
     };
   };
   'apex_account_history': {
@@ -88,6 +92,10 @@ export type Schema = {
       'apexAccount:user:created_at': string;
       'apexAccount:user:updated_at': string;
       'apexAccount:user:apexAccountId': number;
+      'apexAccount:user:giveaway_member:id': number;
+      'apexAccount:user:giveaway_member:twitch_id': string;
+      'apexAccount:user:giveaway_member:twitch_nick': string;
+      'apexAccount:user:giveaway_member:user_id': number;
     };
   };
   'apex_season': {
@@ -148,6 +156,10 @@ export type Schema = {
       'user:created_at': string;
       'user:updated_at': string;
       'user:apexAccountId': number;
+      'user:giveaway_member:id': number;
+      'user:giveaway_member:twitch_id': string;
+      'user:giveaway_member:twitch_nick': string;
+      'user:giveaway_member:user_id': number;
       'user:apexAccount:id': number;
       'user:apexAccount:name': string;
       'user:apexAccount:uid': string;
@@ -198,6 +210,10 @@ export type Schema = {
       'communityEvent:user:created_at': string;
       'communityEvent:user:updated_at': string;
       'communityEvent:user:apexAccountId': number;
+      'communityEvent:user:giveaway_member:id': number;
+      'communityEvent:user:giveaway_member:twitch_id': string;
+      'communityEvent:user:giveaway_member:twitch_nick': string;
+      'communityEvent:user:giveaway_member:user_id': number;
       'communityEvent:user:apexAccount:id': number;
       'communityEvent:user:apexAccount:name': string;
       'communityEvent:user:apexAccount:uid': string;
@@ -224,6 +240,10 @@ export type Schema = {
       'user:created_at': string;
       'user:updated_at': string;
       'user:apexAccountId': number;
+      'user:giveaway_member:id': number;
+      'user:giveaway_member:twitch_id': string;
+      'user:giveaway_member:twitch_nick': string;
+      'user:giveaway_member:user_id': number;
       'user:apexAccount:id': number;
       'user:apexAccount:name': string;
       'user:apexAccount:uid': string;
@@ -256,6 +276,45 @@ export type Schema = {
     };
     nested: {};
     flat: {};
+  };
+  'giveaway_member': {
+    plain: {
+      'id': number;
+      'twitch_id': string;
+      'twitch_nick': string;
+      'user_id': number;
+    };
+    nested: {
+      'user': Schema['user']['plain'] & Schema['user']['nested'];
+    };
+    flat: {
+      'user:id': number;
+      'user:discord_id': string;
+      'user:email': string;
+      'user:is_admin': number;
+      'user:created_at': string;
+      'user:updated_at': string;
+      'user:apexAccountId': number;
+      'user:apexAccount:id': number;
+      'user:apexAccount:name': string;
+      'user:apexAccount:uid': string;
+      'user:apexAccount:avatar_url': string;
+      'user:apexAccount:platform': string;
+      'user:apexAccount:rank_score': number;
+      'user:apexAccount:rank_name': string;
+      'user:apexAccount:rank_division': string;
+      'user:apexAccount:rank_img': string;
+      'user:apexAccount:level': number;
+      'user:apexAccount:percent_to_next_level': number;
+      'user:apexAccount:br_total_kills': number;
+      'user:apexAccount:br_total_wins': number;
+      'user:apexAccount:br_total_games_played': number;
+      'user:apexAccount:br_kdr': number;
+      'user:apexAccount:br_total_damage': number;
+      'user:apexAccount:last_legend_played': string;
+      'user:apexAccount:created_at': string;
+      'user:apexAccount:updated_at': string;
+    };
   };
   'inside_league_match': {
     plain: {
@@ -365,6 +424,10 @@ export type Schema = {
       'user:created_at': string;
       'user:updated_at': string;
       'user:apexAccountId': number;
+      'user:giveaway_member:id': number;
+      'user:giveaway_member:twitch_id': string;
+      'user:giveaway_member:twitch_nick': string;
+      'user:giveaway_member:user_id': number;
       'user:apexAccount:id': number;
       'user:apexAccount:name': string;
       'user:apexAccount:uid': string;
@@ -529,9 +592,14 @@ export type Schema = {
       'apexAccountId': number;
     };
     nested: {
+      'giveaway_member': Schema['giveaway_member']['plain'] & Schema['giveaway_member']['nested'];
       'apexAccount': Schema['apex_account']['plain'] & Schema['apex_account']['nested'];
     };
     flat: {
+      'giveaway_member:id': number;
+      'giveaway_member:twitch_id': string;
+      'giveaway_member:twitch_nick': string;
+      'giveaway_member:user_id': number;
       'apexAccount:id': number;
       'apexAccount:name': string;
       'apexAccount:uid': string;

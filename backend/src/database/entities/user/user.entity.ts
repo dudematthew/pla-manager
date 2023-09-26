@@ -2,6 +2,7 @@ import { BaseEntity, Column, CreateDateColumn, Entity, JoinColumn, ManyToMany, O
 import { ApexAccountEntity } from "../apex-account/entities/apex-account.entity";
 import { MessageEntity } from "../message/entities/message.entity";
 import { CommunityEventEntity } from "../community-event/entities/community-event.entity";
+import { GiveawayMemberEntity } from "../giveaway-member/entities/giveaway-member.entity";
 
 @Entity({
     name: 'user',
@@ -38,4 +39,7 @@ export class UserEntity extends BaseEntity {
 
     @ManyToMany(() => CommunityEventEntity, communityEvent => communityEvent.reminders)
     communityEventReminders: CommunityEventEntity[];
+
+    @OneToOne(() => GiveawayMemberEntity, (giveawayMember) => giveawayMember.user)
+    giveawayMember: GiveawayMemberEntity;
 }
