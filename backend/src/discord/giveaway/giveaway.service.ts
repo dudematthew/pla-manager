@@ -26,7 +26,7 @@ export class GiveawayService {
     public async handleGiveawayJoinDiscordCommand(interaction: ChatInputCommandInteraction<CacheType>, options: handleGivewayJoinCommandDto) {
         console.log('handleGiveawayJoinDiscordCommand');
 
-        interaction.reply({
+        await interaction.reply({
             content: `## :hourglass_flowing_sand: Przetwarzanie...`,
             ephemeral: true,
         });
@@ -108,7 +108,7 @@ export class GiveawayService {
             return;
         }
 
-        interaction.editReply({
+        await interaction.editReply({
             content: `## :hourglass_flowing_sand: Przetwarzanie...`,
             embeds: [],
             components: [],
