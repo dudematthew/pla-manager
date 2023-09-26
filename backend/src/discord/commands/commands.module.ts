@@ -13,6 +13,8 @@ import { ApexStatisticsModule } from '../apex-statistics/apex-statistics.module'
 import { StatisticsCommandsService } from './statistics-commands.service';
 import { CommunityEventsCommandService } from './community-events-commands.service';
 import { CommunityEventsModule } from '../community-events/community-events.module';
+import { GiveawayModule } from '../giveaway/giveaway.module';
+import { GiveawayCommandService } from './giveaway-commands.service';
 
 @Module({
   imports: [
@@ -25,6 +27,7 @@ import { CommunityEventsModule } from '../community-events/community-events.modu
     ApexStatisticsModule,
     CommunityEventsModule,
     forwardRef(() => DiscordModule),
+    GiveawayModule,
   ],
   providers: [
     CommandsService,
@@ -32,6 +35,7 @@ import { CommunityEventsModule } from '../community-events/community-events.modu
     InsideCommandsService,
     StatisticsCommandsService,
     CommunityEventsCommandService,
+    GiveawayCommandService,
   ],
 })
 export class CommandsModule {}

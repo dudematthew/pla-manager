@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { ActionRowBuilder, ApplicationCommand, ApplicationCommandSubCommand, Attachment, ButtonBuilder, ButtonStyle, CacheType, ChatInputCommandInteraction, ColorResolvable, EmbedBuilder, GuildMember, ModalActionRowComponent, ModalActionRowComponentBuilder, ModalBuilder, ModalSubmitInteraction, TextInputBuilder, TextInputStyle, User } from 'discord.js';
-import { handleCommunityEventCreateDiscordCommandDto } from '../commands/dtos/handle-community-events-create-discord-command';
 import { CommunityEventService } from 'src/database/entities/community-event/community-event.service';
 import DateInterpreter from 'src/misc/date-interpreter';
 import { ConfigService } from '@nestjs/config';
@@ -11,6 +10,7 @@ import { ChannelService } from 'src/database/entities/channel/channel.service';
 import { ButtonData } from '../discord.listeners';
 import { CommunityEventEntity } from 'src/database/entities/community-event/entities/community-event.entity';
 import { CronService } from 'src/cron/cron.service';
+import { handleCommunityEventCreateDiscordCommandDto } from '../commands/dtos/handle-community-events-create-discord-command';
 
 // Create type of event
 class EventType {

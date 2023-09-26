@@ -45,11 +45,11 @@ export class CommunityEventsCommandService {
     /**
      * Delete community event
     */
-    @Subcommand({
-        name: 'usuń',
-        description: 'Usuń twoje wydarzenie społeczności',
-    })
-    public async onCommunityEventDelete(@Context() [Interaction]: SlashCommandContext, @Options() options: handleCommunityEventCreateDiscordCommandDto) {
-        console.log('onCommunityEventDelete');
-    }
+    // @Subcommand({
+    //     name: 'usuń',
+    //     description: 'Usuń twoje wydarzenie społeczności',
+    // })
+    // public async onCommunityEventDelete(@Context() [Interaction]: SlashCommandContext, @Options() options: handleCommunityEventCreateDiscordCommandDto) {
+    //     console.log('onCommunityEventDelete');
+    // }
 }

@@ -19,6 +19,7 @@ import { DatabaseModule } from "src/database/database.module";
 import { IntroduceModule } from './introduce/introduce.module';
 import { ApexStatisticsModule } from './apex-statistics/apex-statistics.module';
 import { CommunityEventsModule } from './community-events/community-events.module';
+import { GiveawayModule } from './giveaway/giveaway.module';
 
 @Module({
     imports: [
@@ -56,6 +57,7 @@ import { CommunityEventsModule } from './community-events/community-events.modul
         IntroduceModule,
         ApexStatisticsModule,
         CommunityEventsModule,
+        GiveawayModule,
     ],
     controllers: [],
     providers: [
