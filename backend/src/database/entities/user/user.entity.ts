@@ -41,5 +41,9 @@ export class UserEntity extends BaseEntity {
     communityEventReminders: CommunityEventEntity[];
 
     @OneToOne(() => GiveawayMemberEntity, (giveawayMember) => giveawayMember.user)
+    @JoinColumn({
+        name: 'giveaway_member_id',
+        referencedColumnName: 'id',
+    })
     giveawayMember: GiveawayMemberEntity;
 }

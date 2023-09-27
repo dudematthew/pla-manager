@@ -27,9 +27,5 @@ export class GiveawayMemberEntity extends BaseEntity {
     twitchNick: string;
 
     @OneToOne(() => UserEntity, user => user.giveawayMember)
-    @JoinColumn({
-        name: 'user_id',
-        referencedColumnName: 'id',
-    })
     user: UserEntity;
 }

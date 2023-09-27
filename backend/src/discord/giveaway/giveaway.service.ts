@@ -57,20 +57,21 @@ export class GiveawayService {
             }
         }
 
+        const giveawayMember = await this.giveawayMemberService.findOneByDiscordId(interaction.user.id);
+
+        if (giveawayMember) {
+            interaction.editReply({
+                content: '## :x: Już dołączyłeś do konkursu! Jeśli chcesz się wypisać, wpisz komendę */konkurs wypisz*',
+            });
+
+            return;
+        }
+
         console.log('dbUser', dbUser);
 
         const checkForExistingMember = await this.giveawayMemberService.findOneByTwichNick(options.twitchNick);
 
         if (checkForExistingMember) {
-
-            if (checkForExistingMember.user.id == dbUser.id) {
-                interaction.editReply({
-                    content: '## :x: Już dołączyłeś do konkursu! Jeśli chcesz się wypisać, wpisz komendę */konkurs wypisz*',
-                });
-
-                return;
-            }
-
             interaction.editReply({
                 content: '## :x: Użytkownik o podanym nicku Twitch już dołączył do konkursu. Jeśli Twoim zdaniem zaszła pomyłka, skontaktuj się z administracją.',
             });
@@ -115,6 +116,14 @@ export class GiveawayService {
         });
 
         const twitchUserData = await this.twitchApiService.getFollowed(options.twitchNick);
+
+        if (twitchUserData && !twitchUserData.id) {
+            interaction.editReply({
+                content: '## :x: Nie możesz dołączyć do konkursu, ponieważ podane konto Twitch nie istnieje.',
+            });
+
+            return;
+        }
 
         if (twitchUserData && !twitchUserData.following) {
             interaction.editReply({
