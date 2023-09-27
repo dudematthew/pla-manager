@@ -34,4 +34,24 @@ export class GiveawayCommandService {
 
         this.giveawayService.handleGiveawayJoinDiscordCommand(Interaction, options);
     }
+
+    @Subcommand({
+        name: 'status',
+        description: 'Sprawdź status aktualnego konkursu Polskich Legend Apex',
+    })
+    public async onGiveawayStatus(@Context() [Interaction]: SlashCommandContext) {
+        console.log('onGiveawayStatus');
+
+        this.giveawayService.handleGiveawayStatusDiscordCommand(Interaction);
+    }
+
+    @Subcommand({
+        name: 'zrezygnuj',
+        description: 'Zrezygnuj z uczestnictwa w konkursie Polskich Legend Apex',
+    })
+    public async onGiveawayResign(@Context() [Interaction]: SlashCommandContext) {
+        console.log('onGiveawayResign');
+
+        this.giveawayService.handleGiveawayResignDiscordCommand(Interaction);
+    }
 }

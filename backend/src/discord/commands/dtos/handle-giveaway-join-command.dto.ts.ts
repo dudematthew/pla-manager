@@ -7,6 +7,7 @@ class handleGivewayJoinCommandDto {
         name: 'nick-twitch',
         description: 'Nick na twitchu, który zafollowował kanał snakebitebettyx',
         required: true,
+        max_length: 26,
     })
     twitchNick: string;
 }

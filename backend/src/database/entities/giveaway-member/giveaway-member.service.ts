@@ -60,6 +60,10 @@ export class GiveawayMemberService {
         });
     }
 
+    async getCount(): Promise<number> {
+        return await this.giveawayMemberRepository.count();
+    }
+
     async findOneByTwichNick(twitchNick: string): Promise<GiveawayMemberEntity> {
         return await this.giveawayMemberRepository.findOne({
             where: { twitchNick },
@@ -85,6 +89,15 @@ export class GiveawayMemberService {
     }
 
     async remove(id: number): Promise<void> {
+        const giveawayMember = await this.findOneById(id);
+
+        if (!giveawayMember) {
+            throw new BadRequestException('Giveaway Member not found');
+        }
+
+        giveawayMember.user.giveawayMember = null;
+        await giveawayMember.user.save();
+
         await this.giveawayMemberRepository.delete(id);
     }
 }
