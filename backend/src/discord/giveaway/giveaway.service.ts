@@ -6,6 +6,7 @@ import { GiveawayMemberService } from 'src/database/entities/giveaway-member/giv
 import { ConfigService } from '@nestjs/config';
 import { ChannelService } from 'src/database/entities/channel/channel.service';
 import { TwitchApiService } from './twitch-api.service.js';
+import { DiscordService } from '../discord.service.js';
 
 @Injectable()
 export class GiveawayService {
@@ -21,6 +22,7 @@ export class GiveawayService {
         private readonly configService: ConfigService,
         private readonly channelService: ChannelService,
         private readonly twitchApiService: TwitchApiService,
+        private readonly discordService: DiscordService,
     ) {}
 
     public async handleGiveawayJoinDiscordCommand(interaction: ChatInputCommandInteraction<CacheType>, options: handleGivewayJoinCommandDto) {
@@ -163,6 +165,30 @@ export class GiveawayService {
         }
 
         interaction.editReply(await this.getSuccessMessage());
+
+        const logChannel = await this.channelService.findByName('botlog');
+
+        this.discordService.sendMessage(logChannel.discordId, undefined, [
+            await this.getBaseEmbed()
+                .setTitle('Dołączenie do konkursu')
+                .setDescription(`Użytkownik <@${dbUser.discordId}> dołączył do konkursu.`)
+                .addFields([
+                    {
+                        name: 'Nick Twitch',
+                        value: options.twitchNick,
+                    },
+                    {
+                        name: 'ID Twitch',
+                        value: twitchUserData.id,
+                    },
+                ])
+        ]);
+
+        // Check if production
+        if (process.env.NODE_ENV !== 'production') {
+            return;
+        } else
+            this.discordService.sendPrivateMessage('740279676945301515', `Hej Betty, użytkownik <@${dbUser.discordId}> dołączył do konkursu. Nick Twitch: ${options.twitchNick}`);
     }
 
     public async handleGiveawayStatusDiscordCommand(interaction: ChatInputCommandInteraction<CacheType>) {
@@ -296,6 +322,14 @@ export class GiveawayService {
             interaction.editReply({
                 content: `### :raised_hand: Wypisano z konkursu. Jeśli zmienisz zdanie, zawsze możesz dołączyć za pomocą komendy */konkurs dołącz*`,
             });
+
+            const logChannel = await this.channelService.findByName('botlog');
+
+            this.discordService.sendMessage(logChannel.discordId, undefined, [
+                await this.getBaseEmbed()
+                    .setTitle('Wypisanie z konkursu')
+                    .setDescription(`Użytkownik <@${dbUser.discordId}> wypisał się z konkursu.`)
+            ]);
     }
 
     private async getExplainMessage (twitchNick: string) {
