@@ -167,7 +167,7 @@ export class GiveawayService {
 
     public async handleGiveawayStatusDiscordCommand(interaction: ChatInputCommandInteraction<CacheType>) {
 
-        interaction.reply({
+        await interaction.reply({
             content: `## :hourglass_flowing_sand: Przetwarzanie...`,
         });
 
@@ -230,7 +230,7 @@ export class GiveawayService {
         embed.setImage(this.configService.get<string>('images.giveaways.snakebitebetty'));
 
         try {
-            interaction.editReply({
+            await interaction.editReply({
                 content: ``,
                 embeds: [embed],
                 components: [],
@@ -241,7 +241,7 @@ export class GiveawayService {
             console.info(e);
             embed.setDescription(description.join('\n'));
 
-            interaction.editReply({
+            await interaction.editReply({
                 content: ``,
                 embeds: [embed],
                 components: [],
@@ -251,7 +251,7 @@ export class GiveawayService {
 
     public async handleGiveawayResignDiscordCommand(interaction: ChatInputCommandInteraction<CacheType>) {
             
-            interaction.reply({
+            await interaction.reply({
                 content: `## :hourglass_flowing_sand: Przetwarzanie...`,
             });
     
