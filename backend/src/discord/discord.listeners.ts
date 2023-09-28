@@ -85,6 +85,11 @@ export default class DiscordListeners {
     private readonly buttonListeners: ButtonListener[];
 
     /**
+     * The cached channels
+     */
+    private readonly cachedChannels: { [key: string]: ChannelEntity } = {};
+
+    /**
      * The logger instance
      */
     private readonly logger = new Logger(DiscordListeners.name);
@@ -165,6 +170,16 @@ export default class DiscordListeners {
                             member.roles.add(adminRole);
                         });
                     }
+                }
+            },
+            // The spawn message listener
+            {
+                channelPattern: 'spawn',
+                messagePattern: '**Witaj**',
+                userPattern: '**',
+                channelType: [],
+                callback: (messageData: MessageData) => {
+                    messageData.message.react('👋');
                 }
             }
         ];
@@ -279,6 +294,24 @@ export default class DiscordListeners {
         ]
     }
 
+    private async getCachedChannelByName(channelName: string): Promise<ChannelEntity> {
+        // If channel is cached
+        if (channelName in this.cachedChannels) {
+            return this.cachedChannels[channelName];
+        }
+
+        // If channel is not cached, get it from database
+        const channel = await this.channelService.findByName(channelName);
+
+        // If channel is in database
+        if (channel) {
+            // Cache channel
+            this.cachedChannels[channelName] = channel;
+        }
+
+        return channel;
+    }
+
     /**
      * Check if a value matches a pattern
      * 
@@ -327,7 +360,7 @@ export default class DiscordListeners {
             }
             
             // Check if channel matches database channel ------------------------------
-            let dbChannel: ChannelEntity = await this.channelService.findByName(listener.channelPattern);
+            let dbChannel: ChannelEntity = await this.getCachedChannelByName(listener.channelPattern);
 
             // If channel is in database
             if (dbChannel) {
@@ -391,7 +424,7 @@ export default class DiscordListeners {
             }
             
             // Check if channel matches database channel ------------------------------
-            let dbChannel: ChannelEntity = await this.channelService.findByName(listener.channelPattern);
+            let dbChannel: ChannelEntity = await this.getCachedChannelByName(listener.channelPattern);
 
             // If channel is in database
             if (dbChannel) {
@@ -489,7 +522,7 @@ export default class DiscordListeners {
             }
 
             // Check if channel matches database channel ------------------------------
-            let dbChannel: ChannelEntity = await this.channelService.findByName(listener.channelPattern);
+            let dbChannel: ChannelEntity = await this.getCachedChannelByName(listener.channelPattern);
 
             // If channel is in database
             if (dbChannel) {
