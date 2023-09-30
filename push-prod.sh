@@ -6,6 +6,8 @@
 # merge branch
 git checkout production
 
+git pull
+
 git merge main
 
 git push
