@@ -6,6 +6,7 @@ import { GiveawayMemberService } from 'src/database/entities/giveaway-member/giv
 import { ConfigService } from '@nestjs/config';
 import { ChannelService } from 'src/database/entities/channel/channel.service';
 import { TwitchApiService } from './twitch-api.service.js';
+import { DiscordService } from '../discord.service.js';
 
 @Injectable()
 export class GiveawayService {
@@ -21,6 +22,7 @@ export class GiveawayService {
         private readonly configService: ConfigService,
         private readonly channelService: ChannelService,
         private readonly twitchApiService: TwitchApiService,
+        private readonly discordService: DiscordService,
     ) {}
 
     public async handleGiveawayJoinDiscordCommand(interaction: ChatInputCommandInteraction<CacheType>, options: handleGivewayJoinCommandDto) {
@@ -57,20 +59,21 @@ export class GiveawayService {
             }
         }
 
+        const giveawayMember = await this.giveawayMemberService.findOneByDiscordId(interaction.user.id);
+
+        if (giveawayMember) {
+            interaction.editReply({
+                content: '## :x: Już dołączyłeś do konkursu! Jeśli chcesz się wypisać, wpisz komendę */konkurs wypisz*',
+            });
+
+            return;
+        }
+
         console.log('dbUser', dbUser);
 
         const checkForExistingMember = await this.giveawayMemberService.findOneByTwichNick(options.twitchNick);
 
         if (checkForExistingMember) {
-
-            if (checkForExistingMember.user.id == dbUser.id) {
-                interaction.editReply({
-                    content: '## :x: Już dołączyłeś do konkursu! Jeśli chcesz się wypisać, wpisz komendę */konkurs wypisz*',
-                });
-
-                return;
-            }
-
             interaction.editReply({
                 content: '## :x: Użytkownik o podanym nicku Twitch już dołączył do konkursu. Jeśli Twoim zdaniem zaszła pomyłka, skontaktuj się z administracją.',
             });
@@ -116,6 +119,14 @@ export class GiveawayService {
 
         const twitchUserData = await this.twitchApiService.getFollowed(options.twitchNick);
 
+        if (twitchUserData && !twitchUserData.id) {
+            interaction.editReply({
+                content: '## :x: Nie możesz dołączyć do konkursu, ponieważ podane konto Twitch nie istnieje.',
+            });
+
+            return;
+        }
+
         if (twitchUserData && !twitchUserData.following) {
             interaction.editReply({
                 content: '## :x: Nie możesz dołączyć do konkursu, ponieważ nie obserwujesz kanału [snakebitebettyx](https://www.twitch.tv/snakebitebettyx) na Twitchu.',
@@ -153,7 +164,172 @@ export class GiveawayService {
             return;
         }
 
-        interaction.editReply(this.getSuccessMessage());
+        interaction.editReply(await this.getSuccessMessage());
+
+        const logChannel = await this.channelService.findByName('botlog');
+
+        this.discordService.sendMessage(logChannel.discordId, undefined, [
+            await this.getBaseEmbed()
+                .setTitle('Dołączenie do konkursu')
+                .setDescription(`Użytkownik <@${dbUser.discordId}> dołączył do konkursu.`)
+                .addFields([
+                    {
+                        name: 'Nick Twitch',
+                        value: options.twitchNick,
+                    },
+                    {
+                        name: 'ID Twitch',
+                        value: twitchUserData.id,
+                    },
+                ])
+        ]);
+
+        // Check if production
+        if (process.env.NODE_ENV !== 'production') {
+            return;
+        } else
+            this.discordService.sendPrivateMessage('740279676945301515', `Hej Betty, użytkownik <@${dbUser.discordId}> dołączył do konkursu. Nick Twitch: ${options.twitchNick}`);
+    }
+
+    public async handleGiveawayStatusDiscordCommand(interaction: ChatInputCommandInteraction<CacheType>) {
+
+        await interaction.reply({
+            content: `## :hourglass_flowing_sand: Przetwarzanie...`,
+        });
+
+        let dbUser = await this.userService.findByDiscordId(interaction.user.id);
+
+        // If user doesn't exists create new one
+        if (!dbUser) {
+            dbUser = await this.userService.create({
+                discordId: interaction.user.id,
+            });
+
+            if (!dbUser) {
+                interaction.editReply({
+                    content: '## :x: Wystąpił błąd podczas wykonywania komendy. Spróbuj ponownie później.',
+                })
+
+                throw new InternalServerErrorException('handleGiveawayStatusDiscordCommand: Failed to create user');
+            }
+        }
+
+        const giveawayMembersCount = await this.giveawayMemberService.getCount();
+
+        const embed = this.getBaseEmbed();
+        
+        const description = [
+            '### Nagroda:',
+            'Jeśli wygrasz, Betty zakupi dla ciebie dowolne elementy dostępne aktualnie w sklepie Apex Legends o wartości do **2500** Monet Apex!',
+            '',
+            '### Status dołączenia:',
+        ];
+
+        if (dbUser.giveawayMember) {
+            description.push(`:white_check_mark: Dołączono do konkursu!`);
+        } else {
+            description.push(`:x: Nie dołączono do konkursu! Dołącz korzystając z komendy */konkurs dołącz*`);
+        }
+
+        description.push('');
+        description.push(`### Aktualnie ${giveawayMembersCount} osób dołączyło do giveaway'a!`);
+
+        const giveawayMembers = await this.giveawayMemberService.findAll();
+
+        const membersText = [];
+
+        for (const member of giveawayMembers) {
+            const user = member.user;
+
+            membersText.push(`- <@${user.discordId}> - ${member.twitchNick}`);
+        }
+
+        embed.setDescription(description.join('\n') + `\n` + membersText.join('\n'));
+
+        embed.addFields([
+            {
+                name: 'Losowanie zakończy się',
+                value: `<t:${this.giveawayEndTimestamp}:F>`,
+            }
+        ]);
+
+        embed.setImage(this.configService.get<string>('images.giveaways.snakebitebetty'));
+
+        try {
+            await interaction.editReply({
+                content: ``,
+                embeds: [embed],
+                components: [],
+            });
+        } 
+        // If embed is too long, send it without components
+        catch (e) {
+            console.info(e);
+            embed.setDescription(description.join('\n'));
+
+            await interaction.editReply({
+                content: ``,
+                embeds: [embed],
+                components: [],
+            });
+        }
+    }
+
+    public async handleGiveawayResignDiscordCommand(interaction: ChatInputCommandInteraction<CacheType>) {
+            
+            await interaction.reply({
+                content: `## :hourglass_flowing_sand: Przetwarzanie...`,
+            });
+    
+            let dbUser = await this.userService.findByDiscordId(interaction.user.id);
+    
+            // If user doesn't exists create new one
+            if (!dbUser) {
+                dbUser = await this.userService.create({
+                    discordId: interaction.user.id,
+                });
+    
+                if (!dbUser) {
+                    interaction.editReply({
+                        content: '## :x: Wystąpił błąd podczas wykonywania komendy. Spróbuj ponownie później.',
+                    })
+    
+                    throw new InternalServerErrorException('handleGiveawayResignDiscordCommand: Failed to create user');
+                }
+            }
+    
+            const giveawayMember = await this.giveawayMemberService.findOneByDiscordId(interaction.user.id);
+    
+            if (!giveawayMember) {
+                interaction.editReply({
+                    content: '## :x: Nie dołączyłeś do konkursu, więc nie możesz się z niego wypisać.',
+                });
+    
+                return;
+            }
+    
+            try {
+                await this.giveawayMemberService.remove(giveawayMember.id);
+            } catch (e) {
+                console.error(e);
+                interaction.editReply({
+                    content: '## :x: Wystąpił błąd podczas wypisywania z konkursu. Spróbuj ponownie później.',
+                });
+    
+                return;
+            }
+    
+            interaction.editReply({
+                content: `### :raised_hand: Wypisano z konkursu. Jeśli zmienisz zdanie, zawsze możesz dołączyć za pomocą komendy */konkurs dołącz*`,
+            });
+
+            const logChannel = await this.channelService.findByName('botlog');
+
+            this.discordService.sendMessage(logChannel.discordId, undefined, [
+                await this.getBaseEmbed()
+                    .setTitle('Wypisanie z konkursu')
+                    .setDescription(`Użytkownik <@${dbUser.discordId}> wypisał się z konkursu.`)
+            ]);
     }
 
     private async getExplainMessage (twitchNick: string) {
@@ -170,7 +346,7 @@ export class GiveawayService {
         description.push('W tym konkursie znajdziesz się w puli graczy, którzy będą losowani do wygranej. Jeśli wygrasz, Betty zakupi dla ciebie dowolne elementy dostępne aktualnie w sklepie Apex Legends o wartości do **2500** Monet Apex!');
         description.push('');
         description.push('## Aby dołączyć do konkursu, musisz spełnić następujące warunki:');
-        description.push('1. Musisz obserwować kanał [snakebitebettyx](https://www.twitch.tv/snakebitebettyx) na Twitchu. Jeśli podane konto Twitch nie należy do Ciebie, nie otrzymasz nagrody.');
+        description.push(`1. Musisz obserwować kanał [snakebitebettyx](https://www.twitch.tv/snakebitebettyx) na Twitchu. Jeśli podane konto \`${twitchNick}\` nie należy do Ciebie, nie otrzymasz nagrody.`);
         description.push(`2. Musisz mieć połączone konto Apex Legends - Możesz to zrobić na kanale ${connectChannel} wpisując komendę */połącz*`);
         description.push('');
         description.push('### Po spełnieniu warunków, kliknij przycisk poniżej aby dołączyć do konkursu!');
@@ -223,10 +399,12 @@ export class GiveawayService {
             .setTimestamp();
     }
 
-    private getSuccessMessage() {
+    private async getSuccessMessage() {
+        const membersCount = await this.giveawayMemberService.getCount();
+
         const embed = this.getBaseEmbed()
             .setTitle('Dołączono do konkursu ')
-            .setDescription('### :tada: Gratulacje! Dołączyłeś do konkursu! Jeśli wygrasz, Betty zakupi dla ciebie dowolne elementy dostępne aktualnie w sklepie Apex Legends o wartości do **2500** Monet Apex!\nPolskie Legendy Apex życzą powodzenia!')
+            .setDescription('### :tada: Gratulacje! Dołączyłeś do konkursu! Jeśli wygrasz, Betty zakupi dla ciebie dowolne elementy dostępne aktualnie w sklepie Apex Legends o wartości do **2500** Monet Apex!\nPolskie Legendy Apex życzą powodzenia!\nW międzyczasie możesz korzystać z naszego serwera aby znaleźć graczy do gry!')
 
         embed.addFields([
             {
@@ -234,9 +412,9 @@ export class GiveawayService {
                 value: `<t:${this.giveawayEndTimestamp}:R>`,
             },
             {
-                name: 'W międzyczasie możesz korzystać z',
-                value: `naszego serwera aby znaleźć graczy do gry!`,
-            }
+                name: 'Aktualna liczba uczestników',
+                value: `${membersCount}`,
+            },
         ])
 
         embed.setImage(this.configService.get<string>('images.celebration'));

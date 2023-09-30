@@ -58,10 +58,10 @@ export class TwitchApiService {
 
         try {
             userResponse = await this.axiosGet(getUserUrl, { headers: this.headers });
-            return userResponse.data.data[0].id;
+            return userResponse.data?.data[0]?.id ?? null;
         } catch (e) {
             this.logger.error('TwitchApiService: Failed to get user: ', e);
-            throw e;
+            return null;
         }
     }
 
@@ -73,6 +73,14 @@ export class TwitchApiService {
     public async checkFollows(twitchUsername: string): Promise<{ following: boolean, id: string }> {
         
         const userId = await this.getUserTwitchId(twitchUsername);
+
+        if (!userId) {
+            return {
+                following: false,
+                id: null,
+            }
+        }
+
         const broadcasterId = await this.getUserTwitchId(this.mainChannelTwitchName);
         console.info(`Got user: ${twitchUsername} with id: ${userId}`);
         

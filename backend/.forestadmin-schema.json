@@ -1547,7 +1547,7 @@
           "isSortable": true,
           "isVirtual": false,
           "reference": "user.id",
-          "relationship": "BelongsTo",
+          "relationship": "HasOne",
           "type": "Number",
           "validations": []
         }
@@ -2920,7 +2920,7 @@
           "isSortable": true,
           "isVirtual": false,
           "reference": "giveaway_member.id",
-          "relationship": "HasOne",
+          "relationship": "BelongsTo",
           "type": "Number",
           "validations": []
         },
@@ -3004,6 +3004,6 @@
   "metadata": {
     "liana": "forest-nodejs-agent",
     "liana_version": "1.8.13",
-    "stack": {"engine": "nodejs", "engine_version": "19.1.0"}
+    "stack": {"engine": "nodejs", "engine_version": "18.12.1"}
   }
 }
