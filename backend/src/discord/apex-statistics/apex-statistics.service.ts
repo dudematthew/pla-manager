@@ -5,7 +5,7 @@ import { ApexAccountService } from 'src/database/entities/apex-account/apex-acco
 import { UserService } from 'src/database/entities/user/user.service';
 import { DiscordService } from '../discord.service';
 import { handleStatisticsDiscordCommandDto } from '../commands/dtos/handle-statistics-discord-command.dto';
-import { AttachmentBuilder, BufferResolvable, CacheType, ChatInputCommandInteraction, Client, ColorResolvable, EmbedBuilder, GuildMember, MessagePayload, PermissionsBitField } from 'discord.js';
+import { AttachmentBuilder, BufferResolvable, CacheType, ChatInputCommandInteraction, Client, ColorResolvable, EmbedBuilder, GuildMember, Interaction, MessagePayload, PermissionsBitField, UserContextMenuCommandInteraction } from 'discord.js';
 import { ApexAccountEntity } from 'src/database/entities/apex-account/entities/apex-account.entity';
 import { PlayerStatistics } from 'src/apex-api/player-statistics.interface';
 import { UserEntity } from 'src/database/entities/user/user.entity';
@@ -67,7 +67,7 @@ export class ApexStatisticsService {
      * @param interaction 
      * @param options 
      */
-    public async handleStatisticsDiscordCommand(interaction: ChatInputCommandInteraction<CacheType>, options: handleStatisticsDiscordCommandDto) {
+    public async handleStatisticsDiscordCommand(interaction: ChatInputCommandInteraction<CacheType> | UserContextMenuCommandInteraction<CacheType>, options: handleStatisticsDiscordCommandDto) {
         // Check if interaction is deferred
         if (!interaction.deferred)
             await interaction.deferReply();

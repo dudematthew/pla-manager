@@ -1,9 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Context, On, Once, ContextOf } from 'necord';
-import { Client, Typing } from 'discord.js';
+import { ApplicationCommandType, Client, ContextMenuCommandBuilder, Typing } from 'discord.js';
 import { ConfigService } from '@nestjs/config';
 import DiscordListeners from './discord.listeners';
 import { on } from 'events';
+import { env } from 'process';
 
 @Injectable()
 export class DiscordUpdate {
@@ -13,7 +14,25 @@ export class DiscordUpdate {
         private readonly client: Client,
         private readonly configService: ConfigService,
         private readonly discordListeners: DiscordListeners,
-        ) {}
+    ) {
+        // Get main guild id
+        const guildId = env.MAIN_GUILD_ID;
+
+        const applicationCommands = [
+            new ContextMenuCommandBuilder()
+                .setName('Statystyki Apex')
+                .setType(ApplicationCommandType.User)
+                .toJSON(),
+        ]
+
+        this.client.once('ready', () => {
+            client.guilds.fetch(guildId).then(guild => {
+                guild.commands.set(applicationCommands);
+            })
+           
+            console.info('Application commands registered:', applicationCommands, 'in guild:', guildId);
+        });
+    }
 
     /**
      * Fires when the client becomes ready to start working.
@@ -58,7 +77,7 @@ export class DiscordUpdate {
     public onTypingStart(@Context() [typing]: ContextOf<'typingStart'>) {
         this.discordListeners.handleTypingStart(typing);
     }
-
+    
     @On('guildMemberEntered')
     public onGuildMemberEntered(@Context() [member]: ContextOf<'guildMemberEntered'>) {
         this.logger.verbose(`Member accepted the server rules: ${member.user.username}`);
@@ -77,6 +96,15 @@ export class DiscordUpdate {
         if (interaction.isButton()) {
             this.logger.verbose(`Button interaction: ${interaction.customId}`);
             this.discordListeners.handleButtonInteraction(interaction);
+
+            return;
+        }
+
+        // Check if this is a user context menu command
+        if (interaction.isUserContextMenuCommand()) {
+            this.discordListeners.handleUserContextMenuCommandInteraction(interaction);
+
+            return;
         }
     }
 }

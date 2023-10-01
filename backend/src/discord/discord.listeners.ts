@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { LfgService } from "./lfg/lfg.service";
-import { Message, User, Channel, ChannelType, Typing, PartialUser, GuildMember, Interaction, ButtonInteraction, CacheType } from "discord.js";
+import { Message, User, Channel, ChannelType, Typing, PartialUser, GuildMember, Interaction, ButtonInteraction, CacheType, UserContextMenuCommandInteraction } from "discord.js";
 import { ChannelService } from "src/database/entities/channel/channel.service";
 import { ChannelEntity } from "src/database/entities/channel/channel.entity";
 import { Logger } from "@nestjs/common";
@@ -10,6 +10,7 @@ import { IntroduceService } from "./introduce/introduce.service";
 import { UserService } from "src/database/entities/user/user.service";
 import { ContextOf } from "necord";
 import { CommunityEventsService } from "./community-events/community-events.service";
+import { ApexStatisticsService } from "./apex-statistics/apex-statistics.service";
 
 interface MessageCreateListener {
     channelPattern: string;
@@ -26,6 +27,12 @@ interface TypingStartListener {
     callback: (typing: TypingData) => void;
 }
 
+interface UserContextMenuCommandInteractionListener {
+    userPattern: string;
+    commandNamePattern: string;
+    callback: (interaction: UserContextMenuCommandInteractionData) => void;
+}
+
 interface GuildMemberEnteredListener {
     memberPattern: string;
     callback: (member: MemberData) => void;
@@ -37,6 +44,11 @@ interface ButtonListener {
     channelPattern: string;
     userPattern: string;
     callback: (button: ButtonData) => void;
+}
+
+export interface UserContextMenuCommandInteractionData {
+    interaction: UserContextMenuCommandInteraction<CacheType>;
+    user: GuildMember;
 }
 
 export interface MessageData {
@@ -84,6 +96,8 @@ export default class DiscordListeners {
 
     private readonly buttonListeners: ButtonListener[];
 
+    private readonly userContextMenuCommandInteractionListeners: UserContextMenuCommandInteractionListener[];
+
     /**
      * The cached channels
      */
@@ -102,6 +116,7 @@ export default class DiscordListeners {
         private readonly introduceService: IntroduceService,
         private readonly userService: UserService,
         private readonly communityEventsService: CommunityEventsService,
+        private readonly apexStatisticsService: ApexStatisticsService,
     ) {
         this.wcmatch = require('wildcard-match');
         
@@ -183,6 +198,31 @@ export default class DiscordListeners {
                 }
             }
         ];
+
+        /**
+         * The user context menu command interaction listeners - these are the listeners that should be
+         * activated when a user clicks a context menu command.
+         * 
+         * Available patterns:
+         * interaction: The pattern to match against the interaction
+         * user: The pattern to match against the user
+         * 
+         * @var UserContextMenuCommandInteractionListener[]
+         */
+        this.userContextMenuCommandInteractionListeners = [
+            // The apex statistics context menu command listener
+            {
+                commandNamePattern: 'Statystyki Apex',
+                userPattern: '**',
+                callback: (interactionData: UserContextMenuCommandInteractionData) => {
+                    // this.apexConnectService.handleContextMenuCommand(interactionData);
+                    console.info('User context menu command interaction listener called');
+                    this.apexStatisticsService.handleStatisticsDiscordCommand(interactionData.interaction, {
+                        user: interactionData.user,
+                    });
+                }
+            }
+        ]
 
         /**
          * The typing start listeners - these are the listeners that should be
@@ -450,6 +490,51 @@ export default class DiscordListeners {
             try {
                 this.logger.log('Calling callback: ' + callback.name);
                 callback(messageData);
+            } catch (e) {
+                this.logger.error(e);
+            }
+        });
+    }
+
+    public async handleUserContextMenuCommandInteraction(interaction: UserContextMenuCommandInteraction<CacheType>) {
+        const interactionData: UserContextMenuCommandInteractionData = {
+            interaction: interaction,
+            user: interaction.member as GuildMember,
+        };
+
+        let callbacks: ((interaction: UserContextMenuCommandInteractionData) => void)[] = [];
+
+        // Check if interaction matches any of the listeners
+        for(const listener of this.userContextMenuCommandInteractionListeners) {
+
+            console.log('Checking listener: ' + listener.commandNamePattern);
+
+            if (!interactionData.interaction.isCommand())
+                return;
+
+            // Check if interaction id matches pattern ------------------------------
+            if (!this.matchPattern(interactionData.interaction.commandName, this.escapeSpecialCharacters(listener.commandNamePattern))) {
+                console.log(`Interaction id ${interactionData.interaction.commandName} does not match pattern: ` + listener.commandNamePattern);
+                continue;
+            }
+
+            // Check if user matches pattern ------------------------------
+            if (!this.matchPattern(interactionData.user.id, this.escapeSpecialCharacters(listener.userPattern))) {
+                console.log('User does not match pattern: ' + listener.userPattern);
+                continue;
+            }
+
+            console.log('Matched listener: ' + listener.commandNamePattern);
+
+            // If all patterns match, add callback to callbacks
+            callbacks.push(listener.callback);
+        }
+
+        // Call all callbacks
+        callbacks.forEach((callback: (interaction: UserContextMenuCommandInteractionData) => void) => {
+            try {
+                this.logger.log('Calling callback: ' + callback.name);
+                callback(interactionData);
             } catch (e) {
                 this.logger.error(e);
             }
