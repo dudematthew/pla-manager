@@ -310,7 +310,6 @@ export class InsideLeaderboardService {
 
         // Get all members data 
         for (const [key, member] of members) {
-            // Todo: check if problem exists here
             const account = await this.apexAccountService.findByUserDiscordId(member.id);
 
             if (account) {
@@ -324,11 +323,6 @@ export class InsideLeaderboardService {
             else {
                 console.log(`Account not found for user ${member.nickname} ${member.id}`);
             }
-
-            // Finish on ten members
-            if (membersData.length >= 10) {
-                break;
-            }
         }
 
         console.info(`Members data has ${membersData.length} positions`);
@@ -339,7 +333,7 @@ export class InsideLeaderboardService {
         });
 
         // Dump to console sorted members
-        console.info(`Sorted members has ${sortedMembers.length} positions: `, sortedMembers);
+        // console.info(`Sorted members has ${sortedMembers.length} positions: `, sortedMembers);
 
         let leaderboardMessages = [];
 
@@ -360,6 +354,11 @@ export class InsideLeaderboardService {
 
             leaderboardMessages[embedNumber] += prefix + `${member.member} - ${member.account.rankScore} LP\n`;
             i++;
+
+            // Finish on 10 members
+            if (i > 10) {
+                break;
+            }
         }
 
         await Promise.all(leaderboardMessages.map(async (message, key) => {
