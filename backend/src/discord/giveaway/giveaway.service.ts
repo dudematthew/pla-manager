@@ -15,7 +15,7 @@ export class GiveawayService {
 
     private logger = new Logger('GiveawayService');
 
-    private readonly giveawayEndTimestamp = 1696179600;
+    private readonly giveawayEndTimestamp = 1696185300;
     private readonly giveawayEndDate = new Date(this.giveawayEndTimestamp * 1000);
 
     constructor(
