@@ -296,8 +296,11 @@ export class InsideLeaderboardService {
         const membersData = [];
         const embeds = [];
         const dbRole = await this.roleService.findByName(this.configService.get<string>('role-names.pla-inside.main'));
+        // Todo: check if problem exists here
         const members = await this.discordService.getUsersWithRole(dbRole.discordId);
         const rankToRoleNameDictionary = this.apexAccountService.rankToRoleNameDictionary;
+
+        console.info(`Found ${members.size} members with role ${dbRole.name}`);
 
         const placementEmojis = {
             1: await this.emojiService.findByName(`first`),
@@ -307,6 +310,7 @@ export class InsideLeaderboardService {
 
         // Get all members data 
         for (const [key, member] of members) {
+            // Todo: check if problem exists here
             const account = await this.apexAccountService.findByUserDiscordId(member.id);
 
             if (account) {
@@ -314,9 +318,11 @@ export class InsideLeaderboardService {
                     member,
                     account,
                 });
+
+                console.log(`Account found for user ${member.nickname} ${member.id}`);
             }
             else {
-                console.log(`Account not found for user ${member.nickname}`);
+                console.log(`Account not found for user ${member.nickname} ${member.id}`);
             }
 
             // Finish on ten members
@@ -325,7 +331,7 @@ export class InsideLeaderboardService {
             }
         }
 
-        console.info(`Members data:`, membersData);
+        console.info(`Members data has ${membersData.length} positions`);
 
         // Sort members by rank score
         const sortedMembers = membersData.sort((a, b) => {
@@ -333,7 +339,7 @@ export class InsideLeaderboardService {
         });
 
         // Dump to console sorted members
-        console.info(`Sorted members:`, sortedMembers);
+        console.info(`Sorted members has ${sortedMembers.length} positions: `, sortedMembers);
 
         let leaderboardMessages = [];
 
