@@ -499,7 +499,7 @@ export default class DiscordListeners {
     public async handleUserContextMenuCommandInteraction(interaction: UserContextMenuCommandInteraction<CacheType>) {
         const interactionData: UserContextMenuCommandInteractionData = {
             interaction: interaction,
-            user: interaction.member as GuildMember,
+            user: interaction.targetMember as GuildMember,
         };
 
         let callbacks: ((interaction: UserContextMenuCommandInteractionData) => void)[] = [];
