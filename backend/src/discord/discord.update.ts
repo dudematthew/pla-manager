@@ -30,7 +30,7 @@ export class DiscordUpdate {
                 guild.commands.set(applicationCommands);
             })
            
-            console.info('Application commands registered:', applicationCommands, 'in guild:', guildId);
+            console.info('Application commands registered:', applicationCommands.length, 'in guild:', guildId);
         });
     }
 

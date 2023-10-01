@@ -14,6 +14,7 @@ import { DiscordModule } from '../discord.module';
     ChannelModule,
     GiveawayMemberModule,
     HttpModule,
+    RoleModule,
     forwardRef(() => DiscordModule),
   ],
   providers: [

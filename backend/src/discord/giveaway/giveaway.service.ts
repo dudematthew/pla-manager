@@ -5,8 +5,9 @@ import { UserService } from 'src/database/entities/user/user.service';
 import { GiveawayMemberService } from 'src/database/entities/giveaway-member/giveaway-member.service';
 import { ConfigService } from '@nestjs/config';
 import { ChannelService } from 'src/database/entities/channel/channel.service';
-import { TwitchApiService } from './twitch-api.service.js';
-import { DiscordService } from '../discord.service.js';
+import { TwitchApiService } from './twitch-api.service';
+import { DiscordService } from '../discord.service';
+import { RoleService } from 'src/database/entities/role/role.service';
 
 @Injectable()
 export class GiveawayService {
@@ -23,6 +24,7 @@ export class GiveawayService {
         private readonly channelService: ChannelService,
         private readonly twitchApiService: TwitchApiService,
         private readonly discordService: DiscordService,
+        private readonly roleService: RoleService,
     ) {}
 
     public async handleGiveawayJoinDiscordCommand(interaction: ChatInputCommandInteraction<CacheType>, options: handleGivewayJoinCommandDto) {
@@ -163,6 +165,10 @@ export class GiveawayService {
 
             return;
         }
+
+        // Give user role
+        const role = await this.roleService.findByName('giveaway');
+        this.discordService.addRoleToUser(interaction.user.id, role.discordId);
 
         interaction.editReply(await this.getSuccessMessage());
 
@@ -318,6 +324,9 @@ export class GiveawayService {
     
                 return;
             }
+
+            const role = await this.roleService.findByName('giveaway');
+            this.discordService.removeRoleFromUser(interaction.user.id, role.discordId);
     
             interaction.editReply({
                 content: `### :raised_hand: Wypisano z konkursu. Jeśli zmienisz zdanie, zawsze możesz dołączyć za pomocą komendy */konkurs dołącz*`,
