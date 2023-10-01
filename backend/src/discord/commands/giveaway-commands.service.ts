@@ -3,6 +3,7 @@ import { Context, Options, SlashCommandContext, Subcommand, createCommandGroupDe
 import { CommunityEventsService } from "../community-events/community-events.service";
 import { GiveawayService } from "../giveaway/giveaway.service";
 import { handleGivewayJoinCommandDto } from "./dtos/handle-giveaway-join-command.dto.ts";
+import { handleCommunityEventStatusDiscordCommandDto } from "./dtos/handle-community-events-status-discord-command";
 
 
 export const GiveawayCommandsDecorator = createCommandGroupDecorator({
@@ -39,10 +40,10 @@ export class GiveawayCommandService {
         name: 'status',
         description: 'Sprawdź status aktualnego konkursu Polskich Legend Apex',
     })
-    public async onGiveawayStatus(@Context() [Interaction]: SlashCommandContext) {
+    public async onGiveawayStatus(@Context() [Interaction]: SlashCommandContext, @Options() options: handleCommunityEventStatusDiscordCommandDto) {
         console.log('onGiveawayStatus');
 
-        this.giveawayService.handleGiveawayStatusDiscordCommand(Interaction);
+        this.giveawayService.handleGiveawayStatusDiscordCommand(Interaction, options);
     }
 
     @Subcommand({

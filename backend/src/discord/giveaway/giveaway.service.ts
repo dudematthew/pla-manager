@@ -8,6 +8,7 @@ import { ChannelService } from 'src/database/entities/channel/channel.service';
 import { TwitchApiService } from './twitch-api.service';
 import { DiscordService } from '../discord.service';
 import { RoleService } from 'src/database/entities/role/role.service';
+import { handleCommunityEventStatusDiscordCommandDto } from '../commands/dtos/handle-community-events-status-discord-command.js';
 
 @Injectable()
 export class GiveawayService {
@@ -197,11 +198,36 @@ export class GiveawayService {
             this.discordService.sendPrivateMessage('740279676945301515', `Hej Betty, użytkownik <@${dbUser.discordId}> dołączył do konkursu. Nick Twitch: ${options.twitchNick}`);
     }
 
-    public async handleGiveawayStatusDiscordCommand(interaction: ChatInputCommandInteraction<CacheType>) {
+    public async handleGiveawayStatusDiscordCommand(interaction: ChatInputCommandInteraction<CacheType>, options: handleCommunityEventStatusDiscordCommandDto) {
 
         await interaction.reply({
             content: `## :hourglass_flowing_sand: Przetwarzanie...`,
         });
+
+        const giveawayMembers = await this.giveawayMemberService.findAll();
+
+        const membersText = [];
+
+        for (const member of giveawayMembers) {
+            const user = member.user;
+
+            if (!options.log) {
+                membersText.push(`- <@${user.discordId}> - ${member.twitchNick}`);
+            } else {
+                const discordUser = await this.discordService.getUserById(user.discordId);
+                membersText.push(`- **${discordUser.username}** - ${member.twitchNick}`);
+            }
+        }
+
+        if (options.log) {
+            await interaction.editReply({
+                content: `### Lista uczestników konkursu\n` + membersText.join('\n'),
+                embeds: [],
+                components: [],
+            });
+
+            return;
+        }
 
         let dbUser = await this.userService.findByDiscordId(interaction.user.id);
 
@@ -239,16 +265,6 @@ export class GiveawayService {
 
         description.push('');
         description.push(`### Aktualnie ${giveawayMembersCount} osób dołączyło do giveaway'a!`);
-
-        const giveawayMembers = await this.giveawayMemberService.findAll();
-
-        const membersText = [];
-
-        for (const member of giveawayMembers) {
-            const user = member.user;
-
-            membersText.push(`- <@${user.discordId}> - ${member.twitchNick}`);
-        }
 
         embed.setDescription(description.join('\n') + `\n` + membersText.join('\n'));
 
