@@ -272,8 +272,9 @@ export class MessageProviderService {
 
         if (!online) {
             embed.setTitle(`Zaloguj się do gry`)
-            embed.setDescription('Aby połączyć konto, musisz znaleźć się w lobby, zalogowany na twoim koncie.');
+            embed.setDescription('Aby połączyć konto, musisz znaleźć się w lobby, zalogowany na twoim koncie. Jeśli wciąż widzisz tę wiadomość, mimo że jesteś zalogowany, zmień status drużyny na otwarty (według zrzutu ekranu poniżej).');
             embed.setThumbnail(this.configService.get<string>('images.loading'));
+            embed.setImage(this.configService.get<string>('images.lobby-connect-tutorial'));
             
             embed.addFields({
                 name: 'Proces wygasa',

@@ -5,7 +5,7 @@ import { ApexAccountService } from 'src/database/entities/apex-account/apex-acco
 import { UserService } from 'src/database/entities/user/user.service';
 import { DiscordService } from '../discord.service';
 import { handleStatisticsDiscordCommandDto } from '../commands/dtos/handle-statistics-discord-command.dto';
-import { AttachmentBuilder, BufferResolvable, CacheType, ChatInputCommandInteraction, Client, ColorResolvable, EmbedBuilder, GuildMember, MessagePayload, PermissionsBitField } from 'discord.js';
+import { AttachmentBuilder, BufferResolvable, CacheType, ChatInputCommandInteraction, Client, ColorResolvable, EmbedBuilder, GuildMember, Interaction, MessagePayload, PermissionsBitField, UserContextMenuCommandInteraction } from 'discord.js';
 import { ApexAccountEntity } from 'src/database/entities/apex-account/entities/apex-account.entity';
 import { PlayerStatistics } from 'src/apex-api/player-statistics.interface';
 import { UserEntity } from 'src/database/entities/user/user.entity';
@@ -67,7 +67,7 @@ export class ApexStatisticsService {
      * @param interaction 
      * @param options 
      */
-    public async handleStatisticsDiscordCommand(interaction: ChatInputCommandInteraction<CacheType>, options: handleStatisticsDiscordCommandDto) {
+    public async handleStatisticsDiscordCommand(interaction: ChatInputCommandInteraction<CacheType> | UserContextMenuCommandInteraction<CacheType>, options: handleStatisticsDiscordCommandDto) {
         // Check if interaction is deferred
         if (!interaction.deferred)
             await interaction.deferReply();
@@ -184,6 +184,11 @@ export class ApexStatisticsService {
         console.info(`Rank emoji: ${rankEmoji} for ${statistics?.global?.rank.rankName}`); 
         const plaEmoji = await this.emojiService.findByName('pla');
         const serverRank = ((user?.apexAccount ?? null) != null) ? await this.apexAccountService.getServerRankByAccountId(user.apexAccount.id): null;
+        const lastMidnightDate = new Date();
+        // Set time to 00:03:00am
+        lastMidnightDate.setHours(0, 3, 0, 0);
+        const lastMidnightStats = ((user?.apexAccount ?? null) != null) ? (await this.apexAccountHistoryService.getHistoryClosestTo(apexAccount, lastMidnightDate)) : null;
+        const scoreGainSinceMidnight = lastMidnightStats ? (statistics?.global?.rank.rankScore - lastMidnightStats.rankScore) : null;
         const rankDisplayName = rankToDisplayNameDictionary[statistics?.global?.rank.rankName];
         // ----------------------------------------------------------------------
 
@@ -290,9 +295,12 @@ export class ApexStatisticsService {
 
         if(serverRank)
             description.push(`${plaEmoji} TOP **${serverRank}** na serwerze **PLA**`);
-
+        
         description.push(`**:chart_with_upwards_trend: ${statistics?.global?.rank.rankScore}** LP`);
         
+        if (scoreGainSinceMidnight != null)
+            description.push(`**:calendar: ${scoreGainSinceMidnight}** LP dzisiaj`);
+
         description.push('ㅤ');
         // ----------------------------------------------------------------------
 

@@ -57,7 +57,8 @@ export class ApexSyncService {
 
         // Check if bot is in production mode
         if (process.env.NODE_ENV === 'production') {
-            this.updateConnectedAccounts();
+            // ! This has to be disabled for now
+            // this.updateConnectedAccounts();
         }
     }
 

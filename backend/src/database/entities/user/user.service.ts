@@ -26,7 +26,8 @@ export class UserService {
             where: { id },
             relations: [
                 'apexAccount',
-                'messages'
+                'messages',
+                'giveawayMember'
             ]
           });
     }
@@ -41,7 +42,8 @@ export class UserService {
             where: { discordId },
             relations: [
                 'apexAccount',
-                'messages'
+                'messages',
+                'giveawayMember'
             ]
           });
     }
@@ -56,7 +58,8 @@ export class UserService {
             where: { email },
             relations: [
                 'apexAccount',
-                'messages'
+                'messages',
+                'giveawayMember'
             ]
           });
     }

@@ -11,6 +11,10 @@ import { RoleGroupModule } from 'src/database/entities/role-group/role-group.mod
 import { DatabaseModule } from 'src/database/database.module';
 import { ApexStatisticsModule } from '../apex-statistics/apex-statistics.module';
 import { StatisticsCommandsService } from './statistics-commands.service';
+import { CommunityEventsCommandService } from './community-events-commands.service';
+import { CommunityEventsModule } from '../community-events/community-events.module';
+import { GiveawayModule } from '../giveaway/giveaway.module';
+import { GiveawayCommandService } from './giveaway-commands.service';
 
 @Module({
   imports: [
@@ -21,13 +25,17 @@ import { StatisticsCommandsService } from './statistics-commands.service';
     EmojiModule,
     DatabaseModule,
     ApexStatisticsModule,
+    CommunityEventsModule,
     forwardRef(() => DiscordModule),
+    GiveawayModule,
   ],
   providers: [
     CommandsService,
     AdminCommandsService,
     InsideCommandsService,
     StatisticsCommandsService,
+    CommunityEventsCommandService,
+    GiveawayCommandService,
   ],
 })
 export class CommandsModule {}

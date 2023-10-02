@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { LfgService } from "./lfg/lfg.service";
-import { Message, User, Channel, ChannelType, Typing, PartialUser, GuildMember } from "discord.js";
+import { Message, User, Channel, ChannelType, Typing, PartialUser, GuildMember, Interaction, ButtonInteraction, CacheType, UserContextMenuCommandInteraction } from "discord.js";
 import { ChannelService } from "src/database/entities/channel/channel.service";
 import { ChannelEntity } from "src/database/entities/channel/channel.entity";
 import { Logger } from "@nestjs/common";
@@ -8,6 +8,9 @@ import { ConfigService } from "@nestjs/config";
 import { ApexConnectService } from "./apex-connect/apex-connect.service";
 import { IntroduceService } from "./introduce/introduce.service";
 import { UserService } from "src/database/entities/user/user.service";
+import { ContextOf } from "necord";
+import { CommunityEventsService } from "./community-events/community-events.service";
+import { ApexStatisticsService } from "./apex-statistics/apex-statistics.service";
 
 interface MessageCreateListener {
     channelPattern: string;
@@ -24,15 +27,42 @@ interface TypingStartListener {
     callback: (typing: TypingData) => void;
 }
 
+interface UserContextMenuCommandInteractionListener {
+    userPattern: string;
+    commandNamePattern: string;
+    callback: (interaction: UserContextMenuCommandInteractionData) => void;
+}
+
 interface GuildMemberEnteredListener {
     memberPattern: string;
     callback: (member: MemberData) => void;
+}
+
+interface ButtonListener {
+    idPattern: string;
+    channelType: ChannelType[];
+    channelPattern: string;
+    userPattern: string;
+    callback: (button: ButtonData) => void;
+}
+
+export interface UserContextMenuCommandInteractionData {
+    interaction: UserContextMenuCommandInteraction<CacheType>;
+    user: GuildMember;
 }
 
 export interface MessageData {
     channel: Channel;
     message: Message;
     user: User
+}
+
+export interface ButtonData {
+    id: string;
+    user: GuildMember;
+    message: Message;
+    channel: Channel;
+    interaction: ButtonInteraction<CacheType>;
 }
 
 export interface TypingData {
@@ -64,6 +94,15 @@ export default class DiscordListeners {
 
     private readonly guildMemberAddListeners: GuildMemberEnteredListener[];
 
+    private readonly buttonListeners: ButtonListener[];
+
+    private readonly userContextMenuCommandInteractionListeners: UserContextMenuCommandInteractionListener[];
+
+    /**
+     * The cached channels
+     */
+    private readonly cachedChannels: { [key: string]: ChannelEntity } = {};
+
     /**
      * The logger instance
      */
@@ -76,6 +115,8 @@ export default class DiscordListeners {
         private readonly apexConnectService: ApexConnectService,
         private readonly introduceService: IntroduceService,
         private readonly userService: UserService,
+        private readonly communityEventsService: CommunityEventsService,
+        private readonly apexStatisticsService: ApexStatisticsService,
     ) {
         this.wcmatch = require('wildcard-match');
         
@@ -145,8 +186,43 @@ export default class DiscordListeners {
                         });
                     }
                 }
+            },
+            // The spawn message listener
+            {
+                channelPattern: 'spawn',
+                messagePattern: '**Witaj**',
+                userPattern: '**',
+                channelType: [],
+                callback: (messageData: MessageData) => {
+                    messageData.message.react('👋');
+                }
             }
         ];
+
+        /**
+         * The user context menu command interaction listeners - these are the listeners that should be
+         * activated when a user clicks a context menu command.
+         * 
+         * Available patterns:
+         * interaction: The pattern to match against the interaction
+         * user: The pattern to match against the user
+         * 
+         * @var UserContextMenuCommandInteractionListener[]
+         */
+        this.userContextMenuCommandInteractionListeners = [
+            // The apex statistics context menu command listener
+            {
+                commandNamePattern: 'Statystyki Apex',
+                userPattern: '**',
+                callback: (interactionData: UserContextMenuCommandInteractionData) => {
+                    // this.apexConnectService.handleContextMenuCommand(interactionData);
+                    console.info('User context menu command interaction listener called');
+                    this.apexStatisticsService.handleStatisticsDiscordCommand(interactionData.interaction, {
+                        user: interactionData.user,
+                    });
+                }
+            }
+        ]
 
         /**
          * The typing start listeners - these are the listeners that should be
@@ -167,6 +243,61 @@ export default class DiscordListeners {
                 channelType: [],
                 callback: (typingData: TypingData) => {
                     this.introduceService.handleIntroduceTyping(typingData);
+                }
+            }
+        ]
+
+        /**
+         * The button listeners - these are the listeners that should be
+         * activated when a user clicks a button.
+         * 
+         * Available patterns:
+         * id: The pattern to match against the button id
+         * channelPattern: The pattern to match against the channel name or database name
+         * channelType: The channel type to match against
+         * userPattern: The pattern to match the user name against
+         * 
+         * @var ButtonListener[]
+         */
+        this.buttonListeners = [
+            // The communityEvent accept button listener
+            {
+                idPattern: 'community-event-approve**',
+                channelPattern: `reports`,
+                userPattern: '**',
+                channelType: [],
+                callback: (buttonData: ButtonData) => {
+                    this.communityEventsService.handleCommunityEventAcceptButton(buttonData);
+                }
+            },
+            // The communityEvent reject button listener
+            {
+                idPattern: 'community-event-reject**',
+                channelPattern: `reports`,
+                userPattern: '**',
+                channelType: [],
+                callback: (buttonData: ButtonData) => {
+                    this.communityEventsService.handleCommunityEventRejectButton(buttonData);
+                }
+            },
+            // The communityEvent user reminder button listener
+            {
+                idPattern: 'community-event-remind**',
+                channelPattern: `communityevents`,
+                userPattern: '**',
+                channelType: [],
+                callback: (buttonData: ButtonData) => {
+                    this.communityEventsService.handleCommunityEventReminderButton(buttonData);
+                }
+            },
+            // The communityEvent switch reminders button listener
+            {
+                idPattern: 'community-event-switch-remind**',
+                channelPattern: `reports`,
+                userPattern: '**',
+                channelType: [],
+                callback: (buttonData: ButtonData) => {
+                    this.communityEventsService.handleCommunityEventSwitchRemindersButton(buttonData);
                 }
             }
         ]
@@ -201,6 +332,24 @@ export default class DiscordListeners {
                 }
             }
         ]
+    }
+
+    private async getCachedChannelByName(channelName: string): Promise<ChannelEntity> {
+        // If channel is cached
+        if (channelName in this.cachedChannels) {
+            return this.cachedChannels[channelName];
+        }
+
+        // If channel is not cached, get it from database
+        const channel = await this.channelService.findByName(channelName);
+
+        // If channel is in database
+        if (channel) {
+            // Cache channel
+            this.cachedChannels[channelName] = channel;
+        }
+
+        return channel;
     }
 
     /**
@@ -251,7 +400,7 @@ export default class DiscordListeners {
             }
             
             // Check if channel matches database channel ------------------------------
-            let dbChannel: ChannelEntity = await this.channelService.findByName(listener.channelPattern);
+            let dbChannel: ChannelEntity = await this.getCachedChannelByName(listener.channelPattern);
 
             // If channel is in database
             if (dbChannel) {
@@ -295,6 +444,7 @@ export default class DiscordListeners {
 
         // Check if message matches any of the listeners
         for(const listener of this.messageCreateListeners) {
+
             // Check if channel type matches pattern ------------------------------
             if (listener.channelType.length != 0 && message.channel.type in listener.channelType) {
                 // console.log('Channel type ' + messageData.channel.type + ' does not match pattern: ' + listener.channelType);
@@ -314,7 +464,7 @@ export default class DiscordListeners {
             }
             
             // Check if channel matches database channel ------------------------------
-            let dbChannel: ChannelEntity = await this.channelService.findByName(listener.channelPattern);
+            let dbChannel: ChannelEntity = await this.getCachedChannelByName(listener.channelPattern);
 
             // If channel is in database
             if (dbChannel) {
@@ -322,6 +472,7 @@ export default class DiscordListeners {
                     continue;
                 }
             } 
+
             // If channel id matches pattern
             else if (!this.matchPattern(messageData.channel.id, this.escapeSpecialCharacters(listener.channelPattern))) {
                 // console.log('Channel id does not match pattern: ' + listener.channelPattern);
@@ -339,6 +490,51 @@ export default class DiscordListeners {
             try {
                 this.logger.log('Calling callback: ' + callback.name);
                 callback(messageData);
+            } catch (e) {
+                this.logger.error(e);
+            }
+        });
+    }
+
+    public async handleUserContextMenuCommandInteraction(interaction: UserContextMenuCommandInteraction<CacheType>) {
+        const interactionData: UserContextMenuCommandInteractionData = {
+            interaction: interaction,
+            user: interaction.targetMember as GuildMember,
+        };
+
+        let callbacks: ((interaction: UserContextMenuCommandInteractionData) => void)[] = [];
+
+        // Check if interaction matches any of the listeners
+        for(const listener of this.userContextMenuCommandInteractionListeners) {
+
+            console.log('Checking listener: ' + listener.commandNamePattern);
+
+            if (!interactionData.interaction.isCommand())
+                return;
+
+            // Check if interaction id matches pattern ------------------------------
+            if (!this.matchPattern(interactionData.interaction.commandName, this.escapeSpecialCharacters(listener.commandNamePattern))) {
+                console.log(`Interaction id ${interactionData.interaction.commandName} does not match pattern: ` + listener.commandNamePattern);
+                continue;
+            }
+
+            // Check if user matches pattern ------------------------------
+            if (!this.matchPattern(interactionData.user.id, this.escapeSpecialCharacters(listener.userPattern))) {
+                console.log('User does not match pattern: ' + listener.userPattern);
+                continue;
+            }
+
+            console.log('Matched listener: ' + listener.commandNamePattern);
+
+            // If all patterns match, add callback to callbacks
+            callbacks.push(listener.callback);
+        }
+
+        // Call all callbacks
+        callbacks.forEach((callback: (interaction: UserContextMenuCommandInteractionData) => void) => {
+            try {
+                this.logger.log('Calling callback: ' + callback.name);
+                callback(interactionData);
             } catch (e) {
                 this.logger.error(e);
             }
@@ -370,6 +566,74 @@ export default class DiscordListeners {
             try {
                 this.logger.log('Calling callback: ' + callback.name);
                 callback(memberData);
+            } catch (e) {
+                this.logger.error(e);
+            }
+        });
+    }
+
+    public async handleButtonInteraction(interaction: ButtonInteraction<CacheType>) {
+        const buttonData: ButtonData = {
+            id: interaction.customId,
+            user: interaction.member as GuildMember,
+            message: interaction.message,
+            channel: interaction.channel,
+            interaction,
+        }
+
+        let callbacks: ((button: ButtonData) => void)[] = [];
+
+        // Check if button matches any of the listeners
+        for(const listener of this.buttonListeners) {
+
+            console.log('Checking listener: ' + listener.idPattern);
+
+            // Check if button id matches pattern ------------------------------
+            if (!this.matchPattern(buttonData.id, this.escapeSpecialCharacters(listener.idPattern))) {
+                // console.log(`Button id ${buttonData.id} does not match pattern: ` + listener.idPattern);
+                continue;
+            }
+            
+            // Check if channel type matches pattern ------------------------------
+            if (listener.channelType.length != 0 && buttonData.channel.type in listener.channelType) {
+                // console.log('Channel type ' + buttonData.channel.type + ' does not match pattern: ' + listener.channelType);
+                continue;
+            }
+
+            // Check if user matches pattern ------------------------------
+            if (!this.matchPattern(buttonData.user.id, this.escapeSpecialCharacters(listener.userPattern))) {
+                // console.log('User does not match pattern: ' + listener.userPattern);
+                continue;
+            }
+
+            // Check if channel matches database channel ------------------------------
+            let dbChannel: ChannelEntity = await this.getCachedChannelByName(listener.channelPattern);
+
+            // If channel is in database
+            if (dbChannel) {
+                if (dbChannel.discordId !== buttonData.channel.id) {
+                    // console.log('Channel id does not match pattern: ' + listener.channelPattern);
+                    continue;
+                }
+            } 
+
+            // If channel id matches pattern
+            else if (!this.matchPattern(buttonData.channel.id, this.escapeSpecialCharacters(listener.channelPattern))) {
+                // console.log('Channel id does not match pattern: ' + listener.channelPattern);
+                continue;
+            }
+
+            console.log('Matched listener: ' + listener.idPattern);
+
+            // If all patterns match, add callback to callbacks
+            callbacks.push(listener.callback);
+        }
+
+        // Call all callbacks
+        callbacks.forEach((callback: (button: ButtonData) => void) => {
+            try {
+                this.logger.log('Calling callback: ' + callback.name);
+                callback(buttonData);
             } catch (e) {
                 this.logger.error(e);
             }

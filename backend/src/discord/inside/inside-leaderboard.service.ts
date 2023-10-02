@@ -296,8 +296,11 @@ export class InsideLeaderboardService {
         const membersData = [];
         const embeds = [];
         const dbRole = await this.roleService.findByName(this.configService.get<string>('role-names.pla-inside.main'));
+        // Todo: check if problem exists here
         const members = await this.discordService.getUsersWithRole(dbRole.discordId);
         const rankToRoleNameDictionary = this.apexAccountService.rankToRoleNameDictionary;
+
+        console.info(`Found ${members.size} members with role ${dbRole.name}`);
 
         const placementEmojis = {
             1: await this.emojiService.findByName(`first`),
@@ -314,18 +317,15 @@ export class InsideLeaderboardService {
                     member,
                     account,
                 });
+
+                console.log(`Account found for user ${member.nickname} ${member.id}`);
             }
             else {
-                console.log(`Account not found for user ${member.nickname}`);
-            }
-
-            // Finish on ten members
-            if (membersData.length >= 10) {
-                break;
+                console.log(`Account not found for user ${member.nickname} ${member.id}`);
             }
         }
 
-        console.info(`Members data:`, membersData);
+        console.info(`Members data has ${membersData.length} positions`);
 
         // Sort members by rank score
         const sortedMembers = membersData.sort((a, b) => {
@@ -333,7 +333,7 @@ export class InsideLeaderboardService {
         });
 
         // Dump to console sorted members
-        console.info(`Sorted members:`, sortedMembers);
+        // console.info(`Sorted members has ${sortedMembers.length} positions: `, sortedMembers);
 
         let leaderboardMessages = [];
 
@@ -354,6 +354,11 @@ export class InsideLeaderboardService {
 
             leaderboardMessages[embedNumber] += prefix + `${member.member} - ${member.account.rankScore} LP\n`;
             i++;
+
+            // Finish on 10 members
+            if (i > 10) {
+                break;
+            }
         }
 
         await Promise.all(leaderboardMessages.map(async (message, key) => {

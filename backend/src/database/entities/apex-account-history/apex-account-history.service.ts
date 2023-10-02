@@ -61,6 +61,36 @@ export class ApexAccountHistoryService {
   
     return playerHistory;
   }
+
+  /**
+   * Get player history closest to a given time
+   * @param account account to get history for
+   * @param targetTime time to get history for
+   * @returns player history closest to target time
+   */
+  public async getHistoryClosestTo(account: ApexAccountEntity, targetTime: Date): Promise<ApexAccountHistoryEntity> {
+    console.info(`Getting history closest to ${targetTime} for ${account?.name}`);
+
+    const twentyFourHoursAgo = new Date(targetTime.getTime() - 24 * 60 * 60 * 1000); // Calculate 24 hours ago
+
+    const closestHistory = await this.apexAccountHistoryRepository.createQueryBuilder('ah')
+      .where('ah.apexAccount = :accountId', { accountId: account.id })
+      .andWhere('ah.createdAt <= :targetTime', { targetTime })
+      .andWhere('ah.createdAt > :twentyFourHoursAgo', { twentyFourHoursAgo })
+      .orderBy('ah.createdAt', 'DESC')
+      .getOne();
+
+    if (!closestHistory) {
+      console.info(`No history found for ${account?.name} within 24 hours of ${targetTime}`);
+      return null;
+    }
+
+    console.info(`Found history for ${account?.name} within 24 hours of ${targetTime}: ${closestHistory.createdAt}`);
+
+    return closestHistory;
+  }
+  
+
   
   
   public async getTopXAtTime(topX: number | null = 20, atTime: Date, afterDate: boolean = true): Promise<ApexAccountHistoryEntity[]> {

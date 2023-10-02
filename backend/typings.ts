@@ -33,6 +33,10 @@ export type Schema = {
       'user:created_at': string;
       'user:updated_at': string;
       'user:apexAccountId': number;
+      'user:giveaway_member_id': number;
+      'user:giveaway_member:id': number;
+      'user:giveaway_member:twitch_id': string;
+      'user:giveaway_member:twitch_nick': string;
     };
   };
   'apex_account_history': {
@@ -88,6 +92,10 @@ export type Schema = {
       'apexAccount:user:created_at': string;
       'apexAccount:user:updated_at': string;
       'apexAccount:user:apexAccountId': number;
+      'apexAccount:user:giveaway_member_id': number;
+      'apexAccount:user:giveaway_member:id': number;
+      'apexAccount:user:giveaway_member:twitch_id': string;
+      'apexAccount:user:giveaway_member:twitch_nick': string;
     };
   };
   'apex_season': {
@@ -122,6 +130,141 @@ export type Schema = {
     nested: {};
     flat: {};
   };
+  'community_events': {
+    plain: {
+      'id': number;
+      'name': string;
+      'description': string;
+      'start_date': string;
+      'end_date': string;
+      'image_url': string;
+      'approve_state': 'pending' | 'approved' | 'rejected';
+      'created_at': string;
+      'updated_at': string;
+      'userId': number;
+      'color': string;
+      'reminder': number;
+    };
+    nested: {
+      'user': Schema['user']['plain'] & Schema['user']['nested'];
+    };
+    flat: {
+      'user:id': number;
+      'user:discord_id': string;
+      'user:email': string;
+      'user:is_admin': number;
+      'user:created_at': string;
+      'user:updated_at': string;
+      'user:apexAccountId': number;
+      'user:giveaway_member_id': number;
+      'user:apexAccount:id': number;
+      'user:apexAccount:name': string;
+      'user:apexAccount:uid': string;
+      'user:apexAccount:avatar_url': string;
+      'user:apexAccount:platform': string;
+      'user:apexAccount:rank_score': number;
+      'user:apexAccount:rank_name': string;
+      'user:apexAccount:rank_division': string;
+      'user:apexAccount:rank_img': string;
+      'user:apexAccount:level': number;
+      'user:apexAccount:percent_to_next_level': number;
+      'user:apexAccount:br_total_kills': number;
+      'user:apexAccount:br_total_wins': number;
+      'user:apexAccount:br_total_games_played': number;
+      'user:apexAccount:br_kdr': number;
+      'user:apexAccount:br_total_damage': number;
+      'user:apexAccount:last_legend_played': string;
+      'user:apexAccount:created_at': string;
+      'user:apexAccount:updated_at': string;
+      'user:giveaway_member:id': number;
+      'user:giveaway_member:twitch_id': string;
+      'user:giveaway_member:twitch_nick': string;
+    };
+  };
+  'community_events_reminders_user': {
+    plain: {
+      'communityEventsId': number;
+      'userId': number;
+    };
+    nested: {
+      'communityEvent': Schema['community_events']['plain'] & Schema['community_events']['nested'];
+      'user': Schema['user']['plain'] & Schema['user']['nested'];
+    };
+    flat: {
+      'communityEvent:id': number;
+      'communityEvent:name': string;
+      'communityEvent:description': string;
+      'communityEvent:start_date': string;
+      'communityEvent:end_date': string;
+      'communityEvent:image_url': string;
+      'communityEvent:approve_state': 'pending' | 'approved' | 'rejected';
+      'communityEvent:created_at': string;
+      'communityEvent:updated_at': string;
+      'communityEvent:userId': number;
+      'communityEvent:color': string;
+      'communityEvent:reminder': number;
+      'communityEvent:user:id': number;
+      'communityEvent:user:discord_id': string;
+      'communityEvent:user:email': string;
+      'communityEvent:user:is_admin': number;
+      'communityEvent:user:created_at': string;
+      'communityEvent:user:updated_at': string;
+      'communityEvent:user:apexAccountId': number;
+      'communityEvent:user:giveaway_member_id': number;
+      'communityEvent:user:apexAccount:id': number;
+      'communityEvent:user:apexAccount:name': string;
+      'communityEvent:user:apexAccount:uid': string;
+      'communityEvent:user:apexAccount:avatar_url': string;
+      'communityEvent:user:apexAccount:platform': string;
+      'communityEvent:user:apexAccount:rank_score': number;
+      'communityEvent:user:apexAccount:rank_name': string;
+      'communityEvent:user:apexAccount:rank_division': string;
+      'communityEvent:user:apexAccount:rank_img': string;
+      'communityEvent:user:apexAccount:level': number;
+      'communityEvent:user:apexAccount:percent_to_next_level': number;
+      'communityEvent:user:apexAccount:br_total_kills': number;
+      'communityEvent:user:apexAccount:br_total_wins': number;
+      'communityEvent:user:apexAccount:br_total_games_played': number;
+      'communityEvent:user:apexAccount:br_kdr': number;
+      'communityEvent:user:apexAccount:br_total_damage': number;
+      'communityEvent:user:apexAccount:last_legend_played': string;
+      'communityEvent:user:apexAccount:created_at': string;
+      'communityEvent:user:apexAccount:updated_at': string;
+      'communityEvent:user:giveaway_member:id': number;
+      'communityEvent:user:giveaway_member:twitch_id': string;
+      'communityEvent:user:giveaway_member:twitch_nick': string;
+      'user:id': number;
+      'user:discord_id': string;
+      'user:email': string;
+      'user:is_admin': number;
+      'user:created_at': string;
+      'user:updated_at': string;
+      'user:apexAccountId': number;
+      'user:giveaway_member_id': number;
+      'user:apexAccount:id': number;
+      'user:apexAccount:name': string;
+      'user:apexAccount:uid': string;
+      'user:apexAccount:avatar_url': string;
+      'user:apexAccount:platform': string;
+      'user:apexAccount:rank_score': number;
+      'user:apexAccount:rank_name': string;
+      'user:apexAccount:rank_division': string;
+      'user:apexAccount:rank_img': string;
+      'user:apexAccount:level': number;
+      'user:apexAccount:percent_to_next_level': number;
+      'user:apexAccount:br_total_kills': number;
+      'user:apexAccount:br_total_wins': number;
+      'user:apexAccount:br_total_games_played': number;
+      'user:apexAccount:br_kdr': number;
+      'user:apexAccount:br_total_damage': number;
+      'user:apexAccount:last_legend_played': string;
+      'user:apexAccount:created_at': string;
+      'user:apexAccount:updated_at': string;
+      'user:giveaway_member:id': number;
+      'user:giveaway_member:twitch_id': string;
+      'user:giveaway_member:twitch_nick': string;
+    };
+  };
   'emoji': {
     plain: {
       'id': number;
@@ -133,6 +276,125 @@ export type Schema = {
     };
     nested: {};
     flat: {};
+  };
+  'inside_league_match': {
+    plain: {
+      'id': number;
+      'created_at': string;
+      'updated_at': string;
+      'seasonId': number;
+    };
+    nested: {
+      'season': Schema['inside_league_season']['plain'] & Schema['inside_league_season']['nested'];
+    };
+    flat: {
+      'season:id': number;
+      'season:name': string;
+      'season:background_image': string;
+      'season:created_at': string;
+      'season:updated_at': string;
+    };
+  };
+  'inside_league_match_score': {
+    plain: {
+      'id': number;
+      'score': number;
+      'created_at': string;
+      'updated_at': string;
+      'teamId': number;
+      'matchId': number;
+    };
+    nested: {
+      'team': Schema['team']['plain'] & Schema['team']['nested'];
+      'match': Schema['inside_league_match']['plain'] & Schema['inside_league_match']['nested'];
+    };
+    flat: {
+      'team:id': number;
+      'team:name': string;
+      'team:created_at': string;
+      'team:updated_at': string;
+      'team:roleId': number;
+      'team:display_name': string;
+      'team:logo_url': string;
+      'team:color': string;
+      'team:role:id': number;
+      'team:role:discord_id': string;
+      'team:role:name': string;
+      'team:role:created_at': string;
+      'team:role:updated_at': string;
+      'team:role:priority': number;
+      'team:role:emojiId': number;
+      'team:role:roleGroupId': number;
+      'team:role:emoji:id': number;
+      'team:role:emoji:name': string;
+      'team:role:emoji:discord_id': string;
+      'team:role:emoji:created_at': string;
+      'team:role:emoji:updated_at': string;
+      'team:role:emoji:discord_name': string;
+      'team:role:roleGroup:id': number;
+      'team:role:roleGroup:name': string;
+      'team:role:roleGroup:created_at': string;
+      'team:role:roleGroup:updated_at': string;
+      'match:id': number;
+      'match:created_at': string;
+      'match:updated_at': string;
+      'match:seasonId': number;
+      'match:season:id': number;
+      'match:season:name': string;
+      'match:season:background_image': string;
+      'match:season:created_at': string;
+      'match:season:updated_at': string;
+    };
+  };
+  'inside_league_season': {
+    plain: {
+      'id': number;
+      'name': string;
+      'background_image': string;
+      'created_at': string;
+      'updated_at': string;
+    };
+    nested: {};
+    flat: {};
+  };
+  'giveaway_member': {
+    plain: {
+      'id': number;
+      'twitch_id': string;
+      'twitch_nick': string;
+    };
+    nested: {
+      'user': Schema['user']['plain'] & Schema['user']['nested'];
+    };
+    flat: {
+      'user:id': number;
+      'user:discord_id': string;
+      'user:email': string;
+      'user:is_admin': number;
+      'user:created_at': string;
+      'user:updated_at': string;
+      'user:apexAccountId': number;
+      'user:giveaway_member_id': number;
+      'user:apexAccount:id': number;
+      'user:apexAccount:name': string;
+      'user:apexAccount:uid': string;
+      'user:apexAccount:avatar_url': string;
+      'user:apexAccount:platform': string;
+      'user:apexAccount:rank_score': number;
+      'user:apexAccount:rank_name': string;
+      'user:apexAccount:rank_division': string;
+      'user:apexAccount:rank_img': string;
+      'user:apexAccount:level': number;
+      'user:apexAccount:percent_to_next_level': number;
+      'user:apexAccount:br_total_kills': number;
+      'user:apexAccount:br_total_wins': number;
+      'user:apexAccount:br_total_games_played': number;
+      'user:apexAccount:br_kdr': number;
+      'user:apexAccount:br_total_damage': number;
+      'user:apexAccount:last_legend_played': string;
+      'user:apexAccount:created_at': string;
+      'user:apexAccount:updated_at': string;
+    };
   };
   'inside_league_match': {
     plain: {
@@ -242,6 +504,7 @@ export type Schema = {
       'user:created_at': string;
       'user:updated_at': string;
       'user:apexAccountId': number;
+      'user:giveaway_member_id': number;
       'user:apexAccount:id': number;
       'user:apexAccount:name': string;
       'user:apexAccount:uid': string;
@@ -261,6 +524,9 @@ export type Schema = {
       'user:apexAccount:last_legend_played': string;
       'user:apexAccount:created_at': string;
       'user:apexAccount:updated_at': string;
+      'user:giveaway_member:id': number;
+      'user:giveaway_member:twitch_id': string;
+      'user:giveaway_member:twitch_nick': string;
     };
   };
   'role': {
@@ -404,9 +670,11 @@ export type Schema = {
       'created_at': string;
       'updated_at': string;
       'apexAccountId': number;
+      'giveaway_member_id': number;
     };
     nested: {
       'apexAccount': Schema['apex_account']['plain'] & Schema['apex_account']['nested'];
+      'giveaway_member': Schema['giveaway_member']['plain'] & Schema['giveaway_member']['nested'];
     };
     flat: {
       'apexAccount:id': number;
@@ -428,6 +696,9 @@ export type Schema = {
       'apexAccount:last_legend_played': string;
       'apexAccount:created_at': string;
       'apexAccount:updated_at': string;
+      'giveaway_member:id': number;
+      'giveaway_member:twitch_id': string;
+      'giveaway_member:twitch_nick': string;
     };
   };
 };

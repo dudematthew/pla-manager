@@ -7,6 +7,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import * as passport from 'passport';
 import * as session from 'express-session';
 import 'dotenv/config';
+import "reflect-metadata";
 
 import { createAgent } from '@forestadmin/agent';
 import { createSqlDataSource } from '@forestadmin/datasource-sql';

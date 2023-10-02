@@ -30,4 +30,9 @@ export class RoleEntity extends BaseEntity {
 
     @ManyToOne(() => RoleGroupEntity, roleGroup => roleGroup.roles)
     roleGroup: RoleGroupEntity;
+
+    // Mention the role
+    toString(): string {
+        return `<@&${this.discordId}>`;
+    }
 }

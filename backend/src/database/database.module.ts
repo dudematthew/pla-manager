@@ -26,6 +26,10 @@ import { InsideTeamEntity } from "./entities/inside-teams/entities/inside-team.e
 import { InsideLeagueSeasonEntity } from "./entities/inside-league/entities/inside-league-season.entity";
 import { InsideLeagueMatchEntity } from "./entities/inside-league/entities/inside-league-match.entity";
 import { InsideLeagueMatchScoreEntity } from "./entities/inside-league/entities/inside-league-match-score.entity";
+import { CommunityEventModule } from './entities/community-event/community-event.module';
+import { CommunityEventEntity } from "./entities/community-event/entities/community-event.entity";
+import { GiveawayMemberModule } from './entities/giveaway-member/giveaway-member.module';
+import { GiveawayMemberEntity } from "./entities/giveaway-member/entities/giveaway-member.entity";
 
 @Module({
     imports: [
@@ -39,6 +43,7 @@ import { InsideLeagueMatchScoreEntity } from "./entities/inside-league/entities/
                 username: configService.get('DB_USER', 'root'),
                 password: configService.get('DB_PASS', ''),
                 database: configService.get('DB_NAME', 'pla_manager'),
+                charset: "utf8mb4",
                 entities: [
                     UserEntity,
                     ChannelEntity,
@@ -56,6 +61,8 @@ import { InsideLeagueMatchScoreEntity } from "./entities/inside-league/entities/
                     InsideLeagueSeasonEntity,
                     InsideLeagueMatchEntity,
                     InsideLeagueMatchScoreEntity,
+                    CommunityEventEntity,
+                    GiveawayMemberEntity,
                 ],
                 synchronize: true,
                 autoLoadEntities: true,
@@ -66,6 +73,8 @@ import { InsideLeagueMatchScoreEntity } from "./entities/inside-league/entities/
         forwardRef(() => DiscordModule),
         ApexSeasonModule,
         InsideTeamsModule,
+        CommunityEventModule,
+        GiveawayMemberModule,
     ],
     providers: [
         TypeORMSession,

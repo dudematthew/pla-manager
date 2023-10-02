@@ -31,7 +31,8 @@
   "dependencies": {
     "@nestjs/mapped-types": "*",
     "@nestjs/schedule": "^2.2.2",
-    "postcss-nesting": "^11.2.2"
+    "postcss-nesting": "^11.2.2",
+    "twitch": "^4.6.7"
   },
   "optionalDependencies": {
     "node-canvas": "*"

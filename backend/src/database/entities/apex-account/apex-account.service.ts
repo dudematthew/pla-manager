@@ -149,7 +149,7 @@ export class ApexAccountService {
         brTotalWins: playerData.total?.specialEvent_wins?.value ?? null,
         brTotalDamage: playerData.total?.specialEvent_damage?.value ?? null,
         brTotalGamesPlayed: null, // Doesn't exist in API
-        brKDR: parseInt(playerData.total?.kd?.value ?? null) ?? null,
+        brKDR: !isNaN(Number(playerData.total?.kd?.value)) ? parseInt(playerData.total?.kd?.value) : null,
         lastLegendPlayed: playerData.realtime?.selectedLegend ?? null,
     };
 
@@ -168,9 +168,8 @@ export class ApexAccountService {
 
     if(existingAccount) {
         // Update existing profile
-        console.log("Updating existing profile");
+        console.log("Updating existing profile: ", existingAccount.id);
         profile = await this.update(existingAccount.id, data);
-        console.log(`Updated profile: ${profile.name}`);
     } else {
         // Create new profile
         console.log(`Creating new profile: ${data.name}`);
@@ -195,24 +194,30 @@ export class ApexAccountService {
 
   async update(id: number, properties: UpdateApexAccountDto): Promise<ApexAccountEntity> {
     const account = await this.findById(id);
-
+  
     if(!account) {
       return null;
     }
-
+  
     try {
-        Object.assign(account, properties);
-
-        const modifiedAccountEntity = await this.apexAccountRepository.save(account);
-
-        // Create new history chunk
-        await this.apexAccountHistoryService.create(modifiedAccountEntity);
-
-        return modifiedAccountEntity;
+      console.log('Updating account with ID:', id);
+  
+      Object.assign(account, properties);
+  
+      const modifiedAccountEntity = await this.apexAccountRepository.save(account);
+  
+      console.log('Modified account entity:', modifiedAccountEntity);
+  
+      // Create new history chunk
+      await this.apexAccountHistoryService.create(modifiedAccountEntity);
+  
+      return modifiedAccountEntity;
     } catch (error) {
-        throw new InternalServerErrorException(error);
+      console.error('Error while updating account:', error);
+      throw new InternalServerErrorException(error);
     }
   }
+  
 
   async remove (id: number): Promise<ApexAccountEntity> {
     const account = await this.findById(id);

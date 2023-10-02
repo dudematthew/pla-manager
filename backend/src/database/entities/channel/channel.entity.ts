@@ -37,4 +37,9 @@ export class ChannelEntity extends BaseEntity {
 
     @OneToMany(() => MessageEntity, message => message.channel)
     messages: MessageEntity[];
+
+    // to string
+    toString(): string {
+        return `<#${this.discordId}>`;
+    }
 }
