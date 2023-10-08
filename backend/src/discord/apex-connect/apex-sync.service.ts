@@ -230,11 +230,11 @@ export class ApexSyncService {
 
         // Create a fusion of discord users and users with connected Apex Account
         return usersWithConnectedApexAccount
-        .filter(apexAccount => discordUsers.has(apexAccount.user.discordId))
+            .filter(apexAccount => apexAccount.user? discordUsers.has(apexAccount.user.discordId): false)
             .map(apexAccount => {
                 return {
                     ...apexAccount,
-                    discordUser: discordUsers.get(apexAccount.user.discordId),
+                    discordUser: apexAccount.user? discordUsers.get(apexAccount.user.discordId): null,
                 }
             });
     }
