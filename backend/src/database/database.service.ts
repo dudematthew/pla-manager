@@ -6,6 +6,7 @@ import fs from 'fs';
 import { DiscordService } from "src/discord/discord.service";
 import { throwError } from "rxjs";
 import { Attachment, AttachmentBuilder, BufferResolvable } from "discord.js";
+const zlib = require('zlib');
 
 @Injectable()
 export class DatabaseService {
@@ -68,19 +69,20 @@ export class DatabaseService {
         await this.discordService.isReady();
         
         const mainAdminId = this.configService.get<string>('DISCORD_MAIN_ADMIN_ID', '426330456753963008');
-
-        const buffer: BufferResolvable = Buffer.from(backup.dump.data, 'utf-8');
-
-        const attachment = new AttachmentBuilder(buffer, {
-            name: filename,
+    
+        // Compress the SQL dump
+        const compressedDump = zlib.gzipSync(backup.dump.data);
+    
+        const attachment = new AttachmentBuilder(compressedDump, {
+            name: filename + '.gz', // Add .gz extension for the compressed file
             description: 'Backup bazy danych',
-        }).setSpoiler(true)
-
+        }) // .setSpoiler(true)
+    
         // Send backup message to user 426330456753963008
-        this.discordService.sendPrivateMessage(mainAdminId, `Backup bazy danych został wykonany! [${backup.dump.data.length} bajtów]`, [], [], [
+        this.discordService.sendPrivateMessage(mainAdminId, `Backup bazy danych został wykonany! [${compressedDump.length} bajtów]`, [], [], [
             attachment,
         ]);
-
+    
         return true;
     }
     
