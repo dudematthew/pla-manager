@@ -67,6 +67,12 @@ export class ApexConnectService {
                 } catch (e) {
                     await interaction.editReply(this.messageProviderService.getPlayerDataExpiredMessage());
                 }
+
+                if (!confirmation || !confirmation.customId) {
+                    interaction.editReply({ content: `Wystąpił błąd podczas oczekiwania na potwierdzenie. Spróbuj ponownie później.`});
+                    console.error("Connection failed, couldn't get confirmation.");
+                    this.sendConnectionStatusToLogChannel(interaction, options, "error");
+                }
         
                 if (confirmation.customId == 'apex-link-steam') {
                     await interaction.editReply(this.messageProviderService.getConnectSteamMessage(options.username, options.platform));
