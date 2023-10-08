@@ -1,6 +1,4 @@
 import { BaseEntity, Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
-import { InsideLeagueMatchEntity } from "./inside-league-match.entity";
-import { InsideTeamEntity } from "../../inside-teams/entities/inside-team.entity";
 
 @Entity({
     name: 'inside_league_season'
@@ -18,8 +16,8 @@ export class InsideLeagueSeasonEntity extends BaseEntity {
     })
     backgroundImage: string;
 
-    @OneToMany(() => InsideLeagueMatchEntity, match => match.season)
-    matches: InsideLeagueMatchEntity[];
+    // @OneToMany(() => InsideLeagueMatchEntity, match => match.season)
+    // matches: InsideLeagueMatchEntity[];
 
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;

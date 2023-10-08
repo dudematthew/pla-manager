@@ -24,8 +24,6 @@ import { ApexSeasonEntity } from "./entities/apex-season/entities/apex-season.en
 import { InsideTeamsModule } from './entities/inside-teams/inside-teams.module';
 import { InsideTeamEntity } from "./entities/inside-teams/entities/inside-team.entity";
 import { InsideLeagueSeasonEntity } from "./entities/inside-league/entities/inside-league-season.entity";
-import { InsideLeagueMatchEntity } from "./entities/inside-league/entities/inside-league-match.entity";
-import { InsideLeagueMatchScoreEntity } from "./entities/inside-league/entities/inside-league-match-score.entity";
 import { CommunityEventModule } from './entities/community-event/community-event.module';
 import { CommunityEventEntity } from "./entities/community-event/entities/community-event.entity";
 import { GiveawayMemberModule } from './entities/giveaway-member/giveaway-member.module';
@@ -59,8 +57,6 @@ import { GiveawayMemberEntity } from "./entities/giveaway-member/entities/giveaw
                     ApexSeasonEntity,
                     InsideTeamEntity,
                     InsideLeagueSeasonEntity,
-                    InsideLeagueMatchEntity,
-                    InsideLeagueMatchScoreEntity,
                     CommunityEventEntity,
                     GiveawayMemberEntity,
                 ],
