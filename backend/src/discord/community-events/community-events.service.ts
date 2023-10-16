@@ -262,7 +262,7 @@ export class CommunityEventsService {
     public async handleCommunityEventAcceptButton(buttonData: ButtonData) {
         console.log('handleCommunityEventAcceptButton');
 
-        buttonData.interaction.reply({
+        await buttonData.interaction.reply({
             content: `### :hourglass_flowing_sand: Przetwarzanie...`,
             ephemeral: true,
         });
@@ -473,7 +473,7 @@ export class CommunityEventsService {
     public async handleCommunityEventReminderButton(buttonData: ButtonData) {
         console.log('handleCommunityEventReminderButton');
 
-        buttonData.interaction.reply({
+        await buttonData.interaction.reply({
             content: `### :hourglass_flowing_sand: Przetwarzanie...`,
             ephemeral: true,
         });
@@ -559,7 +559,7 @@ export class CommunityEventsService {
     public async handleCommunityEventSwitchRemindersButton(buttonData: ButtonData) {
         console.log('handleCommunityEventSwitchRemindersButton');
 
-        buttonData.interaction.reply({
+        await buttonData.interaction.reply({
             content: `### :hourglass_flowing_sand: Przetwarzanie...`,
             ephemeral: true,
         });

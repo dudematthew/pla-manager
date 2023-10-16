@@ -58,7 +58,7 @@ export class InsideService {
 
     public async handleGetInsideMembers(interaction: ChatInputCommandInteraction<CacheType>) {
 
-        interaction.reply({
+        await interaction.reply({
             content: 'Pobieram listę członków PLA Inside...',
         });
 

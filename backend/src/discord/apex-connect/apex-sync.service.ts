@@ -104,7 +104,7 @@ export class ApexSyncService {
   }
 
   public async handleAdminUpdateConnectedRole (Interaction: ChatInputCommandInteraction<CacheType>) {
-    Interaction.reply({ content: 'Rozpoczynam aktualizację ról...', ephemeral: true });
+    await Interaction.reply({ content: 'Rozpoczynam aktualizację ról...', ephemeral: true });
 
     const isDone = await this.updateConnectedRoles();
 
@@ -401,7 +401,7 @@ export class ApexSyncService {
     public async handleAdminUpdateConnectedAccounts(Interaction: ChatInputCommandInteraction<CacheType>) {
 
         
-        Interaction.reply({ content: 'Rozpoczynam aktualizację kont...', ephemeral: true });
+        await Interaction.reply({ content: 'Rozpoczynam aktualizację kont...', ephemeral: true });
 
         const isDone = await this.updateConnectedAccounts();
 
