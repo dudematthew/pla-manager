@@ -12,6 +12,7 @@ import { RoleEntity } from '../role/entities/role.entity';
 import { ApexAccountHistoryService } from '../apex-account-history/apex-account-history.service';
 import { PlainObjectToNewEntityTransformer } from 'typeorm/query-builder/transformer/PlainObjectToNewEntityTransformer.js';
 import { InsideTeamEntity } from '../inside-teams/entities/inside-team.entity';
+import { get } from 'axios';
 
 @Injectable()
 export class ApexAccountService {
@@ -58,6 +59,13 @@ export class ApexAccountService {
     'X1': 'xbox',
     'SWITCH': 'switch',
   };
+
+  public platformToRoleNameDictionary = {
+    PC: 'pc',
+    X1: 'xbox',
+    PS4: 'ps4',
+    SWITCH: 'switch',
+}
 
   public rankDivToRomanDictionary = {
     '1': 'I',
@@ -368,7 +376,23 @@ export class ApexAccountService {
     return role;
   }
 
-  public async getRoleByAccountId(accountId: number): Promise<RoleEntity> {
+  public async getRoleByPlatformName(platformName: string): Promise<RoleEntity> {
+    const roleName = this.platformToRoleNameDictionary[platformName] ?? null;
+
+    if(!roleName) {
+      return null;
+    }
+
+    const role = await this.roleService.findByName(roleName);
+
+    if(!role) {
+      return null;
+    }
+
+    return role;
+  }
+
+  public async getRankedRoleByAccountId(accountId: number): Promise<RoleEntity> {
     const account = await this.findById(accountId);
 
     if(!account) {
@@ -376,6 +400,16 @@ export class ApexAccountService {
     }
 
     return await this.getRoleByRankName(account.rankName);
+  }
+
+  public async getPlatformRoleByAccountId(accountId: number): Promise<RoleEntity> {
+    const account = await this.findById(accountId);
+
+    if(!account) {
+      return null;
+    }
+
+    return await this.getRoleByPlatformName(account.platform);
   }
 
   public async getServerAvgRankScore(): Promise<number> {

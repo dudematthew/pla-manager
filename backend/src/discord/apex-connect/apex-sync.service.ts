@@ -96,6 +96,7 @@ export class ApexSyncService {
         else {
             await this.discordService.addRoleToUser(user.id, disconnectRole.discordId);
             await this.discordService.removeGroupRoles(user.id, 'rank');
+            await this.discordService.removeGroupRoles(user.id, 'platform');
         }
     }
 
@@ -138,16 +139,25 @@ export class ApexSyncService {
                 return {
                     ...apexAccount,
                     discordUser: users.get(apexAccount.user.discordId),
-                    roleToGive: await this.apexAccountService.getRoleByAccountId(apexAccount.id),
+                    rolesToGive: [
+                        await this.apexAccountService.getRankedRoleByAccountId(apexAccount.id),
+                        await this.apexAccountService.getPlatformRoleByAccountId(apexAccount.id),
+                    ]
                 }
             }
         ));
 
         // Check if RoleGroup with name 'rank' exists
         const rankRoleGroup = await this.roleGroupService.findByName('rank');
+        const platformRoleGroup = await this.roleGroupService.findByName('platform');
 
         if (!rankRoleGroup) {
             this.logger.error('RoleGroup with name \'rank\' not found');
+            return false;
+        }
+
+        if (!platformRoleGroup) {
+            this.logger.error('RoleGroup with name \'platform\' not found');
             return false;
         }
 
@@ -158,8 +168,14 @@ export class ApexSyncService {
             }
 
             // If user doesn't have role that he should have, give it to him
-            if (!user.discordUser.roles.cache.has(user.roleToGive.discordId)) {
-                await this.discordService.switchRoleFromGroup(user.discordUser.id, 'rank', user.roleToGive.discordId);
+            for (const roleToGive of user.rolesToGive) {
+                if (!roleToGive) {
+                    continue;
+                }
+
+                if (!user.discordUser.roles.cache.has(roleToGive.discordId)) {
+                    await this.discordService.switchRoleFromGroup(user.discordUser.id, roleToGive.roleGroup.name, roleToGive.discordId);
+                }
             }
         }
 
@@ -198,7 +214,10 @@ export class ApexSyncService {
         const discordUser = await this.discordService.guild.members.fetch(user.discordId);
 
         // Get role to give
-        const roleToGive = await this.apexAccountService.getRoleByAccountId(apexAccount.id);
+        const rolesToGive = [
+            await this.apexAccountService.getRankedRoleByAccountId(apexAccount.id),
+            await this.apexAccountService.getPlatformRoleByAccountId(apexAccount.id),
+        ]
 
         // Check if RoleGroup with name 'rank' exists
         const rankRoleGroup = await this.roleGroupService.findByName('rank');
@@ -209,8 +228,14 @@ export class ApexSyncService {
         }
 
         // If user doesn't have role that he should have, give it to him
-        if (!discordUser.roles.cache.has(roleToGive.discordId)) {
-            await this.discordService.switchRoleFromGroup(discordUser.id, 'rank', roleToGive.discordId);
+        for (const roleToGive of rolesToGive) {
+            if (!roleToGive) {
+                continue;
+            }
+
+            if (!discordUser.roles.cache.has(roleToGive.discordId)) {
+                await this.discordService.switchRoleFromGroup(discordUser.id, roleToGive.roleGroup.name, roleToGive.discordId);
+            }
         }
         
         // If user has disconnected role, remove it
