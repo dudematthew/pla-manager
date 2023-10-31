@@ -101,9 +101,13 @@ export class LfgService {
             'pubsach',
             'publiczne',
             'publicznych',
+            'tercety',
+            'tercetach',
+            'tercetami',
         ],
         '1v1': [
             '1v1',
+            '1vs1',
             'versus',
             'sparing',
             'sparingi',
@@ -457,11 +461,11 @@ export class LfgService {
             const platformIcon = await this.emojiService.getDiscordEmojiByName(platformIconName);
 
             const urlFriendlyName = apexAccount.name.replaceAll(' ', '%20');
-            authorData.url = `https://apex.tracker.gg/profile/pc/${urlFriendlyName}`;
+            authorData.url = `https://apexlegendsstatus.com/profile/${apexAccount?.platform}/${urlFriendlyName}`;
 
             embed.addFields({
                 name: '🎮 Konto Apex',
-                value: `${platformIcon} [${apexAccount.name}](https://apex.tracker.gg/profile/pc/${urlFriendlyName})`,
+                value: `${platformIcon} [${apexAccount.name}](${authorData.url})`,
             });
 
         }
