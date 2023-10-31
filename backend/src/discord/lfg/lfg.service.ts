@@ -7,10 +7,12 @@ import { Cache } from 'cache-manager';
 import { Logger } from '@nestjs/common';
 import { DiscordService } from '../discord.service';
 import { RoleEntity } from 'src/database/entities/role/entities/role.entity';
-import { ColorResolvable, Embed, EmbedBuilder, GuildEmoji, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, APIActionRowComponent, APIMessageActionRowComponent, Channel, Role, AnyComponentBuilder } from 'discord.js';
+import { ColorResolvable, Embed, EmbedBuilder, GuildEmoji, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, APIActionRowComponent, APIMessageActionRowComponent, Channel, Role, AnyComponentBuilder, EmbedAuthorOptions } from 'discord.js';
 import { ConfigService } from '@nestjs/config';
 import { ChannelService } from 'src/database/entities/channel/channel.service';
 import { EmojiService } from 'src/database/entities/emoji/emoji.service';
+import { ApexAccountService } from 'src/database/entities/apex-account/apex-account.service';
+import { ApexAccountEntity } from 'src/database/entities/apex-account/entities/apex-account.entity';
 
 @Injectable()
 export class LfgService {
@@ -223,6 +225,7 @@ export class LfgService {
         private readonly configService: ConfigService,
         private readonly channelService: ChannelService,
         private readonly emojiService: EmojiService,
+        private readonly apexAccountService: ApexAccountService,
     ) {}
 
     /**
@@ -275,8 +278,11 @@ export class LfgService {
         // Cache the user lfg cooldown
         userCacheData = await this.setCachedUserLfg(message.message.author.id);
 
+        // Get user apex account
+        const account = await this.apexAccountService.findByUserDiscordId(message.message.author.id);
+
         // Get the lfg embed
-        const embed = await this.getLfgEmbed(message, mentionedRoles, parseInt(userCacheData));
+        const embed = await this.getLfgEmbed(message, mentionedRoles, account, parseInt(userCacheData));
         
         let roleMentions = '';
         const globalCache = await this.getCachedGlobalLfg();
@@ -406,7 +412,7 @@ export class LfgService {
         return channel.discordId;
     }
 
-    private async getLfgEmbed(message: MessageData, mentionedRoles: RoleEntity[], cooldownTimestamp: number) {
+    private async getLfgEmbed(message: MessageData, mentionedRoles: RoleEntity[], apexAccount: ApexAccountEntity, cooldownTimestamp: number) {
         const disconnectedRole = await this.roleService.findByName(this.configService.get<string>('role-names.disconnected'));
 
         const rankRole = await this.discordService.getUserRankRole(message.message.author.id)
@@ -429,14 +435,15 @@ export class LfgService {
                 
         }
 
+        const authorData: EmbedAuthorOptions = {
+            name: message.message.member.nickname ?? message.message.author.username,
+            iconURL: rankIcon,
+        };
+
         const embed = new EmbedBuilder()
             .setColor(this.configService.get<ColorResolvable>('theme.color-primary'))
             .setTitle('LFG - Szukam graczy:')
-            .setAuthor({
-                name: message.message.member.nickname ?? message.message.author.username,
-                iconURL: rankIcon,
-            })
-            .setURL(message.message.url)
+            // .setURL(message.message.url)
             .setThumbnail(message.message.member.displayAvatarURL())
             .setDescription('"' + messageContent + '"')
             .setTimestamp()
@@ -444,6 +451,22 @@ export class LfgService {
                 text: `LFG`,
                 iconURL: this.configService.get<string>('images.logo'),
             });
+
+        if (apexAccount) {
+            const platformIconName = this.apexAccountService.platformToEmojiNameDictionary[apexAccount.platform];
+            const platformIcon = await this.emojiService.getDiscordEmojiByName(platformIconName);
+
+            const urlFriendlyName = apexAccount.name.replaceAll(' ', '%20');
+            authorData.url = `https://apex.tracker.gg/profile/pc/${urlFriendlyName}`;
+
+            embed.addFields({
+                name: '🎮 Konto Apex',
+                value: `${platformIcon} [${apexAccount.name}](https://apex.tracker.gg/profile/pc/${urlFriendlyName})`,
+            });
+
+        }
+
+        embed.setAuthor(authorData);
 
         const voiceChannel = this.discordService.getUserVoiceChannel(message.message.author.id);
 

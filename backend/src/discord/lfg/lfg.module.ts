@@ -4,6 +4,7 @@ import { RoleModule } from 'src/database/entities/role/role.module';
 import { DiscordModule } from '../discord.module';
 import { ChannelModule } from 'src/database/entities/channel/channel.module';
 import { EmojiModule } from 'src/database/entities/emoji/emoji.module';
+import { ApexAccountModule } from 'src/database/entities/apex-account/apex-account.module';
 
 @Module({
   imports: [
@@ -11,6 +12,7 @@ import { EmojiModule } from 'src/database/entities/emoji/emoji.module';
     ChannelModule,
     EmojiModule,
     forwardRef(() => DiscordModule),
+    ApexAccountModule,
   ],
   providers: [
     LfgService,
