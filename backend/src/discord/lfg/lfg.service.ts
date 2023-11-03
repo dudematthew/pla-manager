@@ -458,8 +458,8 @@ export class LfgService {
 
         if (apexAccount) {
             const platformIconName = this.apexAccountService.platformToEmojiNameDictionary[apexAccount.platform];
-            const platformIcon = await this.emojiService.getDiscordEmojiByName(platformIconName);
-            const apexIcon = await this.emojiService.getDiscordEmojiByName('apex');
+            const platformIcon = await this.emojiService.findByName(platformIconName);
+            const apexIcon = await this.emojiService.findByName('apex');
 
             const urlFriendlyName = apexAccount.name.replaceAll(' ', '%20');
             authorData.url = `https://apexlegendsstatus.com/profile/${apexAccount?.platform}/${urlFriendlyName}`;
