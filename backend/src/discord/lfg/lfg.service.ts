@@ -459,12 +459,13 @@ export class LfgService {
         if (apexAccount) {
             const platformIconName = this.apexAccountService.platformToEmojiNameDictionary[apexAccount.platform];
             const platformIcon = await this.emojiService.getDiscordEmojiByName(platformIconName);
+            const apexIcon = await this.emojiService.getDiscordEmojiByName('apex');
 
             const urlFriendlyName = apexAccount.name.replaceAll(' ', '%20');
             authorData.url = `https://apexlegendsstatus.com/profile/${apexAccount?.platform}/${urlFriendlyName}`;
 
             embed.addFields({
-                name: '🎮 Konto Apex',
+                name: `${apexIcon} Konto Apex`,
                 value: `${platformIcon} [${apexAccount.name}](${authorData.url})`,
             });
 
