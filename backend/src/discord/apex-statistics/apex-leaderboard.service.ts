@@ -184,6 +184,10 @@ export class ApexLeaderboardService {
         const topPlayers = await this.apexAccountService.getServerRankTopX(20);
         const totalAccounts = await this.apexAccountService.countAll();
 
+        if (!topPlayers || topPlayers.length === 0) {
+            throw new Error(`[ApexLeaderboardService] getLeaderboardMessage: Top players not found`);
+        }
+
         const lastTopPlayerLp = topPlayers[topPlayers.length - 1].rankScore;
 
         // Get date of monday at 00:01 AM
@@ -211,6 +215,14 @@ export class ApexLeaderboardService {
 
         const topAccount = topPlayers[0];
         const topDiscordMember = await this.discordService.getMemberById(topAccount.user.discordId);
+
+        if (!topDiscordMember) {
+            throw new Error(`[ApexLeaderboardService] getLeaderboardMessage: Top player discord member not found`);
+        }
+
+        if (!topAccount) {
+            throw new Error(`[ApexLeaderboardService] getLeaderboardMessage: Top player not found`);
+        }
 
         const topPlayerHistory = await this.apexAccountHistoryService.getTopXAtTime(20, differenceDate);
 
