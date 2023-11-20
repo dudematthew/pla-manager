@@ -14,7 +14,10 @@
     "deploy": "npm-run-all --parallel deploy:frontend deploy:backend",
     "deploy:frontend": "cd frontend && npm run deploy",
     "deploy:backend": "cd backend && npm run deploy",
-    "push:prod": "push-prod.sh"
+    "push:prod": "npm run push:prod:patch",
+    "push:prod:patch": "cross-env VERSION=patch node push-prod.js",
+    "push:prod:minor": "cross-env VERSION=minor node push-prod.js",
+    "push:prod:major": "cross-env VERSION=major node push-prod.js"
   },
   "keywords": [
     "pla",
