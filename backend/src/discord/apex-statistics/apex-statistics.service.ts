@@ -17,6 +17,7 @@ import { Console } from 'console';
 import { ApexAccountHistoryEntity } from 'src/database/entities/apex-account-history/entities/apex-account-history.entity';
 import { ApexAccountHistoryService } from 'src/database/entities/apex-account-history/apex-account-history.service';
 import { ApexSeasonService } from 'src/database/entities/apex-season/apex-season.service';
+import { ChannelService } from 'src/database/entities/channel/channel.service';
 const { ChartJSNodeCanvas } = require('chartjs-node-canvas');
 
 @Injectable()
@@ -34,6 +35,7 @@ export class ApexStatisticsService {
         private readonly emojiService: EmojiService,
         private readonly apexAccountHistoryService: ApexAccountHistoryService,
         private readonly seasonService: ApexSeasonService,
+        private readonly channelService: ChannelService,
     ) {
         const Annotation = require('chartjs-plugin-annotation');
         const ChartMomentAdapter = require('chartjs-adapter-moment');
@@ -101,7 +103,9 @@ export class ApexStatisticsService {
 
         // interaction.editReply(`Statystyki użytkownika **${options.user.displayName}**`);
 
-        const message = await this.getStatisticsMessage(statistics, options.user, user);
+        let isStatisticsChannel = ((await this.channelService.findByName('statistics'))?.discordId == interaction.channelId);
+
+        const message = await this.getStatisticsMessage(statistics, options.user, user, !isStatisticsChannel);
 
         interaction.editReply(message);
     }
@@ -132,7 +136,9 @@ export class ApexStatisticsService {
 
         const discordUser = user ? await this.discordService.getMemberById(user?.discordId) : null;
 
-        const message = await this.getStatisticsMessage(statistics, discordUser, user);
+        let isStatisticsChannel = ((await this.channelService.findByName('statistics'))?.discordId == interaction.channelId);
+
+        const message = await this.getStatisticsMessage(statistics, discordUser, user, !isStatisticsChannel);
 
         interaction.editReply(message);
     }
@@ -162,7 +168,7 @@ export class ApexStatisticsService {
         });
     }
 
-    private async getStatisticsMessage(statistics: PlayerStatistics, discordUser: GuildMember, user: UserEntity) {
+    private async getStatisticsMessage(statistics: PlayerStatistics, discordUser: GuildMember, user: UserEntity, short = true) {
         console.info(`Getting statistics message for ${statistics?.global?.name}, ${discordUser?.displayName}, ${user?.discordId}`);
 
         const embed = this.getBasicStatisticsEmbed();
@@ -199,72 +205,83 @@ export class ApexStatisticsService {
         );
         // ----------------------------------------------------------------------
 
-        // Total ---------------------------------------------------------------
-
-        const totalStatsNames = {
-            'kills': 'Zabójstwa',
-            'damage': 'Obrażenia',
-            'winning_kills': 'Zwycięskie zabójstwa',
-            'top_3': 'Top 3',
-            'kills_as_kill_leader': 'Zabójstwa jako lider zabójstw',
-            'wins': 'Zwycięstwa',
-        };
-
-        const totalStats = [];
-
-        for (const statName in totalStatsNames) {
-            const statValue = statistics?.total[statName] ?? null;
-
-            if (statValue == null || statValue.value == -1)
-                continue;
-
-            totalStats.push({
-                name: totalStatsNames[statName],
-                value: statValue.value,
-            });
-        }
-        // ----------------------------------------------------------------------
-
         // Status ---------------------------------------------------------------
-        const isOnline = statistics?.realtime?.isOnline;
-        const isPlaying = statistics?.realtime?.isInGame;
-        const partyFull = statistics?.realtime?.partyFull;
-        const lobbyState = statistics?.realtime?.lobbyState == 'open' ? 'open' : 'closed';
-        const currentStateSinceTimestamp = statistics?.realtime?.currentStateSinceTimestamp;
+        if (!short) {
+            const isOnline = statistics?.realtime?.isOnline;
+            const isPlaying = statistics?.realtime?.isInGame;
+            const partyFull = statistics?.realtime?.partyFull;
+            const lobbyState = statistics?.realtime?.lobbyState == 'open' ? 'open' : 'closed';
+            const currentStateSinceTimestamp = statistics?.realtime?.currentStateSinceTimestamp;
+    
+            const statusEmojiName = !isOnline ? 'offline' : isPlaying ? 'playing' : 'online';
+            const statusEmoji = await this.emojiService.findByName(statusEmojiName);
+    
+            const lobbyStateEmoji = await this.emojiService.findByName(lobbyState);
+    
+            const statusText = [];
+            if (isOnline) {
+                if (currentStateSinceTimestamp != -1)
+                    statusText.push(`> ` + (isPlaying ? 'Rozpoczął grę' : 'Wszedł do lobby') + ` <t:${currentStateSinceTimestamp}:R>`);
+                statusText.push(`> Skład: ${partyFull ? 'Pełny :x:' : 'Niepełny :white_check_mark:'}`);
+            }
+            statusText.push(`> Lobby: ${(lobbyState == 'open') ? `Otwarte` : 'Zamknięte'} ${lobbyStateEmoji}`);
+            statusText.push('ㅤ');
 
-        const statusEmojiName = !isOnline ? 'offline' : isPlaying ? 'playing' : 'online';
-        const statusEmoji = await this.emojiService.findByName(statusEmojiName);
-
-        const lobbyStateEmoji = await this.emojiService.findByName(lobbyState);
-
-        const statusText = [];
-        if (isOnline) {
-            if (currentStateSinceTimestamp != -1)
-                statusText.push(`> ` + (isPlaying ? 'Rozpoczął grę' : 'Wszedł do lobby') + ` <t:${currentStateSinceTimestamp}:R>`);
-            statusText.push(`> Skład: ${partyFull ? 'Pełny :x:' : 'Niepełny :white_check_mark:'}`);
+            if (isOnline) {
+                embed.addFields([
+                    {
+                        name: `${statusEmoji} **Online**`,
+                        value: statusText.join('\n'),
+                    }
+                ])
+            } else {
+                embed.addFields([
+                    {
+                        name: `${statusEmoji} **Offline**`,
+                        value: statusText.join('\n'),
+                        inline: true,
+                    }
+                ])
+            }
         }
-        statusText.push(`> Lobby: ${(lobbyState == 'open') ? `Otwarte` : 'Zamknięte'} ${lobbyStateEmoji}`);
-        statusText.push('ㅤ');
         // ----------------------------------------------------------------------
 
         // Level ----------------------------------------------------------------
-        const level = statistics?.global?.level;
-        const levelPrestige = statistics?.global?.levelPrestige;
-        let levelEmojiName = (level <= 100) ? 'level100' : 'level500';
+        if (!short) {
+            const level = statistics?.global?.level;
+            const levelPrestige = statistics?.global?.levelPrestige;
+            let levelEmojiName = (level <= 100) ? 'level100' : 'level500';
+    
+            switch (true) {
+                case (levelPrestige == 1):
+                    levelEmojiName = 'tier1';
+                    break;
+                case (levelPrestige == 2):
+                    levelEmojiName = 'tier2';
+                    break;
+                case (levelPrestige == 3):
+                    levelEmojiName = 'tier3';
+                    break;
+            }
+            
+            const levelEmoji = await this.emojiService.findByName(levelEmojiName) ?? null;
 
-        switch (true) {
-            case (levelPrestige == 1):
-                levelEmojiName = 'tier1';
-                break;
-            case (levelPrestige == 2):
-                levelEmojiName = 'tier2';
-                break;
-            case (levelPrestige == 3):
-                levelEmojiName = 'tier3';
-                break;
+            const levelText = [];
+
+            if (levelPrestige > 0)
+                levelText.push(`> Poziom Prestiżu: **${levelPrestige}**`);
+
+            levelText.push(`> **${statistics?.global?.toNextLevelPercent}%** do następnego poziomu`);
+            levelText.push('ㅤ');
+
+            embed.addFields([
+                {
+                    name: `${levelEmoji} **Poziom ${level}**`,
+                    value: levelText.join('\n'),
+                    inline: true,
+                }
+            ]);
         }
-        
-        const levelEmoji = await this.emojiService.findByName(levelEmojiName) ?? null;
         // ----------------------------------------------------------------------
 
         embed.setTitle(`**${platformEmoji} ${statistics?.global?.name}**`)
@@ -304,80 +321,74 @@ export class ApexStatisticsService {
         description.push('ㅤ');
         // ----------------------------------------------------------------------
 
-        if (isOnline) {
+        // Total Stats ---------------------------------------------------------------
+        if (!short) {
+            const totalStats = [];
+
+            const totalStatsNames = {
+                'kills': 'Zabójstwa',
+                'damage': 'Obrażenia',
+                'winning_kills': 'Zwycięskie zabójstwa',
+                'top_3': 'Top 3',
+                'kills_as_kill_leader': 'Zabójstwa jako lider zabójstw',
+                'wins': 'Zwycięstwa',
+            };
+    
+    
+            for (const statName in totalStatsNames) {
+                const statValue = statistics?.total[statName] ?? null;
+    
+                if (statValue == null || statValue.value == -1)
+                    continue;
+    
+                totalStats.push({
+                    name: totalStatsNames[statName],
+                    value: statValue.value,
+                });
+            }
+
+            const totalStatsText = [];
+    
+            for (const stat of totalStats) {
+                totalStatsText.push(`> **${stat?.name}**: \`${stat.value}\``);
+            }
+    
+            if (totalStatsText.length == 0)
+                totalStatsText.push(`> Brak statystyk`);
+    
+            totalStatsText.push('ㅤ');
+    
             embed.addFields([
                 {
-                    name: `${statusEmoji} **Online**`,
-                    value: statusText.join('\n'),
+                    name: `**:globe_with_meridians:  Globalne Statystyki**`,
+                    value: totalStatsText.join('\n'),
                 }
-            ])
-        } else {
-            embed.addFields([
-                {
-                    name: `${statusEmoji} **Offline**`,
-                    value: statusText.join('\n'),
-                    inline: true,
-                }
-            ])
+            ]);
         }
-
-        const levelText = [];
-
-        if (levelPrestige > 0)
-            levelText.push(`> Poziom Prestiżu: **${levelPrestige}**`);
-
-        levelText.push(`> **${statistics?.global?.toNextLevelPercent}%** do następnego poziomu`);
-        levelText.push('ㅤ');
-
-        embed.addFields([
-            {
-                name: `${levelEmoji} **Poziom ${level}**`,
-                value: levelText.join('\n'),
-                inline: true,
-            }
-        ]);
-
-        // Total Stats ----------------------------------------------------------
-        const totalStatsText = [];
-
-        for (const stat of totalStats) {
-            totalStatsText.push(`> **${stat?.name}**: \`${stat.value}\``);
-        }
-
-        if (totalStatsText.length == 0)
-            totalStatsText.push(`> Brak statystyk`);
-
-        totalStatsText.push('ㅤ');
-
-        embed.addFields([
-            {
-                name: `**:globe_with_meridians:  Globalne Statystyki**`,
-                value: totalStatsText.join('\n'),
-            }
-        ]);
         // ----------------------------------------------------------------------
 
         // Legend ----------------------------------------------------------------
-
         const legend = statistics?.legends?.selected;
-        const stats = legend?.data;
-
-        const legendText = [];
-
-        for (const stat of stats) {
-            legendText.push(`> **${stat?.name}**: \`${stat.value}\``);
-        }
-
-        if (legendText.length == 0)
-            legendText.push(`> Brak statystyk`);
-
-        embed.addFields([
-            {
-                name: `:radio_button:  Wybrana Legenda: **${legend?.LegendName}**`,
-                value: legendText.join('\n'),
-                inline: false,
+        if (!short) {
+            const stats = legend?.data;
+    
+            const legendText = [];
+    
+            for (const stat of stats) {
+                legendText.push(`> **${stat?.name}**: \`${stat.value}\``);
             }
-        ]);
+    
+            if (legendText.length == 0)
+                legendText.push(`> Brak statystyk`);
+    
+            embed.addFields([
+                {
+                    name: `:radio_button:  Wybrana Legenda: **${legend?.LegendName}**`,
+                    value: legendText.join('\n'),
+                    inline: false,
+                }
+            ]);
+        }
 
         // ----------------------------------------------------------------------
 
@@ -404,16 +415,20 @@ export class ApexStatisticsService {
             }
         }
 
+        let footerText = 'Polskie Legendy Apex • Dane są aktualizowane jedynie jeśli założony jest odpowiedni tracker, mogą być więc nieaktualne';
+        if (short)
+            footerText += ' • Przestawiono skróconą wersję, ponieważ nie jest to kanał statystyk';
+
 
         // If some data couldn't be fetched add info to footer
         if (statistics?.global?.rank.ladderPosPlatform == -1 || !serverRank) {
             embed.setFooter({
-                text: 'Polskie Legendy Apex • Dane są aktualizowane jedynie jeśli założony jest odpowiedni tracker, mogą być więc nieaktualne',
+                text: footerText,
                 iconURL: this.configService.get<string>('images.logo-transparent')
             })
         }
 
-        embed.setDescription(description.join('\n'));
+        embed.setDescription(description.join('\n').trim());
 
         return { embeds: [embed], files };
     }
