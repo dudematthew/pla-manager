@@ -7,6 +7,8 @@
 
 git pull
 
+git push
+
 git checkout production
 
 git pull
@@ -27,6 +29,8 @@ git push
 git checkout main
 
 git merge production
+
+git push
 
 # if you want to keep the terminal open
 # /bin/bash
