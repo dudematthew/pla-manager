@@ -222,6 +222,7 @@ export class ApexAccountService {
       return modifiedAccountEntity;
     } catch (error) {
       console.error('Error while updating account:', error);
+      console.info(`Account ID: ${id}, properties:`, properties);
       throw new InternalServerErrorException(error);
     }
   }
